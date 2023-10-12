@@ -10,7 +10,6 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
-import Graphics.UI.GLUT (windowSize)
 
 main :: IO ()
 main =
@@ -23,17 +22,18 @@ main =
     debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh logFormatter
     updateGlobalLogger debugLog $ addHandler debugHandler
 
+    state <- initialState
     size <- getScreenSize
     let (screenWidth, screenHeight) = size
-        (windowWidth, windowHeight) = Model.windowSize initialState
+        (windowWidth, windowHeight) = Model.windowSize state
 
     -- Center screen
     playIO (InWindow "Orion's Outlaws" (windowWidth, windowHeight) 
         -- Ensure that the window is centered
         ((screenWidth `div` 2) - (windowWidth `div` 2), (screenHeight `div` 2) - (windowHeight `div` 2)))
-      white                   -- Background color
-      10                      -- Frames per second
-      initialState            -- Initial state
-      view                    -- View function
-      input                   -- Event function
-      step                    -- Step function
+      white       -- Background color
+      stepsPerSec -- Frames per second
+      state       -- Initial state
+      view        -- View function
+      input       -- Event function
+      step        -- Step function

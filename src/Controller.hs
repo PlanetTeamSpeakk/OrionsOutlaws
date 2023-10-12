@@ -7,21 +7,26 @@ import Graphics.Gloss.Interface.IO.Game
 import Control.Monad (unless)
 import System.Log.Logger (debugM)
 import View (onScreen)
+import Util (msTime)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
 step _ gstate = do
+    time <- msTime
     return gstate {
       player      = stepPlayer $ player gstate,
-      projectiles = stepProjectiles $ projectiles gstate
+      projectiles = stepProjectiles $ projectiles gstate,
+      lastStep    = time
     }
     where
       -- Moves all projectiles forward
       stepProjectiles :: [Projectile] -> [Projectile]
       stepProjectiles = filter (onScreen gstate . position) . map stepProjectile
-          where
-              stepProjectile p = p { projPos = (fst (projPos p) + (speed p * 10), snd $ projPos p) }
-              -- Ensure the given coordinates are on the screen
+        where
+          stepProjectile p = p { 
+            prevProjPos = projPos p,
+            projPos = (fst (projPos p) + (speed p * projectileSpeed), snd $ projPos p) 
+          }
 
       -- Decreases the player's cooldown
       stepPlayer :: Player -> Player
@@ -54,12 +59,8 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
   if cooldown (player gstate) == 0
     then do
       let (px, py) = playerPos $ player gstate
-      let proj = RegularProjectile (px + (playerSize / 2) + 2.5, py) True 1
+      let proj = createProjectile (px + (playerSize / 2) + 2.5, py) True
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
 inputKey _ gstate = return gstate
-
-
-createProjectile :: Position -> Bool -> Projectile
-createProjectile pos f = RegularProjectile pos f 1

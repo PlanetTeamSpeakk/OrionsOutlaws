@@ -7,10 +7,9 @@ module Model (module Model) where
 
 import System.Log.Formatter (tfLogFormatter, LogFormatter)
 import System.Log.Logger (rootLoggerName)
+import Util (msTime)
 
-secondsBetweenCycles :: Float
-secondsBetweenCycles = 5
-
+-- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
 logFormatter :: LogFormatter a
 logFormatter = tfLogFormatter "%X" "[$time : $loggername : $prio] $msg"
@@ -21,12 +20,27 @@ defLog = rootLoggerName
 debugLog :: String
 debugLog = "Debug"
 
-initialState :: GameState
-initialState = GameState (Player (-540, 0) 3 0) [] [] 0 0 False (1280, 720)
+-- Constants
+stepsPerSec :: Int
+stepsPerSec = 10
+
+stepLengthMs :: Int
+stepLengthMs = 1000 `div` stepsPerSec
+
+initialState :: IO GameState
+initialState = GameState (Player (-540, 0) 3 0) [] [] 0 0 False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40
 
+projectileSpeed :: Float
+projectileSpeed = 30
+
+stepDelta :: Integer -> Integer -> Float
+stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLengthMs
+
+
+-- Data types
 data GameState = GameState {
     player      :: Player,          -- The player
     enemies     :: [Enemy],         -- A list of enemies
@@ -34,7 +48,8 @@ data GameState = GameState {
     lastSpawn   :: Float,           -- The time at which the last enemy was spawned
     elapsedTime :: Float,           -- The time elapsed since the game started
     started     :: Bool,            -- Whether the game has started or not
-    windowSize  :: (Int, Int)       -- The size of the window
+    windowSize  :: (Int, Int),      -- The size of the window
+    lastStep    :: Integer          -- The time in milliseconds at which the last step was taken
 } deriving (Show, Eq)
 
 data Player = Player {
@@ -56,6 +71,7 @@ data Enemy =
 
 data Projectile = RegularProjectile {
     projPos     :: Position,    -- Projectile's position on the field
+    prevProjPos :: Position,    -- Projectile's previous position on the field. Used for rendering the projectile
     friendly    :: Bool,        -- Whether the projectile is friendly or not. If it is, it will hurt enemies, otherwise it will hurt the player
     speed       :: Float        -- How fast the projectile moves. Will probably be between 0.5 and 2
 } deriving (Show, Eq)
@@ -82,7 +98,7 @@ instance Boxable Enemy where
     createBoxes (BossEnemy (x, y) _ _)  = undefined
 
 instance Boxable Projectile where
-    createBoxes (RegularProjectile (x, y) _ _) = undefined
+    createBoxes (RegularProjectile (x, y) _ _ _) = undefined
 
 -- Class for things that can collide with other things.
 class Collidable a where
@@ -102,6 +118,9 @@ type Position = (Float, Float)
 -- A box goes from one position to another, representing a rectangle.
 type Box = (Position, Position)
 
+
+-- Helper functions
+
 -- Produces a list of all corners of the given box.
 corners :: Box -> [Position]
 corners ((x1, y1), (x2, y2)) = [(x1, y1), (x1, y2), (x2, y1), (x2, y2)]
@@ -113,3 +132,6 @@ isInBox ((x1, y1), (x2, y2)) (x, y) = x1 <= x && x <= x2 && y1 <= y && y <= y2
 -- Checks whether the two given boxes intersect. (I.e., whether box 2 has a corner inside of box 1)
 intersects :: Box -> Box -> Bool
 intersects b1 b2 = not $ null [c | c <- corners b2, isInBox b1 c]
+
+createProjectile :: Position -> Bool -> Projectile
+createProjectile pos f = RegularProjectile pos pos f 1
