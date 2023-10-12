@@ -3,34 +3,60 @@
 module Controller where
 
 import Model
-import Util
 import Graphics.Gloss.Interface.IO.Game
 import Control.Monad (unless)
 import System.Log.Logger (debugM)
-import Graphics.UI.GLUT.Window
-import Graphics.UI.GLUT (Size (Size), ($=))
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate = do
-  let (wx, wy) = getWindowSizeFor gstate
-  windowSize $= Size (fromIntegral wx) (fromIntegral wy)
-  -- Increment time if the game has started
-  return gstate { elapsedTime = if started gstate then elapsedTime gstate + secs else 0 }
+step _ gstate = do
+    return gstate { projectiles = stepProjectiles gstate $ projectiles gstate }
+
+-- Moves all projectiles forward
+stepProjectiles :: GameState -> [Projectile] -> [Projectile]
+stepProjectiles gstate = filter onScreen . map stepProjectile
+    where
+        stepProjectile p = p { projPos = (fst (projPos p) + (speed p * 10), snd $ projPos p) }
+        -- Ensure the given coordinates are on the screen
+        onScreen (RegularProjectile (x, y) _ _) = 
+          let (wx, wy)   = windowSize gstate
+              (hwx, hwy) = (fromIntegral wx / 2, fromIntegral wy / 2) in
+            x > -hwx && x < hwx && y > -hwy && y < hwy
+
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 -- Mouse events
 input e@(EventKey (MouseButton _) Down _ _) gstate = do
   ret <- inputMouse e gstate
-  unless (ret == gstate) (debugM debugLog "New state ")
+  unless (ret == gstate) $ debugM debugLog "New state "
   return ret
+input e@(EventKey (SpecialKey _) Down _ _) gstate = do
+  ret <- inputKey e gstate
+  unless (ret == gstate) $ debugM debugLog $ "New state " ++ show ret
+  return ret
+input e@(EventResize (nx, ny)) gstate = do
+  debugM debugLog $ "Resizing window to " ++ show nx ++ "x" ++ show ny
+  return gstate
 input _ gstate = return gstate
 
 inputMouse :: Event -> GameState -> IO GameState
 inputMouse (EventKey (MouseButton btn) Down _ p@(x, y)) gstate = do
-  let (cx, cy) = toCell gstate p
-  let (nx, ny) = toNaturalCoord gstate p
-  debugM debugLog $ "Mouse pressed " ++ unwords [show btn, show x, show y, show cx, show cy, show nx, show ny] 
+  debugM debugLog $ "Mouse pressed " ++ unwords [show btn, show x, show y]
   return gstate
 inputMouse _ gstate = return gstate
+
+inputKey :: Event -> GameState -> IO GameState
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
+  if cooldown (player gstate) == 0
+    then do
+      let (px, py) = playerPos $ player gstate
+      let proj = createProjectile (px + (playerSize / 2) + 2.5, py) True
+      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
+    else do
+      return gstate
+inputKey _ gstate = return gstate
+
+
+createProjectile :: Position -> Bool -> Projectile
+createProjectile pos f = RegularProjectile pos f 1

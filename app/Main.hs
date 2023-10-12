@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Controller
 import Model
@@ -10,7 +10,7 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
-import Util
+import Graphics.UI.GLUT (windowSize)
 
 main :: IO ()
 main =
@@ -24,19 +24,16 @@ main =
     updateGlobalLogger debugLog $ addHandler debugHandler
 
     size <- getScreenSize
-    board <- createBoard 16 16 40
     let (screenWidth, screenHeight) = size
-        (windowWidth, windowHeight) = getWindowSizeFor board
-    
-    debugM debugLog $ "Initial state: " ++ show board
-    debugM debugLog $ "Board: \n" ++ printBoard board
+        (windowWidth, windowHeight) = Model.windowSize initialState
 
     -- Center screen
-    playIO (InWindow "Minesweeper" (windowWidth, windowHeight) 
+    playIO (InWindow "Orion's Outlaws" (windowWidth, windowHeight) 
+        -- Ensure that the window is centered
         ((screenWidth `div` 2) - (windowWidth `div` 2), (screenHeight `div` 2) - (windowHeight `div` 2)))
-      (greyN 0.8)             -- Background color
+      white                   -- Background color
       10                      -- Frames per second
-      board                   -- Initial state
+      initialState            -- Initial state
       view                    -- View function
       input                   -- Event function
       step                    -- Step function
