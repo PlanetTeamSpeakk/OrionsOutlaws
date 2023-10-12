@@ -21,3 +21,9 @@ renderProjectiles = pictures . map renderProjectile
 
 translateP :: Position -> Picture -> Picture
 translateP (x, y) = translate x y
+
+onScreen :: GameState -> Position -> Bool
+onScreen gstate (x, y) = 
+    let (wx, wy)   = windowSize gstate
+        (hwx, hwy) = (fromIntegral wx / 2, fromIntegral wy / 2) in
+    x > -hwx && x < hwx && y > -hwy && y < hwy

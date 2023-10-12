@@ -6,23 +6,26 @@ import Model
 import Graphics.Gloss.Interface.IO.Game
 import Control.Monad (unless)
 import System.Log.Logger (debugM)
+import View (onScreen)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
 step _ gstate = do
-    return gstate { projectiles = stepProjectiles gstate $ projectiles gstate }
-
--- Moves all projectiles forward
-stepProjectiles :: GameState -> [Projectile] -> [Projectile]
-stepProjectiles gstate = filter onScreen . map stepProjectile
+    return gstate {
+      player      = stepPlayer $ player gstate,
+      projectiles = stepProjectiles $ projectiles gstate
+    }
     where
-        stepProjectile p = p { projPos = (fst (projPos p) + (speed p * 10), snd $ projPos p) }
-        -- Ensure the given coordinates are on the screen
-        onScreen (RegularProjectile (x, y) _ _) = 
-          let (wx, wy)   = windowSize gstate
-              (hwx, hwy) = (fromIntegral wx / 2, fromIntegral wy / 2) in
-            x > -hwx && x < hwx && y > -hwy && y < hwy
+      -- Moves all projectiles forward
+      stepProjectiles :: [Projectile] -> [Projectile]
+      stepProjectiles = filter (onScreen gstate . position) . map stepProjectile
+          where
+              stepProjectile p = p { projPos = (fst (projPos p) + (speed p * 10), snd $ projPos p) }
+              -- Ensure the given coordinates are on the screen
 
+      -- Decreases the player's cooldown
+      stepPlayer :: Player -> Player
+      stepPlayer p = p { cooldown = max 0 $ cooldown p - 1 }
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
@@ -51,7 +54,7 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
   if cooldown (player gstate) == 0
     then do
       let (px, py) = playerPos $ player gstate
-      let proj = createProjectile (px + (playerSize / 2) + 2.5, py) True
+      let proj = RegularProjectile (px + (playerSize / 2) + 2.5, py) True 1
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
