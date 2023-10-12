@@ -8,6 +8,8 @@ module Model (module Model) where
 import System.Log.Formatter (tfLogFormatter, LogFormatter)
 import System.Log.Logger (rootLoggerName)
 import Util (msTime, lerp)
+import Data.Ord (clamp)
+import Data.Bifunctor (bimap)
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -36,8 +38,13 @@ playerSize = 40
 projectileSpeed :: Float
 projectileSpeed = 30
 
-rt2 :: Float
-rt2 = 0.5 * sqrt 2
+-- | The margin between the player and the edge of the screen
+margin :: (Int, Int)
+margin = (140, 50)
+
+-- Used for movement calculations
+halfRt2 :: Float
+halfRt2 = 0.5 * sqrt 2
 
 stepDelta :: Integer -> Integer -> Float
 stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLengthMs
@@ -119,7 +126,7 @@ class Boxable a where
 
 -- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
 instance Boxable Player where
-    createBoxes p = let (x, y) = playerPos p in 
+    createBoxes p = let (x, y) = playerPos p in
         [((x - 10, y - 10), (x + 10, y + 10))]
 
 instance Boxable Enemy where
@@ -147,6 +154,9 @@ type Position = (Float, Float)
 -- A box goes from one position to another, representing a rectangle.
 type Box = (Position, Position)
 
+-- | Represents width and height of an area.
+type Bounds = (Int, Int)
+
 
 -- Helper functions
 
@@ -166,8 +176,10 @@ createProjectile :: Position -> Bool -> Projectile
 createProjectile pos f = RegularProjectile pos pos f 1
 
 -- | Moves a position by the given difference
-move :: Position -> (Float, Float) -> Position
-move (x, y) (dx, dy) = (x + dx, y + dy)
+move :: Bounds -> Position -> (Float, Float) -> Position
+move (width, height) (x, y) (dx, dy) = let halfWidth = fromIntegral width / 2
+                                           halfHeight = fromIntegral height / 2 in
+    (clamp (-halfWidth, halfWidth) (x + dx), clamp (-halfHeight, halfHeight) (y + dy))
 
 -- | Linearly interpolate between two positions
 lerpPos :: Position -> Position -> Float -> Position
@@ -176,7 +188,7 @@ lerpPos (x1, y1) (x2, y2) t = (lerp x1 x2 t, lerp y1 y2 t)
 -- | Calculates movement based on the given Movement.
 -- | Ensures that the player moves at the same speed in all directions.
 calcMovement :: Movement -> (Float, Float)
-calcMovement m = (if y /= 0 then x * rt2 else x, if x /= 0 then y * rt2 else y)
+calcMovement m = (if y /= 0 then x * halfRt2 else x, if x /= 0 then y * halfRt2 else y)
     where
         x = (if forward m then 1 else 0) + (if backward m then -1 else 0)
         y = (if left m    then 1 else 0) + (if right m    then -1 else 0)
@@ -185,5 +197,8 @@ multiplyMovement :: (Float, Float) -> Float -> (Float, Float)
 multiplyMovement (x, y) mult = (x * mult, y * mult)
 
 -- | Applies the given movement to the given position.
-applyMovement :: Position -> Movement -> Float -> Position
-applyMovement p m mult = move p $ multiplyMovement (calcMovement m) mult
+applyMovement :: Bounds -> Position -> Movement -> Float -> Position
+applyMovement b p m mult = move b p $ multiplyMovement (calcMovement m) mult
+
+subtractMargin :: Bounds -> Bounds
+subtractMargin (width, height) = bimap (width -) (height -) margin

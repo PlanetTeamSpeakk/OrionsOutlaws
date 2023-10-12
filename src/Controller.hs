@@ -31,7 +31,7 @@ step _ gstate = do
       stepPlayer :: Player -> Player
       stepPlayer p = p {
         prevPlayerPos = playerPos p,
-        playerPos = applyMovement (playerPos p) (movement p) 10,
+        playerPos = applyMovement (subtractMargin $ windowSize gstate) (playerPos p) (movement p) 10,
         cooldown = max 0 $ cooldown p - 1
       }
 
