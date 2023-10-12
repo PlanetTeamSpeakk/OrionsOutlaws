@@ -7,7 +7,7 @@ module Model (module Model) where
 
 import System.Log.Formatter (tfLogFormatter, LogFormatter)
 import System.Log.Logger (rootLoggerName)
-import Util (msTime)
+import Util (msTime, lerp)
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -22,19 +22,22 @@ debugLog = "Debug"
 
 -- Constants
 stepsPerSec :: Int
-stepsPerSec = 10
+stepsPerSec = 20
 
 stepLengthMs :: Int
 stepLengthMs = 1000 `div` stepsPerSec
 
 initialState :: IO GameState
-initialState = GameState (Player (-540, 0) 3 0) [] [] 0 0 False (1280, 720) <$> msTime
+initialState = GameState (Player (-540, 0) (-540, 0) (Movement False False False False) 3 0) [] [] 0 0 False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40
 
 projectileSpeed :: Float
 projectileSpeed = 30
+
+rt2 :: Float
+rt2 = 0.5 * sqrt 2
 
 stepDelta :: Integer -> Integer -> Float
 stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLengthMs
@@ -53,18 +56,29 @@ data GameState = GameState {
 } deriving (Show, Eq)
 
 data Player = Player {
-    playerPos   :: Position,   -- Player's position on the field. Whether this is a pair of doubles or ints depends on how Gloss handles coordinates
-    health      :: Int,        -- Player's health. Will be between 0 and 3
-    cooldown    :: Int         -- How many steps until the player can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
+    playerPos       :: Position,    -- Player's position on the field.
+    prevPlayerPos   :: Position,    -- Player's previous position on the field. Used for rendering the player
+    movement        :: Movement,    -- Player's movement
+    health          :: Int,         -- Player's health. Will be between 0 and 3
+    cooldown        :: Int          -- How many steps until the player can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
+} deriving (Show, Eq)
+
+data Movement = Movement {
+    forward     :: Bool,    -- Whether the player is moving forwards
+    backward    :: Bool,    -- Whether the player is moving backwards
+    left        :: Bool,    -- Whether the player is moving left
+    right       :: Bool     -- Whether the player is moving right
 } deriving (Show, Eq)
 
 data Enemy =
     RegularEnemy { -- Regular enemy, will move in a straight line and shoot at the player
         enemyPos        :: Position,    -- Enemy's position on the field
+        prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the enemy
         enemyCooldown   :: Int          -- How many steps until the enemy can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
     } |
     BossEnemy { -- Boss enemy, will not move in a straight line, but rather anywhere on the field and shoot at the player.
         enemyPos        :: Position,    -- Boss' position on the field
+        prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the boss
         enemyCooldown   :: Int,         -- How many steps until the boss can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
         bossHealth      :: Int          -- Boss' health. Will be between 0 and 10
     } deriving (Show, Eq)
@@ -78,12 +92,26 @@ data Projectile = RegularProjectile {
 
 -- Make a class that has an instance for each data type so that we can use the same function for all of them.
 class Positionable a where
-    position :: a -> Position
+    curPosition  :: a -> Position
+    prevPosition :: a -> Position
+
+-- Calculates the interpolated position using the previous position, the current position and the step delta.
+position :: Positionable a => Float -> a -> Position
+position sd a = if sd >= 1 then curPosition a else lerpPos (prevPosition a) (curPosition a) sd
 
 -- Make an instance of Positionable for each data type
-instance Positionable Player where position = playerPos
-instance Positionable Enemy where position = enemyPos
-instance Positionable Projectile where position = projPos
+instance Positionable Player where
+    curPosition = playerPos
+    prevPosition = prevPlayerPos
+
+instance Positionable Enemy where
+    curPosition = enemyPos
+    prevPosition = prevEnemyPos
+
+instance Positionable Projectile where
+    curPosition = projPos
+    prevPosition = prevProjPos
+
 
 -- Allows for creation of bounding boxes for entities in the game.
 class Boxable a where
@@ -91,11 +119,12 @@ class Boxable a where
 
 -- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
 instance Boxable Player where
-    createBoxes (Player (x, y) _ _) = [((x - 10, y - 10), (x + 10, y + 10))]
+    createBoxes p = let (x, y) = playerPos p in 
+        [((x - 10, y - 10), (x + 10, y + 10))]
 
 instance Boxable Enemy where
-    createBoxes (RegularEnemy (x, y) _) = undefined -- TODO - Implement this
-    createBoxes (BossEnemy (x, y) _ _)  = undefined
+    createBoxes (RegularEnemy (x, y) _ _) = undefined -- TODO - Implement this
+    createBoxes (BossEnemy (x, y) _ _ _)  = undefined
 
 instance Boxable Projectile where
     createBoxes (RegularProjectile (x, y) _ _ _) = undefined
@@ -135,3 +164,26 @@ intersects b1 b2 = not $ null [c | c <- corners b2, isInBox b1 c]
 
 createProjectile :: Position -> Bool -> Projectile
 createProjectile pos f = RegularProjectile pos pos f 1
+
+-- | Moves a position by the given difference
+move :: Position -> (Float, Float) -> Position
+move (x, y) (dx, dy) = (x + dx, y + dy)
+
+-- | Linearly interpolate between two positions
+lerpPos :: Position -> Position -> Float -> Position
+lerpPos (x1, y1) (x2, y2) t = (lerp x1 x2 t, lerp y1 y2 t)
+
+-- | Calculates movement based on the given Movement.
+-- | Ensures that the player moves at the same speed in all directions.
+calcMovement :: Movement -> (Float, Float)
+calcMovement m = (if y /= 0 then x * rt2 else x, if x /= 0 then y * rt2 else y)
+    where
+        x = (if forward m then 1 else 0) + (if backward m then -1 else 0)
+        y = (if left m    then 1 else 0) + (if right m    then -1 else 0)
+
+multiplyMovement :: (Float, Float) -> Float -> (Float, Float)
+multiplyMovement (x, y) mult = (x * mult, y * mult)
+
+-- | Applies the given movement to the given position.
+applyMovement :: Position -> Movement -> Float -> Position
+applyMovement p m mult = move p $ multiplyMovement (calcMovement m) mult
