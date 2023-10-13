@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 -- | This module defines how the state changes
 --   in response to time and user input
 module Controller where
@@ -7,12 +8,19 @@ import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger (debugM)
 import View (onScreen)
 import Util (msTime)
+import System.Random (randomIO)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step _ gstate = do
+step elapsed gstate = do
+    -- Add elapsed time to the gamestate
+    let gstateNew = gstate { elapsedTime = elapsedTime gstate + elapsed}
+
+    -- Try to spawn an enemy
+    gstateN2 <- trySpawnEnemy gstateNew
+
     time <- msTime
-    return gstate {
+    return gstateN2 {
       player      = stepPlayer $ player gstate,
       projectiles = stepProjectiles $ projectiles gstate,
       lastStep    = time
@@ -34,6 +42,32 @@ step _ gstate = do
         playerPos = applyMovement (subtractMargin $ windowSize gstate) (playerPos p) (movement p) 10,
         cooldown = max 0 $ cooldown p - 1
       }
+
+      -- Will spawn an enemy if the last one was spawned long enough ago.
+      -- Has a 5% chance of spawning an enemy every step after 4 seconds.
+      trySpawnEnemy :: GameState -> IO GameState
+      trySpawnEnemy gstateNew = do
+        let e = enemies gstateNew
+
+        r <- randomIO :: IO Int
+        let rand = abs r `mod` 100
+
+        if elapsedTime gstateNew - lastSpawn gstate > 4 && (rand < 5)
+          then do
+            let (wx, wy)    = windowSize gstate -- The window size
+            let (hwx, hwy)  = (fromIntegral wx / 2, fromIntegral wy / 2)
+            let maxY        = hwy - fromIntegral (snd margin) -- The maximum y value for an enemy to spawn at
+            yd <- randomIO :: IO Float -- Value between 0 and 1
+            let (x, y) = (hwx + (enemySize / 2), maxY - (yd * maxY * 2)) -- y will be between -maxY and maxY
+            let enemy = RegularEnemy (x, y) (x, y) 0
+
+            debugM debugLog $ "Spawning enemy " ++ show enemy
+            return $ gstateNew {
+              lastSpawn = elapsedTime gstateNew,
+              enemies = enemy : e
+            }
+          else do
+            return gstateNew
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState

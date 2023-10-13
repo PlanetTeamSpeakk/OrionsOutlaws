@@ -35,6 +35,9 @@ initialState = GameState (Player (-540, 0) (-540, 0) (Movement False False False
 playerSize :: Float
 playerSize = 40
 
+enemySize :: Float
+enemySize = playerSize
+
 projectileSpeed :: Float
 projectileSpeed = 30
 
