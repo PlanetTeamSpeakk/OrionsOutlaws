@@ -41,8 +41,10 @@ viewPure sd gstate = pictures [
 translateP :: Position -> Picture -> Picture
 translateP (x, y) = translate x y
 
-onScreen :: GameState -> Position -> Bool
-onScreen gstate (x, y) = 
-    let (wx, wy)   = windowSize gstate
-        (hwx, hwy) = (fromIntegral wx / 2, fromIntegral wy / 2) in
+inBounds :: Bounds -> Position -> Bool
+inBounds (maxX, maxY) (x, y) = 
+    let (hwx, hwy) = (fromIntegral maxX / 2, fromIntegral maxY / 2) in
     x > -hwx && x < hwx && y > -hwy && y < hwy
+
+onScreen :: GameState -> Position -> Bool
+onScreen gstate = inBounds $ windowSize gstate

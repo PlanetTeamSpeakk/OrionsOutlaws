@@ -6,9 +6,10 @@ module Controller where
 import Model
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger (debugM)
-import View (onScreen)
+import View (onScreen, inBounds)
 import Util (msTime)
 import System.Random (randomIO)
+import Data.Bifunctor (first)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -20,16 +21,12 @@ step elapsed gstate = do
     gstateN2 <- trySpawnEnemy gstateNew
 
     time <- msTime
-    let res = gstateN2 {
+    return gstateN2 {
       player      = stepPlayer $ player gstateN2,
       enemies     = stepEnemies $ enemies gstateN2,
       projectiles = stepProjectiles $ projectiles gstateN2,
       lastStep    = time
     }
-
-    -- debugM debugLog $ "Before: " ++ show gstate
-    -- debugM debugLog $ "After: " ++ show res
-    return res
     where
       -- Moves all projectiles forward
       stepProjectiles :: [Projectile] -> [Projectile]
@@ -37,15 +34,16 @@ step elapsed gstate = do
         where
           stepProjectile p = applyMovement (windowSize gstate) p (speed p * projectileSpeed)
 
-      -- Decreases the player's cooldown
+      -- Decreases the player's cooldown and applies movement
       stepPlayer :: Player -> Player
       stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) { cooldown = max 0 $ cooldown p - 1 }
 
-      -- TODO implement movement for enemies (make a Movable class)
+      -- Moves all enemies forward
       stepEnemies :: [Enemy] -> [Enemy]
-      stepEnemies = filter (onScreen gstate . curPosition) . map stepEnemy
+      stepEnemies = let bounds = first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate in
+        filter (inBounds bounds . curPosition) . map stepEnemy
         where
-          stepEnemy e = applyMovement (subtractMargin $ windowSize gstate) e 10
+          stepEnemy e = applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10
 
       -- Will spawn an enemy if the last one was spawned long enough ago.
       -- Has a 5% chance of spawning an enemy every step after 4 seconds.
