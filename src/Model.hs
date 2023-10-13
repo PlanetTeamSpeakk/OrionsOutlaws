@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
+
 
 -- | This module contains the data types
 --   which represent the state of the game
@@ -123,32 +122,20 @@ instance Positionable Projectile where
     prevPosition = prevProjPos
 
 
--- Allows for creation of bounding boxes for entities in the game.
-class Boxable a where
-    createBoxes :: a -> [Box]
+-- Class for things that can collide with other things.
+class Collidable a where
+    createBoxes  :: a -> [Box]
 
 -- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
-instance Boxable Player where
-    createBoxes p = let (x, y) = playerPos p in
-        [((x - 10, y - 10), (x + 10, y + 10))]
+instance Collidable Player where
+    createBoxes p = let (x, y) = playerPos p in [((x - 10, y - 10), (x + 10, y + 10))]
 
-instance Boxable Enemy where
+instance Collidable Enemy where
     createBoxes (RegularEnemy (x, y) _ _) = undefined -- TODO - Implement this
     createBoxes (BossEnemy (x, y) _ _ _)  = undefined
 
-instance Boxable Projectile where
+instance Collidable Projectile where
     createBoxes (RegularProjectile (x, y) _ _ _) = undefined
-
--- TODO merge this with Boxable
--- Class for things that can collide with other things.
-class Collidable a where
-    collidesWith :: Box -> a -> Bool
-
-instance Collidable Box where
-    collidesWith = intersects
-
-instance Boxable a => Collidable a where
-    collidesWith b = any (intersects b) . createBoxes
 
 
 -- Types and helper functions
@@ -204,5 +191,14 @@ multiplyMovement (x, y) mult = (x * mult, y * mult)
 applyMovement :: Bounds -> Position -> Movement -> Float -> Position
 applyMovement b p m mult = move b p $ multiplyMovement (calcMovement m) mult
 
+-- | Subtracts the margin from the given bounds.
 subtractMargin :: Bounds -> Bounds
 subtractMargin (width, height) = bimap (width -) (height -) margin
+
+-- | Checks whether the given collidable collides with the given box.
+collidesWithBox :: (Collidable a) => a -> Box -> Bool
+collidesWithBox a b = any (intersects b) $ createBoxes a
+
+-- | Checks whether the given collidable collides with any of the given boxes.
+collidesWith :: (Collidable a, Collidable b) => a -> b -> Bool
+collidesWith a b = collidesWithBox a `any` createBoxes b
