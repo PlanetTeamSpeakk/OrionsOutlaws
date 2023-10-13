@@ -29,7 +29,7 @@ stepLengthMs :: Int
 stepLengthMs = 1000 `div` stepsPerSec
 
 initialState :: IO GameState
-initialState = GameState (Player (-540, 0) (-540, 0) (Movement False False False False) 3 0) [] [] 0 0 False (1280, 720) <$> msTime
+initialState = GameState (Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0) [] [] 0 0 False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40
@@ -60,49 +60,57 @@ data GameState = GameState {
     lastSpawn   :: Float,           -- The time at which the last enemy was spawned
     elapsedTime :: Float,           -- The time elapsed since the game started
     started     :: Bool,            -- Whether the game has started or not
-    windowSize  :: (Int, Int),      -- The size of the window
-    lastStep    :: Integer          -- The time in milliseconds at which the last step was taken
+    windowSize  :: Bounds,          -- The size of the window
+    lastStep    :: Integer          -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
 } deriving (Show, Eq)
 
 data Player = Player {
     playerPos       :: Position,    -- Player's position on the field.
     prevPlayerPos   :: Position,    -- Player's previous position on the field. Used for rendering the player
-    movement        :: Movement,    -- Player's movement
+    playerMovement  :: Movement,    -- Player's movement
     health          :: Int,         -- Player's health. Will be between 0 and 3
     cooldown        :: Int          -- How many steps until the player can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
 } deriving (Show, Eq)
+
+data MovementDirection = L2R | R2L deriving (Show, Eq)
 
 data Movement = Movement {
     forward     :: Bool,    -- Whether the player is moving forwards
     backward    :: Bool,    -- Whether the player is moving backwards
     left        :: Bool,    -- Whether the player is moving left
-    right       :: Bool     -- Whether the player is moving right
+    right       :: Bool,    -- Whether the player is moving right
+    direction   :: MovementDirection -- The direction this movement goes in.
 } deriving (Show, Eq)
 
 data Enemy =
     RegularEnemy { -- Regular enemy, will move in a straight line and shoot at the player
         enemyPos        :: Position,    -- Enemy's position on the field
         prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the enemy
+        enemyMovement   :: Movement,    -- Enemy's movement
         enemyCooldown   :: Int          -- How many steps until the enemy can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
     } |
     BossEnemy { -- Boss enemy, will not move in a straight line, but rather anywhere on the field and shoot at the player.
         enemyPos        :: Position,    -- Boss' position on the field
         prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the boss
         enemyCooldown   :: Int,         -- How many steps until the boss can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
+        enemyMovement   :: Movement,    -- Enemy's movement
         bossHealth      :: Int          -- Boss' health. Will be between 0 and 10
     } deriving (Show, Eq)
 
 data Projectile = RegularProjectile {
-    projPos     :: Position,    -- Projectile's position on the field
-    prevProjPos :: Position,    -- Projectile's previous position on the field. Used for rendering the projectile
-    friendly    :: Bool,        -- Whether the projectile is friendly or not. If it is, it will hurt enemies, otherwise it will hurt the player
-    speed       :: Float        -- How fast the projectile moves. Will probably be between 0.5 and 2
+    projPos         :: Position,    -- Projectile's position on the field
+    prevProjPos     :: Position,    -- Projectile's previous position on the field. Used for rendering the projectile
+    projMovement    :: Movement,    -- Projectile's movement
+    friendly        :: Bool,        -- Whether the projectile is friendly or not. If it is, it will hurt enemies, otherwise it will hurt the player
+    speed           :: Float        -- How fast the projectile moves. Will probably be between 0.5 and 2
 } deriving (Show, Eq)
 
 -- Make a class that has an instance for each data type so that we can use the same function for all of them.
 class Positionable a where
     curPosition  :: a -> Position
     prevPosition :: a -> Position
+    withPosition :: a -> Position -> a
+    movement :: a -> Movement
 
 -- Calculates the interpolated position using the previous position, the current position and the step delta.
 position :: Positionable a => Float -> a -> Position
@@ -112,14 +120,20 @@ position sd a = if sd >= 1 then curPosition a else lerpPos (prevPosition a) (cur
 instance Positionable Player where
     curPosition = playerPos
     prevPosition = prevPlayerPos
+    withPosition p pos = p { prevPlayerPos = playerPos p, playerPos = pos }
+    movement = playerMovement
 
 instance Positionable Enemy where
     curPosition = enemyPos
     prevPosition = prevEnemyPos
+    withPosition e pos = e { prevEnemyPos = enemyPos e, enemyPos = pos }
+    movement = enemyMovement
 
 instance Positionable Projectile where
     curPosition = projPos
     prevPosition = prevProjPos
+    withPosition p pos = p { prevProjPos = projPos p, projPos = pos }
+    movement = projMovement
 
 
 -- Class for things that can collide with other things.
@@ -131,11 +145,11 @@ instance Collidable Player where
     createBoxes p = let (x, y) = playerPos p in [((x - 10, y - 10), (x + 10, y + 10))]
 
 instance Collidable Enemy where
-    createBoxes (RegularEnemy (x, y) _ _) = undefined -- TODO - Implement this
-    createBoxes (BossEnemy (x, y) _ _ _)  = undefined
+    createBoxes (RegularEnemy (x, y) _ _ _) = undefined -- TODO - Implement this
+    createBoxes (BossEnemy (x, y) _ _ _ _)  = undefined
 
 instance Collidable Projectile where
-    createBoxes (RegularProjectile (x, y) _ _ _) = undefined
+    createBoxes (RegularProjectile (x, y) _ _ _ _) = undefined
 
 
 -- Types and helper functions
@@ -151,6 +165,9 @@ type Bounds = (Int, Int)
 
 -- Helper functions
 
+emptyMovement :: MovementDirection -> Movement
+emptyMovement = Movement False False False False
+
 -- Produces a list of all corners of the given box.
 corners :: Box -> [Position]
 corners ((x1, y1), (x2, y2)) = [(x1, y1), (x1, y2), (x2, y1), (x2, y2)]
@@ -164,7 +181,7 @@ intersects :: Box -> Box -> Bool
 intersects b1 b2 = not $ null [c | c <- corners b2, isInBox b1 c]
 
 createProjectile :: Position -> Bool -> Projectile
-createProjectile pos f = RegularProjectile pos pos f 1
+createProjectile pos f = RegularProjectile pos pos (Movement True False False False (if f then L2R else R2L)) f 1
 
 -- | Moves a position by the given difference
 move :: Bounds -> Position -> (Float, Float) -> Position
@@ -188,8 +205,12 @@ multiplyMovement :: (Float, Float) -> Float -> (Float, Float)
 multiplyMovement (x, y) mult = (x * mult, y * mult)
 
 -- | Applies the given movement to the given position.
-applyMovement :: Bounds -> Position -> Movement -> Float -> Position
-applyMovement b p m mult = move b p $ multiplyMovement (calcMovement m) mult
+applyPositionMovement :: Bounds -> Position -> Movement -> Float -> Position
+applyPositionMovement b p m mult = move b p $ multiplyMovement (calcMovement m) mult
+
+-- | Applies the given movement to the given positionable.
+applyMovement :: (Positionable a) => Bounds -> a -> Float -> a
+applyMovement b a mult = withPosition a $ applyPositionMovement b (curPosition a) (movement a) mult
 
 -- | Subtracts the margin from the given bounds.
 subtractMargin :: Bounds -> Bounds

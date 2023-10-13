@@ -30,18 +30,11 @@ step elapsed gstate = do
       stepProjectiles :: [Projectile] -> [Projectile]
       stepProjectiles = filter (onScreen gstate . curPosition) . map stepProjectile
         where
-          stepProjectile p = p {
-            prevProjPos = projPos p,
-            projPos = (fst (projPos p) + (speed p * projectileSpeed), snd $ projPos p)
-          }
+          stepProjectile p = applyMovement (windowSize gstate) p (speed p * projectileSpeed)
 
       -- Decreases the player's cooldown
       stepPlayer :: Player -> Player
-      stepPlayer p = p {
-        prevPlayerPos = playerPos p,
-        playerPos = applyMovement (subtractMargin $ windowSize gstate) (playerPos p) (movement p) 10,
-        cooldown = max 0 $ cooldown p - 1
-      }
+      stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) { cooldown = max 0 $ cooldown p - 1 }
 
       -- TODO implement movement for enemies (make a Movable class)
       -- stepEnemies :: [Enemy] -> [Enemy]
@@ -68,7 +61,7 @@ step elapsed gstate = do
             let maxY        = hwy - fromIntegral (snd margin) -- The maximum y value for an enemy to spawn at
             yd <- randomIO :: IO Float -- Value between 0 and 1
             let (x, y) = (hwx + (enemySize / 2), maxY - (yd * maxY * 2)) -- y will be between -maxY and maxY
-            let enemy = RegularEnemy (x, y) (x, y) 0
+            let enemy = RegularEnemy (x, y) (x, y) (Movement True False False False R2L) 0
 
             debugM debugLog $ "Spawning enemy " ++ show enemy
             return $ gstateNew {
@@ -125,4 +118,4 @@ moveRight :: GameState -> Bool -> GameState
 moveRight     gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
 movePlayer :: GameState -> (Movement -> Movement) -> GameState
-movePlayer gstate modifier = gstate { player = (player gstate) { movement = modifier $ movement (player gstate) } }
+movePlayer gstate modifier = gstate { player = (player gstate) { playerMovement = modifier $ playerMovement (player gstate) } }
