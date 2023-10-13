@@ -20,11 +20,16 @@ step elapsed gstate = do
     gstateN2 <- trySpawnEnemy gstateNew
 
     time <- msTime
-    return gstateN2 {
-      player      = stepPlayer $ player gstate,
-      projectiles = stepProjectiles $ projectiles gstate,
+    let res = gstateN2 {
+      player      = stepPlayer $ player gstateN2,
+      enemies     = stepEnemies $ enemies gstateN2,
+      projectiles = stepProjectiles $ projectiles gstateN2,
       lastStep    = time
     }
+
+    -- debugM debugLog $ "Before: " ++ show gstate
+    -- debugM debugLog $ "After: " ++ show res
+    return res
     where
       -- Moves all projectiles forward
       stepProjectiles :: [Projectile] -> [Projectile]
@@ -37,13 +42,10 @@ step elapsed gstate = do
       stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) { cooldown = max 0 $ cooldown p - 1 }
 
       -- TODO implement movement for enemies (make a Movable class)
-      -- stepEnemies :: [Enemy] -> [Enemy]
-      -- stepEnemies = filter (onScreen gstate . curPosition) . map stepEnemy
-      --   where
-      --     stepEnemy e = e {
-      --       prevEnemyPos = enemyPos e,
-      --       enemyPos = applyMovement (subtractMargin $ windowSize gstate) (enemyPos e) (movement e) 10
-      --     }
+      stepEnemies :: [Enemy] -> [Enemy]
+      stepEnemies = filter (onScreen gstate . curPosition) . map stepEnemy
+        where
+          stepEnemy e = applyMovement (subtractMargin $ windowSize gstate) e 10
 
       -- Will spawn an enemy if the last one was spawned long enough ago.
       -- Has a 5% chance of spawning an enemy every step after 4 seconds.
@@ -59,7 +61,7 @@ step elapsed gstate = do
             let (wx, wy)    = windowSize gstate -- The window size
             let (hwx, hwy)  = (fromIntegral wx / 2, fromIntegral wy / 2)
             let maxY        = hwy - fromIntegral (snd margin) -- The maximum y value for an enemy to spawn at
-            yd <- randomIO :: IO Float -- Value between 0 and 1
+            yd <- randomIO :: IO Float -- Random value between 0 and 1
             let (x, y) = (hwx + (enemySize / 2), maxY - (yd * maxY * 2)) -- y will be between -maxY and maxY
             let enemy = RegularEnemy (x, y) (x, y) (Movement True False False False R2L) 0
 
@@ -68,8 +70,7 @@ step elapsed gstate = do
               lastSpawn = elapsedTime gstateNew,
               enemies = enemy : e
             }
-          else do
-            return gstateNew
+          else return gstateNew
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
