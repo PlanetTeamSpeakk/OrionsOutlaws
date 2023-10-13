@@ -139,6 +139,7 @@ instance Boxable Enemy where
 instance Boxable Projectile where
     createBoxes (RegularProjectile (x, y) _ _ _) = undefined
 
+-- TODO merge this with Boxable
 -- Class for things that can collide with other things.
 class Collidable a where
     collidesWith :: Box -> a -> Bool

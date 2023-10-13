@@ -43,6 +43,15 @@ step elapsed gstate = do
         cooldown = max 0 $ cooldown p - 1
       }
 
+      -- TODO implement movement for enemies (make a Movable class)
+      -- stepEnemies :: [Enemy] -> [Enemy]
+      -- stepEnemies = filter (onScreen gstate . curPosition) . map stepEnemy
+      --   where
+      --     stepEnemy e = e {
+      --       prevEnemyPos = enemyPos e,
+      --       enemyPos = applyMovement (subtractMargin $ windowSize gstate) (enemyPos e) (movement e) 10
+      --     }
+
       -- Will spawn an enemy if the last one was spawned long enough ago.
       -- Has a 5% chance of spawning an enemy every step after 4 seconds.
       trySpawnEnemy :: GameState -> IO GameState
