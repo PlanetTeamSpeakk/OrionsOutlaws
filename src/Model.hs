@@ -29,7 +29,7 @@ stepLengthMs :: Int
 stepLengthMs = 1000 `div` stepsPerSec
 
 initialState :: IO GameState
-initialState = GameState (Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0) [] [] 0 0 False (1280, 720) <$> msTime
+initialState = GameState (Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0) [] [] 0 0 False False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40
@@ -60,6 +60,7 @@ data GameState = GameState {
     lastSpawn   :: Float,           -- The time at which the last enemy was spawned
     elapsedTime :: Float,           -- The time elapsed since the game started
     started     :: Bool,            -- Whether the game has started or not
+    paused      :: Bool,            -- Whether the game is paused or not
     windowSize  :: Bounds,          -- The size of the window
     lastStep    :: Integer          -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
 } deriving (Show, Eq)

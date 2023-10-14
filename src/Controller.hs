@@ -15,18 +15,21 @@ import Data.Bifunctor (first)
 step :: Float -> GameState -> IO GameState
 step elapsed gstate = do
     -- Add elapsed time to the gamestate
-    let gstateNew = gstate { elapsedTime = elapsedTime gstate + elapsed}
+    if paused gstate
+      then return gstate -- Do nothing if paused
+    else do
+      let gstateNew = gstate { elapsedTime = elapsedTime gstate + elapsed}
 
-    -- Try to spawn an enemy
-    gstateN2 <- trySpawnEnemy gstateNew
+      -- Try to spawn an enemy
+      gstateN2 <- trySpawnEnemy gstateNew
 
-    time <- msTime
-    return gstateN2 {
-      player      = stepPlayer $ player gstateN2,
-      enemies     = stepEnemies $ enemies gstateN2,
-      projectiles = stepProjectiles $ projectiles gstateN2,
-      lastStep    = time
-    }
+      time <- msTime
+      return gstateN2 {
+        player      = stepPlayer $ player gstateN2,
+        enemies     = stepEnemies $ enemies gstateN2,
+        projectiles = stepProjectiles $ projectiles gstateN2,
+        lastStep    = time
+      }
     where
       -- Moves all projectiles forward
       stepProjectiles :: [Projectile] -> [Projectile]
@@ -89,6 +92,8 @@ inputMouse (EventKey (MouseButton btn) Down _ (x, y)) gstate = do
 inputMouse _ gstate = return gstate
 
 inputKey :: Event -> GameState -> IO GameState
+-- Escape key, pauses the game.
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = return $ gstate { paused = not $ paused gstate }
 -- Space key, fires a projectile.
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
   if cooldown (player gstate) == 0
@@ -98,6 +103,7 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
+-- Movement keys, move the player.
 inputKey (EventKey (Char 'w') down _ _) gstate = return $ moveForward   gstate $ down == Down
 inputKey (EventKey (Char 'a') down _ _) gstate = return $ moveLeft      gstate $ down == Down
 inputKey (EventKey (Char 's') down _ _) gstate = return $ moveBackward  gstate $ down == Down
@@ -117,4 +123,5 @@ moveRight :: GameState -> Bool -> GameState
 moveRight     gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
 movePlayer :: GameState -> (Movement -> Movement) -> GameState
-movePlayer gstate modifier = gstate { player = (player gstate) { playerMovement = modifier $ playerMovement (player gstate) } }
+movePlayer gstate modifier = if paused gstate then gstate else 
+  gstate { player = (player gstate) { playerMovement = modifier $ playerMovement (player gstate) } }
