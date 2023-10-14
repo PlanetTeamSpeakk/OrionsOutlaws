@@ -11,6 +11,7 @@ import Util (msTime)
 import System.Random (randomIO)
 import Data.Bifunctor (first)
 import Data.List ((\\)) -- List difference
+import Control.Monad (unless)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -25,14 +26,21 @@ step elapsed gstate = do
       gstateN2 <- trySpawnEnemy gstateNew
 
       let p = stepProjectiles $ projectiles gstateN2
-      -- Handle projectile collision. Filters projectiles and enemies.
-      let (ps, es) = handleProjectileCollision p $ enemies gstateN2
+      -- Handle projectile collision with enemies. Filters projectiles and enemies.
+      let (fps, es) = handleProjectileCollision (filter friendly p) $ enemies gstateN2
+
+      -- Filter out projectiles that collide with the player
+      let nfps  = filter (not . friendly) p
+      let nfps0 = filter (not . collidesWith (player gstate)) nfps
+
+      -- If there are any projectiles in nfps that are not in nfps0, there was a collision.
+      unless (null $ nfps \\ nfps0) $ debugM debugLog $ "Collision! " ++ show (nfps \\ nfps0)
 
       time <- msTime
       return gstateN2 {
         player      = stepPlayer $ player gstateN2,
         enemies     = stepEnemies es, -- Step left-over enemies
-        projectiles = ps,
+        projectiles = fps ++ nfps,
         lastStep    = time
       }
     where
@@ -45,7 +53,8 @@ step elapsed gstate = do
       -- Handles projectile collision. For each projectile, check if it collides with any enemy.
       -- If it does, remove the projectile and the enemy it collided with.
       handleProjectileCollision :: [Projectile] -> [Enemy] -> ([Projectile], [Enemy])
-      handleProjectileCollision [] es = ([], es)
+      handleProjectileCollision ps [] = (ps, []) -- No enemies, no collision
+      handleProjectileCollision [] es = ([], es) -- No projectiles, no collision
       handleProjectileCollision (p:ps) es = let (ps', es') = handleProjectileCollision ps es in
         case filter (collidesWith p) es' of
           []   -> (p:ps', es') -- No collision, keep projectile and all enemies
@@ -135,5 +144,5 @@ moveRight :: GameState -> Bool -> GameState
 moveRight     gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
 movePlayer :: GameState -> (Movement -> Movement) -> GameState
-movePlayer gstate modifier = if paused gstate then gstate else 
+movePlayer gstate modifier = if paused gstate then gstate else
   gstate { player = (player gstate) { playerMovement = modifier $ playerMovement (player gstate) } }
