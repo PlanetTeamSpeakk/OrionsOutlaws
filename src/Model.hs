@@ -143,14 +143,14 @@ class Collidable a where
 
 -- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
 instance Collidable Player where
-    createBoxes p = let (x, y) = playerPos p in [((x - 10, y - 10), (x + 10, y + 10))]
+    createBoxes p = let (x, y) = playerPos p in [((x - 20, y - 20), (x + 20, y + 20))]
 
 instance Collidable Enemy where
-    createBoxes (RegularEnemy (x, y) _ _ _) = undefined -- TODO - Implement this
-    createBoxes (BossEnemy (x, y) _ _ _ _)  = undefined
+    createBoxes (RegularEnemy (x, y) _ _ _) = [((x - 20, y - 20), (x + 20, y + 20))]
+    createBoxes (BossEnemy (x, y) _ _ _ _)  = undefined -- TODO - Implement this
 
 instance Collidable Projectile where
-    createBoxes (RegularProjectile (x, y) _ _ _ _) = undefined
+    createBoxes (RegularProjectile (x, y) _ _ _ _) = [((x - 5, y - 5), (x + 5, y + 5))]
 
 
 -- Types and helper functions

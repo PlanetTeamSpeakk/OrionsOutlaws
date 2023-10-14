@@ -10,6 +10,7 @@ import View (onScreen, inBounds)
 import Util (msTime)
 import System.Random (randomIO)
 import Data.Bifunctor (first)
+import Data.List ((\\)) -- List difference
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -23,11 +24,15 @@ step elapsed gstate = do
       -- Try to spawn an enemy
       gstateN2 <- trySpawnEnemy gstateNew
 
+      let p = stepProjectiles $ projectiles gstateN2
+      -- Handle projectile collision. Filters projectiles and enemies.
+      let (ps, es) = handleProjectileCollision p $ enemies gstateN2
+
       time <- msTime
       return gstateN2 {
         player      = stepPlayer $ player gstateN2,
-        enemies     = stepEnemies $ enemies gstateN2,
-        projectiles = stepProjectiles $ projectiles gstateN2,
+        enemies     = stepEnemies es, -- Step left-over enemies
+        projectiles = ps,
         lastStep    = time
       }
     where
@@ -36,6 +41,15 @@ step elapsed gstate = do
       stepProjectiles = filter (onScreen gstate . curPosition) . map stepProjectile
         where
           stepProjectile p = applyMovement (windowSize gstate) p (speed p * projectileSpeed)
+
+      -- Handles projectile collision. For each projectile, check if it collides with any enemy.
+      -- If it does, remove the projectile and the enemy it collided with.
+      handleProjectileCollision :: [Projectile] -> [Enemy] -> ([Projectile], [Enemy])
+      handleProjectileCollision [] es = ([], es)
+      handleProjectileCollision (p:ps) es = let (ps', es') = handleProjectileCollision ps es in
+        case filter (collidesWith p) es' of
+          []   -> (p:ps', es') -- No collision, keep projectile and all enemies
+          es'' -> (ps', es' \\ es'') -- Collision, remove projectile and all enemies that collided
 
       -- Decreases the player's cooldown and applies movement
       stepPlayer :: Player -> Player
@@ -54,10 +68,8 @@ step elapsed gstate = do
       trySpawnEnemy gstateNew = do
         let e = enemies gstateNew
 
-        r <- randomIO :: IO Int
-        let rand = abs r `mod` 100
-
-        if elapsedTime gstateNew - lastSpawn gstate > 4 && (rand < 5)
+        r <- randomIO :: IO Float -- Random value between 0 and 1
+        if elapsedTime gstateNew - lastSpawn gstate > 4 && (r < 0.05)
           then do
             let (wx, wy)    = windowSize gstate -- The window size
             let (hwx, hwy)  = (fromIntegral wx / 2, fromIntegral wy / 2)
