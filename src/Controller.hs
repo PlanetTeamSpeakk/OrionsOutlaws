@@ -9,7 +9,7 @@ import System.Log.Logger (debugM)
 import View (onScreen, inBounds)
 import Util (msTime)
 import System.Random (randomIO)
-import Data.Bifunctor (first)
+import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import Control.Monad (unless)
 
@@ -31,16 +31,18 @@ step elapsed gstate = do
 
       -- Filter out projectiles that collide with the player
       let nfps  = filter (not . friendly) p
-      let nfps0 = filter (not . collidesWith (player gstate)) nfps
+      let cnfps = filter (collidesWith (player gstate)) nfps
 
       -- If there are any projectiles in nfps that are not in nfps0, there was a collision.
-      unless (null $ nfps \\ nfps0) $ debugM debugLog $ "Collision! " ++ show (nfps \\ nfps0)
+      unless (null cnfps) $ debugM debugLog $ "Collision! " ++ show cnfps
+
+      ep <- enemyFire es
 
       time <- msTime
       return gstateN2 {
         player      = stepPlayer $ player gstateN2,
-        enemies     = stepEnemies es, -- Step left-over enemies
-        projectiles = fps ++ nfps,
+        enemies     = stepEnemies $ fst ep, -- Step left-over enemies
+        projectiles = fps ++ (nfps \\ cnfps) ++ snd ep,
         lastStep    = time
       }
     where
@@ -69,7 +71,22 @@ step elapsed gstate = do
       stepEnemies = let bounds = first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate in
         filter (inBounds bounds . curPosition) . map stepEnemy
         where
-          stepEnemy e = applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10
+          stepEnemy e = (applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10) 
+            { enemyCooldown = max 0 $ enemyCooldown e - 1 }
+
+      enemyFire :: [Enemy] -> IO ([Enemy], [Projectile])
+      enemyFire [] = return ([], [])
+      enemyFire (e:es) = do
+        r <- randomIO :: IO Float -- Random value between 0 and 1
+        if r < 0.01 && enemyCooldown e == 0
+          then do
+            let (x, y) = curPosition e
+            let proj = createProjectile (x - (enemySize / 2) - 2.5, y) False
+            fps <- enemyFire es
+            return $ bimap (e {enemyCooldown = 10} :) (proj :) fps
+          else do
+            (es', ps) <- enemyFire es
+            return (e : es', ps)
 
       -- Will spawn an enemy if the last one was spawned long enough ago.
       -- Has a 5% chance of spawning an enemy every step after 4 seconds.

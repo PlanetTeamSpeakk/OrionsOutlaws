@@ -177,9 +177,10 @@ corners ((x1, y1), (x2, y2)) = [(x1, y1), (x1, y2), (x2, y1), (x2, y2)]
 isInBox :: Box -> Position -> Bool
 isInBox ((x1, y1), (x2, y2)) (x, y) = x1 <= x && x <= x2 && y1 <= y && y <= y2
 
--- Checks whether the two given boxes intersect. (I.e., whether box 2 has a corner inside of box 1)
+-- Checks whether the two given boxes intersect.
 intersects :: Box -> Box -> Bool
-intersects b1 b2 = not $ null [c | c <- corners b2, isInBox b1 c]
+intersects ((minx1, miny1), (maxx1, maxy1)) ((minx2, miny2), (maxx2, maxy2)) =
+    minx1 <= maxx2 && maxx1 >= minx2 && miny1 <= maxy2 && maxy1 >= miny2
 
 createProjectile :: Position -> Bool -> Projectile
 createProjectile pos f = RegularProjectile pos pos (Movement True False False False (if f then L2R else R2L)) f 1
