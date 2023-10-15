@@ -12,22 +12,27 @@ import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
+import Assets (explosionAnimation)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
 step elapsed gstate = do
-    -- Add elapsed time to the gamestate
-    if paused gstate
-      then return gstate -- Do nothing if paused
+    if paused gstate then return gstate -- Do nothing if paused
     else do
+      -- Add elapsed time to the gamestate
       let gstateNew = gstate { elapsedTime = elapsedTime gstate + elapsed}
 
       -- Try to spawn an enemy
       gstateN2 <- trySpawnEnemy gstateNew
 
+      -- Step projectiles
       let p = stepProjectiles $ projectiles gstateN2
+
+      -- Step animations
+      let as = stepAnimations $ animations gstateN2
+
       -- Handle projectile collision with enemies. Filters projectiles and enemies.
-      let (fps, es) = handleProjectileCollision (filter friendly p) $ enemies gstateN2
+      let (fps, es, nas) = handleProjectileCollision (filter friendly p) $ enemies gstateN2
 
       -- Filter out projectiles that collide with the player
       let nfps  = filter (not . friendly) p
@@ -46,11 +51,12 @@ step elapsed gstate = do
             enemies     = stepEnemies $ fst ep, -- Step left-over enemies
             -- Friendly projectiles, non-friendly projectiles that didn't collide with the player, and new enemy projectiles
             projectiles = fps ++ (nfps \\ cnfps) ++ snd ep,
+            animations  = as ++ nas,
             lastStep    = time
           }
         else -- Collision! Exit game if the player has 1 health left, otherwise reset and subtract 1 health
           if health (player gstateN2) == 1
-            then do 
+            then do
               _ <- exitSuccess
               return gstateN2
             else do
@@ -58,7 +64,8 @@ step elapsed gstate = do
               return gstateN2 {
                 player = initialPlayer { health = health (player gstateN2) - 1 },
                 enemies = [],
-                projectiles = []
+                projectiles = [],
+                animations = []
               }
     where
       -- Moves all projectiles forward
@@ -69,17 +76,27 @@ step elapsed gstate = do
 
       -- Handles projectile collision. For each projectile, check if it collides with any enemy.
       -- If it does, remove the projectile and the enemy it collided with.
-      handleProjectileCollision :: [Projectile] -> [Enemy] -> ([Projectile], [Enemy])
-      handleProjectileCollision ps [] = (ps, []) -- No enemies, no collision
-      handleProjectileCollision [] es = ([], es) -- No projectiles, no collision
-      handleProjectileCollision (p:ps) es = let (ps', es') = handleProjectileCollision ps es in
+      handleProjectileCollision :: [Projectile] -> [Enemy] -> ([Projectile], [Enemy], [PositionedAnimation])
+      handleProjectileCollision ps [] = (ps, [], []) -- No enemies, no collision
+      handleProjectileCollision [] es = ([], es, []) -- No projectiles, no collision
+      handleProjectileCollision (p:ps) es = let (ps', es', as) = handleProjectileCollision ps es in
         case filter (collidesWith p) es' of
-          []   -> (p:ps', es') -- No collision, keep projectile and all enemies
-          es'' -> (ps', es' \\ es'') -- Collision, remove projectile and all enemies that collided
+          []   -> (p:ps', es', as) -- No collision, keep projectile and all enemies
+          -- Collision, remove projectile and all enemies that collided. Add an explosion animation for each collided enemy
+          es'' -> (ps', es' \\ es'', map (PositionedAnimation explosionAnimation . curPosition) es'')
 
       -- Decreases the player's cooldown and applies movement
       stepPlayer :: Player -> Player
       stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) { cooldown = max 0 $ cooldown p - 1 }
+
+      stepAnimations :: [PositionedAnimation] -> [PositionedAnimation]
+      stepAnimations = filter isOnGoing . map stepAnimation
+        where
+          stepAnimation (PositionedAnimation a p) = PositionedAnimation (a {
+              animationStep = animationStep a + 1,
+              curFrame = curFrame a + (if animationStep a `mod` frameDuration a == 0 && (animationStep a /= 0) then 1 else 0)
+            }) p
+          isOnGoing (PositionedAnimation a _) = animationStep a < (frameDuration a * frameCount a)
 
       -- Moves all enemies forward
       stepEnemies :: [Enemy] -> [Enemy]
@@ -89,6 +106,7 @@ step elapsed gstate = do
           stepEnemy e = (applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10)
             { enemyCooldown = max 0 $ enemyCooldown e - 1 }
 
+      -- Attempts to fire a projectile from each enemy. If an enemy fires, it will have a cooldown of 10 steps (0.5 seconds)
       enemyFire :: [Enemy] -> IO ([Enemy], [Projectile])
       enemyFire [] = return ([], [])
       enemyFire (e:es) = do

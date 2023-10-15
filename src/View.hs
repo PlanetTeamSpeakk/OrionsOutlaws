@@ -20,7 +20,8 @@ viewPure :: Float -> GameState -> Picture
 viewPure sd gstate = pictures [
         renderPlayer $ player gstate,           -- render player
         renderProjectiles $ projectiles gstate, -- render projectiles
-        renderEnemies $ enemies gstate          -- render enemies
+        renderEnemies $ enemies gstate,         -- render enemies
+        renderAnimations $ animations gstate    -- render animations
     ]
     where
         -- Renders the player, curently just a green circle
@@ -38,6 +39,11 @@ viewPure sd gstate = pictures [
         renderEnemies = pictures . map renderEnemy
             where
                 renderEnemy e = color orange $ translateP (position sd e) $ circleSolid (enemySize / 2)
+        
+        renderAnimations :: [PositionedAnimation] -> Picture
+        renderAnimations = pictures . map renderAnimation
+            where
+                renderAnimation a = color orange $ translateP (animationPos a) $ frame $ animation a
 
 translateP :: Position -> Picture -> Picture
 translateP (x, y) = translate x y

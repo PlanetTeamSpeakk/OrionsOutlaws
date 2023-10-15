@@ -9,6 +9,7 @@ import System.Log.Logger (rootLoggerName)
 import Util (msTime, lerp)
 import Data.Ord (clamp)
 import Data.Bifunctor (bimap)
+import Graphics.Gloss.Data.Picture (Picture)
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -33,7 +34,7 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
 initialState :: IO GameState
-initialState = GameState Menu initialPlayer [] [] 0 0 False False (1280, 720) <$> msTime
+initialState = GameState Menu initialPlayer [] [] [] 0 0 False False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40
@@ -58,16 +59,17 @@ stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLength
 
 -- Data types
 data GameState = GameState {
-    stateType   :: GameStateType,   -- The type of the game state
-    player      :: Player,          -- The player
-    enemies     :: [Enemy],         -- A list of enemies
-    projectiles :: [Projectile],    -- A list of projectiles currently on the field
-    lastSpawn   :: Float,           -- The time at which the last enemy was spawned
-    elapsedTime :: Float,           -- The time elapsed since the game started
-    started     :: Bool,            -- Whether the game has started or not
-    paused      :: Bool,            -- Whether the game is paused or not
-    windowSize  :: Bounds,          -- The size of the window
-    lastStep    :: Integer          -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+    stateType   :: GameStateType,           -- The type of the game state
+    player      :: Player,                  -- The player
+    enemies     :: [Enemy],                 -- A list of enemies
+    projectiles :: [Projectile],            -- A list of projectiles currently on the field
+    animations  :: [PositionedAnimation],   -- A list of animations currently on the field
+    lastSpawn   :: Float,                   -- The time at which the last enemy was spawned
+    elapsedTime :: Float,                   -- The time elapsed since the game started
+    started     :: Bool,                    -- Whether the game has started or not
+    paused      :: Bool,                    -- Whether the game is paused or not
+    windowSize  :: Bounds,                  -- The size of the window
+    lastStep    :: Integer                  -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
 } deriving (Show, Eq)
 
 data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
@@ -160,6 +162,29 @@ instance Collidable Projectile where
     createBoxes (RegularProjectile (x, y) _ _ _ _) = [((x - 5, y - 5), (x + 5, y + 5))]
 
 
+-- | An animation is a set of frames that are shown in order.
+data Animation = Animation {
+    frameCount      :: Int,             -- How many frames the animation has
+    frameDuration   :: Int,             -- How long each frame lasts in steps
+    curFrame        :: Int,             -- The current frame of the animation
+    animationStep   :: Int,             -- The current step of the animation
+    frameGetter     :: Int -> Picture   -- A function that gets the picture for the given frame
+}
+
+-- | An animation with a position.
+data PositionedAnimation = PositionedAnimation {
+    animation    :: Animation, -- The animation
+    animationPos :: Position   -- The position of the animation
+} deriving (Show, Eq)
+
+instance Eq Animation where
+    a1 == a2 = frameCount a1 == frameCount a2 && frameDuration a1 == frameDuration a2 && 
+        curFrame a1 == curFrame a2 && animationStep a1 == animationStep a2
+
+instance Show Animation where
+    show a = "Animation { frameCount = " ++ show (frameCount a) ++ ", frameDuration = " ++ show (frameDuration a) ++
+        ", curFrame = " ++ show (curFrame a) ++ ", animationStep = " ++ show (animationStep a) ++ " }"
+
 -- Types and helper functions
 -- The Position type, a tuple of two ints representing the x and y coordinates of a point.
 type Position = (Float, Float)
@@ -233,3 +258,9 @@ collidesWithBox a b = any (intersects b) $ createBoxes a
 -- | Checks whether the given collidable collides with any of the given boxes.
 collidesWith :: (Collidable a, Collidable b) => a -> b -> Bool
 collidesWith a b = collidesWithBox a `any` createBoxes b
+
+frame :: Animation -> Picture
+frame a = frameGetter a $ curFrame a
+
+positionAnimation :: Animation -> Position -> PositionedAnimation
+positionAnimation = PositionedAnimation
