@@ -28,8 +28,12 @@ stepsPerSec = 20
 stepLengthMs :: Int
 stepLengthMs = 1000 `div` stepsPerSec
 
+initialPlayer :: Player
+initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
+
+-- | The initial game state
 initialState :: IO GameState
-initialState = GameState (Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0) [] [] 0 0 False False (1280, 720) <$> msTime
+initialState = GameState initialPlayer [] [] 0 0 False False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40

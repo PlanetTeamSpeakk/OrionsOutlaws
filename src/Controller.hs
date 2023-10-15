@@ -11,7 +11,7 @@ import Util (msTime)
 import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
-import Control.Monad (unless)
+import System.Exit (exitSuccess)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -33,24 +33,36 @@ step elapsed gstate = do
       let nfps  = filter (not . friendly) p
       let cnfps = filter (collidesWith (player gstate)) nfps
 
-      -- If there are any projectiles in nfps that are not in nfps0, there was a collision.
-      unless (null cnfps) $ debugM debugLog $ "Collision! " ++ show cnfps
+      if null cnfps
+        then do -- No collision, return new gamestate
+          ep <- enemyFire es
 
-      ep <- enemyFire es
-
-      time <- msTime
-      return gstateN2 {
-        player      = stepPlayer $ player gstateN2,
-        enemies     = stepEnemies $ fst ep, -- Step left-over enemies
-        projectiles = fps ++ (nfps \\ cnfps) ++ snd ep,
-        lastStep    = time
-      }
+          time <- msTime
+          return gstateN2 {
+            player      = stepPlayer $ player gstateN2,
+            enemies     = stepEnemies $ fst ep, -- Step left-over enemies
+            -- Friendly projectiles, non-friendly projectiles that didn't collide with the player, and new enemy projectiles
+            projectiles = fps ++ (nfps \\ cnfps) ++ snd ep,
+            lastStep    = time
+          }
+        else -- Collision! Exit game if the player has 1 health left, otherwise reset and subtract 1 health
+          if health (player gstateN2) == 1
+            then do 
+              _ <- exitSuccess
+              return gstateN2
+            else do
+              debugM debugLog $ "Collision! " ++ show cnfps
+              return gstateN2 {
+                player = initialPlayer { health = health (player gstateN2) - 1 },
+                enemies = [],
+                projectiles = []
+              }
     where
       -- Moves all projectiles forward
       stepProjectiles :: [Projectile] -> [Projectile]
       stepProjectiles = filter (onScreen gstate . curPosition) . map stepProjectile
         where
-          stepProjectile p = applyMovement (windowSize gstate) p (speed p * projectileSpeed)
+          stepProjectile p = applyMovement (windowSize gstate) p $ speed p * projectileSpeed
 
       -- Handles projectile collision. For each projectile, check if it collides with any enemy.
       -- If it does, remove the projectile and the enemy it collided with.
@@ -71,7 +83,7 @@ step elapsed gstate = do
       stepEnemies = let bounds = first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate in
         filter (inBounds bounds . curPosition) . map stepEnemy
         where
-          stepEnemy e = (applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10) 
+          stepEnemy e = (applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10)
             { enemyCooldown = max 0 $ enemyCooldown e - 1 }
 
       enemyFire :: [Enemy] -> IO ([Enemy], [Projectile])
