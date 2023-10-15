@@ -24,7 +24,9 @@ dependencies:
 - gloss
 - hslogger
 - GLUT
-- bv
+- bytestring
+- file-embed
+- bmp
 - random
 - time
 

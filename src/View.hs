@@ -5,6 +5,7 @@ module View where
 
 import Graphics.Gloss
 import Model
+import Assets
 import Util (msTime)
 
 -- | Simply calls viewPure with the current stepdelta and the given gamestate

@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Assets
       Controller
       Model
       Util
@@ -39,7 +40,9 @@ library
   build-depends:
       GLUT
     , base >=4.7 && <5
-    , bv
+    , bmp
+    , bytestring
+    , file-embed
     , gloss
     , hslogger
     , random
@@ -59,7 +62,9 @@ executable OrionsOutlaws-exe
       GLUT
     , OrionsOutlaws
     , base >=4.7 && <5
-    , bv
+    , bmp
+    , bytestring
+    , file-embed
     , gloss
     , hslogger
     , random
@@ -80,7 +85,9 @@ test-suite OrionsOutlaws-test
       GLUT
     , OrionsOutlaws
     , base >=4.7 && <5
-    , bv
+    , bmp
+    , bytestring
+    , file-embed
     , gloss
     , hslogger
     , random
