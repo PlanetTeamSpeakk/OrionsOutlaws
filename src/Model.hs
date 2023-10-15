@@ -33,7 +33,7 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
 initialState :: IO GameState
-initialState = GameState initialPlayer [] [] 0 0 False False (1280, 720) <$> msTime
+initialState = GameState Menu initialPlayer [] [] 0 0 False False (1280, 720) <$> msTime
 
 playerSize :: Float
 playerSize = 40
@@ -58,6 +58,7 @@ stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLength
 
 -- Data types
 data GameState = GameState {
+    stateType   :: GameStateType,   -- The type of the game state
     player      :: Player,          -- The player
     enemies     :: [Enemy],         -- A list of enemies
     projectiles :: [Projectile],    -- A list of projectiles currently on the field
@@ -68,6 +69,8 @@ data GameState = GameState {
     windowSize  :: Bounds,          -- The size of the window
     lastStep    :: Integer          -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
 } deriving (Show, Eq)
+
+data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
 
 data Player = Player {
     playerPos       :: Position,    -- Player's position on the field.
