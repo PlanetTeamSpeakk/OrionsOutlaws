@@ -28,7 +28,7 @@ viewPure sd gstate = pictures [
     where
         -- Renders the player, curently just a green circle
         renderPlayer :: Player -> Picture
-        renderPlayer p = color green $ translateP (position sd p) $ circleSolid (playerSize / 2)
+        renderPlayer p = color green $ translateP (position sd p) $ fromPlayerFacing (facing gstate (movement $ player gstate)) getShipFrame
 
         -- Renders the projectiles, currently just red circles
         renderProjectiles :: [Projectile] -> Picture
@@ -56,6 +56,9 @@ viewPure sd gstate = pictures [
                         scale s s pauseOverlay -- Text
                     ]
             | otherwise = blank
+        
+        getShipFrame :: ShipFrame
+        getShipFrame = if steps gstate `mod` 4 < 2 then First else Second
 
 translateP :: Position -> Picture -> Picture
 translateP (x, y) = translate x y

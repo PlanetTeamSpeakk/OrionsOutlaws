@@ -2,13 +2,13 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Assets (smiley, explosionAnimation, pauseOverlay) where
+module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing) where
 
 import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
 import Data.FileEmbed -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
 import Codec.BMP (parseBMP)
-import Model (Animation (Animation))
+import Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
 
@@ -16,16 +16,22 @@ import Graphics.Gloss.Juicy (fromDynamicImage)
 loadBMPData :: ByteString -> BitmapData
 loadBMPData bstr =
     case parseBMP $ fromStrict bstr of
-        Left err -> error $ show err
-        Right bmp -> bitmapDataOfBMP bmp
+        Prelude.Left err -> error $ show err
+        Prelude.Right bmp -> bitmapDataOfBMP bmp
+
+loadPNG :: ByteString -> Picture
+loadPNG bstr = case decodePng bstr of
+    Prelude.Left err -> error err
+    Prelude.Right pic -> case fromDynamicImage pic of
+        Nothing -> error "Could not load image"
+        Just p -> p
 
 assetScale :: Float
-assetScale = 5
+assetScale = 4
 
-smiley :: BitmapData
-smiley = loadBMPData $(embedFile "assets/smiley.bmp")
 
 -- Explosion animation
+-- Spritesheets have to be bitmaps so that we can use bitmapSection
 explosionSheet :: BitmapData
 explosionSheet = loadBMPData $(embedFile "assets/explosion.bmp")
 
@@ -43,9 +49,26 @@ explosionFrame' n = scale assetScale assetScale $ bitmapSection (Rectangle (n * 
 explosionAnimation :: Animation
 explosionAnimation = Animation 5 2 0 0 explosionFrame
 
+
+-- Ship (player)
+shipSheet :: BitmapData
+shipSheet = loadBMPData $(embedFile "assets/ship.bmp")
+
+ship :: Int -> Int -> Picture
+ship c r = rotate 90 $ scale assetScale assetScale $ bitmapSection (Rectangle (c * 16, r * 24) (16, 24)) shipSheet
+
+fromPlayerFacing :: PlayerFacing -> ShipFrame -> Picture
+fromPlayerFacing LeftLeft    First  = ship 0 0
+fromPlayerFacing LeftLeft    Second = ship 0 1
+fromPlayerFacing Model.Left  First  = ship 1 0
+fromPlayerFacing Model.Left  Second = ship 1 1
+fromPlayerFacing Normal      First  = ship 2 0
+fromPlayerFacing Normal      Second = ship 2 1
+fromPlayerFacing Model.Right First  = ship 3 0
+fromPlayerFacing Model.Right Second = ship 3 1
+fromPlayerFacing RightRight  First  = ship 4 0
+fromPlayerFacing RightRight  Second = ship 4 1
+
+-- Pause overlay
 pauseOverlay :: Picture
-pauseOverlay = case decodePng $(embedFile "assets/pauseOverlay.png") of
-    Left err -> error err
-    Right pic -> case fromDynamicImage pic of
-        Nothing -> error "Could not load pause overlay"
-        Just p -> p
+pauseOverlay = loadPNG $(embedFile "assets/pauseOverlay.png")

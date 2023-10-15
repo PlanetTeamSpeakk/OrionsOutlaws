@@ -1,5 +1,3 @@
-
-
 -- | This module contains the data types
 --   which represent the state of the game
 module Model (module Model) where
@@ -34,10 +32,10 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
 initialState :: IO GameState
-initialState = GameState Menu initialPlayer [] [] [] 0 0 False False (1280, 720) <$> msTime
+initialState = GameState Menu initialPlayer [] [] [] 0 0 False False (1280, 720) 0 <$> msTime
 
 playerSize :: Float
-playerSize = 40
+playerSize = 24 * 4
 
 enemySize :: Float
 enemySize = playerSize
@@ -69,7 +67,8 @@ data GameState = GameState {
     started     :: Bool,                    -- Whether the game has started or not
     paused      :: Bool,                    -- Whether the game is paused or not
     windowSize  :: Bounds,                  -- The size of the window
-    lastStep    :: Integer                  -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+    steps       :: Integer,                  -- The number of steps that have been taken since the game started
+    lastStep    :: Integer                 -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
 } deriving (Show, Eq)
 
 data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
@@ -89,7 +88,8 @@ data Movement = Movement {
     backward    :: Bool,    -- Whether the player is moving backwards
     left        :: Bool,    -- Whether the player is moving left
     right       :: Bool,    -- Whether the player is moving right
-    direction   :: MovementDirection -- The direction this movement goes in.
+    direction   :: MovementDirection, -- The direction this movement goes in.
+    lastChange  :: Float    -- The time at which the last change in direction happened
 } deriving (Show, Eq)
 
 data Enemy =
@@ -185,6 +185,10 @@ instance Show Animation where
     show a = "Animation { frameCount = " ++ show (frameCount a) ++ ", frameDuration = " ++ show (frameDuration a) ++
         ", curFrame = " ++ show (curFrame a) ++ ", animationStep = " ++ show (animationStep a) ++ " }"
 
+data PlayerFacing = LeftLeft | Left | Normal | Right | RightRight deriving (Show, Eq)
+
+data ShipFrame = First | Second deriving (Show, Eq)
+
 -- Types and helper functions
 -- The Position type, a tuple of two ints representing the x and y coordinates of a point.
 type Position = (Float, Float)
@@ -199,7 +203,7 @@ type Bounds = (Int, Int)
 -- Helper functions
 
 emptyMovement :: MovementDirection -> Movement
-emptyMovement = Movement False False False False
+emptyMovement d = Movement False False False False d 0
 
 -- Produces a list of all corners of the given box.
 corners :: Box -> [Position]
@@ -215,7 +219,7 @@ intersects ((minx1, miny1), (maxx1, maxy1)) ((minx2, miny2), (maxx2, maxy2)) =
     minx1 <= maxx2 && maxx1 >= minx2 && miny1 <= maxy2 && maxy1 >= miny2
 
 createProjectile :: Position -> Bool -> Projectile
-createProjectile pos f = RegularProjectile pos pos (Movement True False False False (if f then L2R else R2L)) f 1
+createProjectile pos f = RegularProjectile pos pos (Movement True False False False (if f then L2R else R2L) 0) f 1
 
 -- | Moves a position by the given difference
 move :: Bounds -> Position -> (Float, Float) -> Position
@@ -264,3 +268,11 @@ frame a = frameGetter a $ curFrame a
 
 positionAnimation :: Animation -> Position -> PositionedAnimation
 positionAnimation = PositionedAnimation
+
+facing :: GameState -> Movement -> PlayerFacing
+facing gstate m = 
+    let (v, h) = calcMovement m 
+        c = elapsedTime gstate - lastChange m in
+            if c > 0.3 && v == 0 -- If the player hasn't changed direction in the last 0.3 seconds and is not moving vertically
+                then if h > 0 then LeftLeft else if h < 0 then RightRight else Normal
+                else if h > 0 then Model.Left else if h < 0 then Model.Right else Normal

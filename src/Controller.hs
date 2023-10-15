@@ -52,7 +52,8 @@ step elapsed gstate = do
             -- Friendly projectiles, non-friendly projectiles that didn't collide with the player, and new enemy projectiles
             projectiles = fps ++ (nfps \\ cnfps) ++ snd ep,
             animations  = as ++ nas,
-            lastStep    = time
+            lastStep    = time,
+            steps       = steps gstateN2 + 1
           }
         else -- Collision! Exit game if the player has 1 health left, otherwise reset and subtract 1 health
           if health (player gstateN2) == 1
@@ -62,10 +63,10 @@ step elapsed gstate = do
             else do
               debugM debugLog $ "Collision! " ++ show cnfps
               return gstateN2 {
-                player = initialPlayer { health = health (player gstateN2) - 1 },
-                enemies = [],
+                player      = initialPlayer { health = health (player gstateN2) - 1 },
+                enemies     = [],
                 projectiles = [],
-                animations = []
+                animations  = []
               }
     where
       -- Moves all projectiles forward
@@ -135,7 +136,7 @@ step elapsed gstate = do
             let maxY        = hwy - fromIntegral (snd margin) -- The maximum y value for an enemy to spawn at
             yd <- randomIO :: IO Float -- Random value between 0 and 1
             let (x, y) = (hwx + (enemySize / 2), maxY - (yd * maxY * 2)) -- y will be between -maxY and maxY
-            let enemy = RegularEnemy (x, y) (x, y) (Movement True False False False R2L) 0
+            let enemy = RegularEnemy (x, y) (x, y) (Movement True False False False R2L $ elapsedTime gstateNew) 0
 
             debugM debugLog $ "Spawning enemy " ++ show enemy
             return $ gstateNew {
@@ -201,4 +202,4 @@ moveRight     gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
 movePlayer :: GameState -> (Movement -> Movement) -> GameState
 movePlayer gstate modifier = if paused gstate then gstate else
-  gstate { player = (player gstate) { playerMovement = modifier $ playerMovement (player gstate) } }
+  gstate { player = (player gstate) { playerMovement = (modifier $ playerMovement (player gstate)) { lastChange = elapsedTime gstate } } }
