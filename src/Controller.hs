@@ -146,7 +146,9 @@ inputMouse _ gstate = return gstate
 
 inputKey :: Event -> GameState -> IO GameState
 -- Escape key, pauses the game.
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = return $ gstate { paused = not $ paused gstate }
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
+  debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
+  return $ gstate { paused = not $ paused gstate }
 -- Space key, fires a projectile.
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
   if cooldown (player gstate) == 0
