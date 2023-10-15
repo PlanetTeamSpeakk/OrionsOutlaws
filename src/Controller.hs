@@ -81,9 +81,9 @@ step elapsed gstate = do
         if r < 0.01 && enemyCooldown e == 0
           then do
             let (x, y) = curPosition e
-            let proj = createProjectile (x - (enemySize / 2) - 2.5, y) False
-            fps <- enemyFire es
-            return $ bimap (e {enemyCooldown = 10} :) (proj :) fps
+            let proj = createProjectile (x - (enemySize / 2) - 2.5, y) False -- Create a new projectile
+            fps <- enemyFire es -- Attempt fire on rest of enemies
+            return $ bimap (e {enemyCooldown = 10} :) (proj :) fps -- Set cooldown to 10 steps (0.5 seconds)
           else do
             (es', ps) <- enemyFire es
             return (e : es', ps)
@@ -146,6 +146,10 @@ inputKey (EventKey (Char 'w') down _ _) gstate = return $ moveForward   gstate $
 inputKey (EventKey (Char 'a') down _ _) gstate = return $ moveLeft      gstate $ down == Down
 inputKey (EventKey (Char 's') down _ _) gstate = return $ moveBackward  gstate $ down == Down
 inputKey (EventKey (Char 'd') down _ _) gstate = return $ moveRight     gstate $ down == Down
+inputKey (EventKey (SpecialKey KeyUp)    down _ _) gstate = return $ moveForward   gstate $ down == Down
+inputKey (EventKey (SpecialKey KeyLeft)  down _ _) gstate = return $ moveLeft      gstate $ down == Down
+inputKey (EventKey (SpecialKey KeyDown)  down _ _) gstate = return $ moveBackward  gstate $ down == Down
+inputKey (EventKey (SpecialKey KeyRight) down _ _) gstate = return $ moveRight     gstate $ down == Down
 inputKey _ gstate = return gstate
 
 moveForward :: GameState -> Bool -> GameState
