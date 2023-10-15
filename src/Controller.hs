@@ -33,7 +33,10 @@ step elapsed gstate = do
       let nfps  = filter (not . friendly) p
       let cnfps = filter (collidesWith (player gstate)) nfps
 
-      if null cnfps
+      -- Check if any enemies collide with the player
+      let eCollision = any (collidesWith (player gstate)) es
+
+      if null cnfps && not eCollision
         then do -- No collision, return new gamestate
           ep <- enemyFire es
 
