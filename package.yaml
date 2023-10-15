@@ -29,6 +29,8 @@ dependencies:
 - bmp
 - random
 - time
+- JuicyPixels
+- vector
 
 ghc-options:
 - -Wall

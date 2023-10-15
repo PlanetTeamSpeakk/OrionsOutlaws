@@ -7,6 +7,7 @@ import Graphics.Gloss
 import Model
 import Assets
 import Util (msTime)
+import Data.Bifunctor (Bifunctor(bimap))
 
 -- | Simply calls viewPure with the current stepdelta and the given gamestate
 view :: GameState -> IO Picture
@@ -21,7 +22,8 @@ viewPure sd gstate = pictures [
         renderPlayer $ player gstate,           -- render player
         renderProjectiles $ projectiles gstate, -- render projectiles
         renderEnemies $ enemies gstate,         -- render enemies
-        renderAnimations $ animations gstate    -- render animations
+        renderAnimations $ animations gstate,   -- render animations
+        renderPauseOverlay                      -- render pause overlay
     ]
     where
         -- Renders the player, curently just a green circle
@@ -32,24 +34,34 @@ viewPure sd gstate = pictures [
         renderProjectiles :: [Projectile] -> Picture
         renderProjectiles = pictures . map renderProjectile
             where
-                renderProjectile p = color (if friendly p then cyan else red) $ 
+                renderProjectile p = color (if friendly p then cyan else red) $
                     translateP (position sd p) $ circleSolid 5
 
         renderEnemies :: [Enemy] -> Picture
         renderEnemies = pictures . map renderEnemy
             where
                 renderEnemy e = color orange $ translateP (position sd e) $ circleSolid (enemySize / 2)
-        
+
         renderAnimations :: [PositionedAnimation] -> Picture
         renderAnimations = pictures . map renderAnimation
             where
                 renderAnimation a = color orange $ translateP (animationPos a) $ frame $ animation a
 
+        renderPauseOverlay :: Picture
+        renderPauseOverlay
+            | paused gstate = let s = fromIntegral (fst $ windowSize gstate) / 1280 in 
+                pictures [
+                        -- Background
+                        color (withAlpha 0.5 black) $ uncurry rectangleSolid $ bimap fromIntegral fromIntegral $ windowSize gstate,
+                        scale s s pauseOverlay -- Text
+                    ]
+            | otherwise = blank
+
 translateP :: Position -> Picture -> Picture
 translateP (x, y) = translate x y
 
 inBounds :: Bounds -> Position -> Bool
-inBounds (maxX, maxY) (x, y) = 
+inBounds (maxX, maxY) (x, y) =
     let (hwx, hwy) = (fromIntegral maxX / 2, fromIntegral maxY / 2) in
     x > -hwx && x < hwx && y > -hwy && y < hwy
 

@@ -27,6 +27,7 @@ library
   exposed-modules:
       Assets
       Controller
+      Graphics.Gloss.Juicy
       Model
       Util
       View
@@ -39,6 +40,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       GLUT
+    , JuicyPixels
     , base >=4.7 && <5
     , bmp
     , bytestring
@@ -47,6 +49,7 @@ library
     , hslogger
     , random
     , time
+    , vector
   default-language: Haskell2010
 
 executable OrionsOutlaws-exe
@@ -60,6 +63,7 @@ executable OrionsOutlaws-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GLUT
+    , JuicyPixels
     , OrionsOutlaws
     , base >=4.7 && <5
     , bmp
@@ -69,6 +73,7 @@ executable OrionsOutlaws-exe
     , hslogger
     , random
     , time
+    , vector
   default-language: Haskell2010
 
 test-suite OrionsOutlaws-test
@@ -83,6 +88,7 @@ test-suite OrionsOutlaws-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GLUT
+    , JuicyPixels
     , OrionsOutlaws
     , base >=4.7 && <5
     , bmp
@@ -92,4 +98,5 @@ test-suite OrionsOutlaws-test
     , hslogger
     , random
     , time
+    , vector
   default-language: Haskell2010
