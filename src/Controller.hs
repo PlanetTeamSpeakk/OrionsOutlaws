@@ -169,7 +169,7 @@ inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   return $ gstate { paused = not $ paused gstate }
 -- Space key, fires a projectile.
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
-  if cooldown (player gstate) == 0
+  if cooldown (player gstate) == 0 && not (paused gstate)
     then do
       let (px, py) = playerPos $ player gstate
       let proj = createProjectile (px + (playerSize / 2) + 2.5, py) True
