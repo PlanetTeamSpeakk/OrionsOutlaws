@@ -64,8 +64,8 @@ data GameState = GameState {
     started     :: Bool,                    -- Whether the game has started or not
     paused      :: Bool,                    -- Whether the game is paused or not
     windowSize  :: Bounds,                  -- The size of the window
-    steps       :: Integer,                  -- The number of steps that have been taken since the game started
-    lastStep    :: Integer                 -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+    steps       :: Integer,                 -- The number of steps that have been taken since the game started
+    lastStep    :: Integer                  -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
 } deriving (Show, Eq)
 
 data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
