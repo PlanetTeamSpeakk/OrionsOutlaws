@@ -173,7 +173,7 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
   if cooldown (player gstate) == 0 && not (paused gstate)
     then do
       let (px, py) = playerPos $ player gstate
-      let proj = createProjectile (px + (playerSize / 2) + 2.5, py) True
+      let proj = createProjectile (px + 24 + 2.5, py) True
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate

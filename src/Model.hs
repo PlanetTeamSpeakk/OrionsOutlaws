@@ -34,11 +34,8 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 initialState :: IO GameState
 initialState = GameState Menu initialPlayer [] [] [] 0 0 False False (1280, 720) 0 <$> msTime
 
-playerSize :: Float
-playerSize = 24 * 4
-
 enemySize :: Float
-enemySize = playerSize
+enemySize = 48
 
 projectileSpeed :: Float
 projectileSpeed = 30
@@ -152,7 +149,11 @@ class Collidable a where
 
 -- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
 instance Collidable Player where
-    createBoxes p = let (x, y) = playerPos p in [((x - 20, y - 20), (x + 20, y + 20))]
+    createBoxes p = let (x, y) = playerPos p in [
+            ((x - 12, y - 32), (x + 28, y + 32)), -- Body
+            ((x + 28, y - 24), (x + 40, y + 24)), -- Head
+            ((x + 40, y - 16), (x + 48, y + 16))  -- Tip
+        ]
 
 instance Collidable Enemy where
     createBoxes (RegularEnemy (x, y) _ _ _) = [((x - 20, y - 20), (x + 20, y + 20))]

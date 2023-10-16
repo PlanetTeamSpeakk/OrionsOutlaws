@@ -20,6 +20,7 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate = pictures [
         renderPlayer $ player gstate,           -- render player
+        -- renderPlayerBoxes $ player gstate,      -- render player boxes
         renderProjectiles $ projectiles gstate, -- render projectiles
         renderEnemies $ enemies gstate,         -- render enemies
         renderAnimations $ animations gstate,   -- render animations
@@ -29,6 +30,15 @@ viewPure sd gstate = pictures [
         -- Renders the player, curently just a green circle
         renderPlayer :: Player -> Picture
         renderPlayer p = color green $ translateP (position sd p) $ fromPlayerFacing (facing gstate (movement $ player gstate)) getShipFrame
+
+        renderPlayerBoxes :: Player -> Picture
+        renderPlayerBoxes = renderBoxes . createBoxes
+        
+        renderBoxes :: [Box] -> Picture
+        renderBoxes bs = pictures $ map renderBox bs
+            where
+                renderBox ((minX, minY), (maxX, maxY)) = color red $ translateP ((minX + maxX) / 2, (minY + maxY) / 2) $ 
+                    rectangleWire (maxX - minX) (maxY - minY)
 
         -- Renders the projectiles, currently just red circles
         renderProjectiles :: [Projectile] -> Picture
