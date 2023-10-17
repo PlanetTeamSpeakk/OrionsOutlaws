@@ -32,9 +32,6 @@ dependencies:
 - JuicyPixels
 - gloss-juicy
 - vector
-- sdl2
-- StateVar
-- OpenAL
 - proteaaudio
 
 ghc-options:
@@ -47,8 +44,6 @@ ghc-options:
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
-# To ensure we have a console so we get console output (debugging)
-- -optl-mconsole
 
 library:
   source-dirs: src
