@@ -28,7 +28,6 @@ library
       Assets
       Audio
       Controller
-      Graphics.Gloss.Juicy
       Model
       Util
       View
@@ -49,6 +48,7 @@ library
     , bytestring
     , file-embed
     , gloss
+    , gloss-juicy
     , hslogger
     , proteaaudio
     , random
@@ -77,6 +77,7 @@ executable OrionsOutlaws-exe
     , bytestring
     , file-embed
     , gloss
+    , gloss-juicy
     , hslogger
     , proteaaudio
     , random
@@ -106,6 +107,7 @@ test-suite OrionsOutlaws-test
     , bytestring
     , file-embed
     , gloss
+    , gloss-juicy
     , hslogger
     , proteaaudio
     , random

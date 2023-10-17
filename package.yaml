@@ -30,6 +30,7 @@ dependencies:
 - random
 - time
 - JuicyPixels
+- gloss-juicy
 - vector
 - sdl2
 - StateVar
