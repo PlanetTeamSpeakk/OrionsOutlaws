@@ -2,7 +2,7 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing) where
+module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing, sampleOgg) where
 
 import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
@@ -72,3 +72,6 @@ fromPlayerFacing RightRight  Second = ship 4 1
 -- Pause overlay
 pauseOverlay :: Picture
 pauseOverlay = loadPNG $(embedFile "assets/pauseOverlay.png")
+
+sampleOgg :: ByteString
+sampleOgg = $(embedFile "assets/sample.ogg")

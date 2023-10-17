@@ -3,6 +3,7 @@ module Main (main) where
 import Controller
 import Model
 import View
+import Audio
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger
@@ -22,6 +23,10 @@ main =
     debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh logFormatter
     updateGlobalLogger debugLog $ addHandler debugHandler
 
+    -- Init SDL2 audio related stuff
+    scs <- initAudio
+    debugM debugLog $ "Audio init success: " ++ show scs
+
     state <- initialState
     size <- getScreenSize
     let (screenWidth, screenHeight) = size
@@ -32,8 +37,10 @@ main =
         -- Ensure that the window is centered
         ((screenWidth `div` 2) - (windowWidth `div` 2), (screenHeight `div` 2) - (windowHeight `div` 2)))
       white       -- Background color
-      stepsPerSec -- Frames per second
+      stepsPerSec -- Steps (ticks) per second
       state       -- Initial state
       view        -- View function
       input       -- Event function
       step        -- Step function
+    
+    debugM debugLog "Exiting"

@@ -32,6 +32,9 @@ dependencies:
 - JuicyPixels
 - vector
 - sdl2
+- StateVar
+- OpenAL
+- proteaaudio
 
 ghc-options:
 - -Wall
