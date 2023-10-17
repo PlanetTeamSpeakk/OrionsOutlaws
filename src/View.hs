@@ -1,7 +1,7 @@
-{-# OPTIONS_GHC -Wno-missing-export-lists #-} -- I do not care, just export everything.
+{-# OPTIONS_GHC -Wno-unused-local-binds #-}   -- We have some functions that are only used for debugging that we leave in.
 -- | This module defines how to turn
 --   the game state into a picture
-module View where
+module View (module View) where
 
 import Graphics.Gloss
 import Model

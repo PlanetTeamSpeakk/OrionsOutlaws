@@ -1,4 +1,4 @@
-module Util where
+module Util (module Util) where
     
 import Data.Time.Clock.POSIX (getPOSIXTime)
 

@@ -157,7 +157,7 @@ instance Collidable Player where
 
 instance Collidable Enemy where
     createBoxes (RegularEnemy (x, y) _ _ _) = [((x - 20, y - 20), (x + 20, y + 20))]
-    createBoxes (BossEnemy (x, y) _ _ _ _)  = undefined -- TODO - Implement this
+    createBoxes (BossEnemy (_, _) _ _ _ _)  = undefined -- TODO - Implement this
 
 instance Collidable Projectile where
     createBoxes (RegularProjectile (x, y) _ _ _ _) = [((x - 5, y - 5), (x + 5, y + 5))]
