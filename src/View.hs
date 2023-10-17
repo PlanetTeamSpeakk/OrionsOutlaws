@@ -20,7 +20,7 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate = pictures [
         renderPlayer $ player gstate,           -- render player
-        renderPlayerBoxes $ player gstate,      -- render player boxes
+        -- renderPlayerBoxes $ player gstate,      -- render player boxes
         renderProjectiles $ projectiles gstate, -- render projectiles
         renderEnemies $ enemies gstate,         -- render enemies
         renderAnimations $ animations gstate,   -- render animations
