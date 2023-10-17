@@ -37,12 +37,10 @@ library
       Paths_OrionsOutlaws
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -optl-mconsole
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       GLUT
     , JuicyPixels
-    , OpenAL
-    , StateVar
     , base >=4.7 && <5
     , bmp
     , bytestring
@@ -52,7 +50,6 @@ library
     , hslogger
     , proteaaudio
     , random
-    , sdl2
     , time
     , vector
   default-language: Haskell2010
@@ -65,13 +62,11 @@ executable OrionsOutlaws-exe
       Paths_OrionsOutlaws
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -optl-mconsole -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GLUT
     , JuicyPixels
-    , OpenAL
     , OrionsOutlaws
-    , StateVar
     , base >=4.7 && <5
     , bmp
     , bytestring
@@ -81,7 +76,6 @@ executable OrionsOutlaws-exe
     , hslogger
     , proteaaudio
     , random
-    , sdl2
     , time
     , vector
   default-language: Haskell2010
@@ -95,13 +89,11 @@ test-suite OrionsOutlaws-test
       Paths_OrionsOutlaws
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -optl-mconsole -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GLUT
     , JuicyPixels
-    , OpenAL
     , OrionsOutlaws
-    , StateVar
     , base >=4.7 && <5
     , bmp
     , bytestring
@@ -111,7 +103,6 @@ test-suite OrionsOutlaws-test
     , hslogger
     , proteaaudio
     , random
-    , sdl2
     , time
     , vector
   default-language: Haskell2010
