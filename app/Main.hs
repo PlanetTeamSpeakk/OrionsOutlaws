@@ -3,7 +3,6 @@ module Main (main) where
 import Controller
 import Model
 import View
-import Audio
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger
@@ -11,6 +10,7 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
+import Audio (initAudio, finishAudio)
 
 main :: IO ()
 main =
@@ -44,3 +44,4 @@ main =
       step        -- Step function
     
     debugM debugLog "Exiting"
+    finishAudio

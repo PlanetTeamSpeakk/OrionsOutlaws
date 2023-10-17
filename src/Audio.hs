@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Audio (Audio.initAudio) where
+module Audio (Audio.initAudio, finishAudio) where
 
 import Assets (sampleOgg)
 import Sound.ProteaAudio
