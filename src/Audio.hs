@@ -6,9 +6,8 @@ import Sound.ProteaAudio
 
 initAudio :: IO Bool
 initAudio = do
-    success <- Sound.ProteaAudio.initAudio 32 48000 512
+    success <- Sound.ProteaAudio.initAudio 32 44100 512
 
-    smp <- sampleFromMemoryOgg sampleOgg 1
-    _ <- soundPlay smp 1 1 0 1
+    _ <- soundPlay sampleOgg 1 1 0 1
 
     return success

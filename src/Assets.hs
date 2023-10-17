@@ -11,6 +11,8 @@ import Codec.BMP (parseBMP)
 import Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
+import Sound.ProteaAudio (Sample, sampleFromMemoryOgg)
+import System.IO.Unsafe (unsafePerformIO)
 
 -- Helper function for turning bytestrings into bitmapdata
 loadBMPData :: ByteString -> BitmapData
@@ -73,5 +75,6 @@ fromPlayerFacing RightRight  Second = ship 4 1
 pauseOverlay :: Picture
 pauseOverlay = loadPNG $(embedFile "assets/pauseOverlay.png")
 
-sampleOgg :: ByteString
-sampleOgg = $(embedFile "assets/sample.ogg")
+sampleOgg :: Sample
+sampleOgg = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sample.ogg") 1
+{-# NOINLINE sampleOgg #-}
