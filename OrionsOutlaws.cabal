@@ -48,6 +48,7 @@ library
     , gloss
     , hslogger
     , random
+    , sdl2
     , time
     , vector
   default-language: Haskell2010
@@ -72,6 +73,7 @@ executable OrionsOutlaws-exe
     , gloss
     , hslogger
     , random
+    , sdl2
     , time
     , vector
   default-language: Haskell2010
@@ -97,6 +99,7 @@ test-suite OrionsOutlaws-test
     , gloss
     , hslogger
     , random
+    , sdl2
     , time
     , vector
   default-language: Haskell2010
