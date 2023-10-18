@@ -1,7 +1,6 @@
-{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 -- | This module defines how the state changes
 --   in response to time and user input
-module Controller where
+module Controller (module Controller) where
 
 import Model
 import Graphics.Gloss.Interface.IO.Game
@@ -12,7 +11,8 @@ import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
-import Assets (explosionAnimation)
+import Assets (explosionAnimation, laser1)
+import Audio
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -167,6 +167,12 @@ inputKey :: Event -> GameState -> IO GameState
 -- Escape key, pauses the game.
 inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
+
+  -- If the game is already paused, loop the background music, otherwise stop all sounds
+  if paused gstate
+    then loopBgMusic
+    else stopAllSounds
+
   return $ gstate { paused = not $ paused gstate }
 -- Space key, fires a projectile.
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
@@ -174,6 +180,7 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
     then do
       let (px, py) = playerPos $ player gstate
       let proj = createProjectile (px + 24 + 2.5, py) True
+      playSound laser1
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
@@ -189,17 +196,18 @@ inputKey (EventKey (SpecialKey KeyRight) down _ _) gstate = return $ moveRight  
 inputKey _ gstate = return gstate
 
 moveForward :: GameState -> Bool -> GameState
-moveForward   gstate isDown = movePlayer gstate (\m -> m { forward = isDown })
+moveForward  gstate isDown = movePlayer gstate (\m -> m { forward = isDown })
 
 moveBackward :: GameState -> Bool -> GameState
-moveBackward  gstate isDown = movePlayer gstate (\m -> m { backward = isDown })
+moveBackward gstate isDown = movePlayer gstate (\m -> m { backward = isDown })
 
 moveLeft :: GameState -> Bool -> GameState
-moveLeft      gstate isDown = movePlayer gstate (\m -> m { left = isDown })
+moveLeft     gstate isDown = movePlayer gstate (\m -> m { left = isDown })
 
 moveRight :: GameState -> Bool -> GameState
-moveRight     gstate isDown = movePlayer gstate (\m -> m { right = isDown })
+moveRight    gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
+-- | Sets the player's movement. Does not directly modify the position, that's done in the next step.
 movePlayer :: GameState -> (Movement -> Movement) -> GameState
 movePlayer gstate modifier = if paused gstate then gstate else
   gstate { player = (player gstate) { playerMovement = (modifier $ playerMovement (player gstate)) { lastChange = elapsedTime gstate } } }

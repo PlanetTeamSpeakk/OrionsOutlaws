@@ -2,7 +2,7 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing, sampleOgg) where
+module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing, bgMusic, laser1) where
 
 import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
@@ -11,7 +11,7 @@ import Codec.BMP (parseBMP)
 import Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
-import Sound.ProteaAudio (Sample, sampleFromMemoryOgg)
+import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
 import System.IO.Unsafe (unsafePerformIO)
 
 -- Helper function for turning bytestrings into bitmapdata
@@ -75,6 +75,15 @@ fromPlayerFacing RightRight  Second = ship 4 1
 pauseOverlay :: Picture
 pauseOverlay = loadPNG $(embedFile "assets/pauseOverlay.png")
 
-sampleOgg :: Sample
-sampleOgg = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sample.ogg") 1
-{-# NOINLINE sampleOgg #-}
+-- Samples can be unpacked with unsafePerformIO just fine.
+-- They are only packed in IOs because the code that loads them is foreign.
+-- | Background music
+bgMusic :: Sample
+bgMusic = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/bg.ogg") 1
+{-# NOINLINE bgMusic #-}
+
+-- | Laser sound
+--   Source: https://pixabay.com/sound-effects/blaster-2-81267/
+laser1 :: Sample
+laser1 = unsafePerformIO $ sampleFromMemoryMp3 $(embedFile "assets/sounds/laser1.mp3") 1
+{-# NOINLINE laser1 #-}

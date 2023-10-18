@@ -10,7 +10,7 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
-import Audio (initAudio, finishAudio)
+import Audio (initAudio, finishAudio, loopBgMusic)
 
 main :: IO ()
 main =
@@ -26,6 +26,7 @@ main =
     -- Init SDL2 audio related stuff
     scs <- initAudio
     debugM debugLog $ "Audio init success: " ++ show scs
+    loopBgMusic
 
     state <- initialState
     size <- getScreenSize

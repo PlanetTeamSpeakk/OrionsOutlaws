@@ -5,12 +5,18 @@
 
 packages:
 - completed:
-    hackage: proteaaudio-0.9.4@sha256:ece81858960a46661c09b64074cb9966359e8e8751e4066d6c332cc23bd96e6e,2907
+    name: proteaaudio
     pantry-tree:
-      sha256: f087bcde88e3cf9be15ea780ebe4683b9bdfd8fa6f2164c1c9054d0dc535292e
-      size: 1875
+      sha256: e3ac426555746658d942a8601b23a8070166f3c7c725a5af095037ee91a07f00
+      size: 2115
+    sha256: 99e592e80ce64131279fff1d310a70a32461fa9cfac6a2811d90445ad283ed8b
+    size: 242431
+    subdir: proteaaudio
+    url: https://github.com/csabahruska/proteaaudio/archive/aa482067333b01361cc370571c900b76e2267fbb.tar.gz
+    version: 1.0.0
   original:
-    hackage: proteaaudio-0.9.4
+    subdir: proteaaudio
+    url: https://github.com/csabahruska/proteaaudio/archive/aa482067333b01361cc370571c900b76e2267fbb.tar.gz
 - completed:
     hackage: gloss-juicy-0.2.3@sha256:0c3bca95237cbf91f8b3b1936a0661f1e0457acd80502276d54d6c5210f88b25,1618
     pantry-tree:
