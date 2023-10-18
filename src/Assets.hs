@@ -2,7 +2,7 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing, bgMusic, laser1) where
+module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing, digit, bgMusic, laser1) where
 
 import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
@@ -31,6 +31,8 @@ loadPNG bstr = case decodePng bstr of
 assetScale :: Float
 assetScale = 4
 
+-- IMAGES
+--- Spritesheets
 
 -- Explosion animation
 -- Spritesheets have to be bitmaps so that we can use bitmapSection
@@ -71,9 +73,24 @@ fromPlayerFacing Model.Right Second = ship 3 1
 fromPlayerFacing RightRight  First  = ship 4 0
 fromPlayerFacing RightRight  Second = ship 4 1
 
+
+-- Digits spritesheet
+digitsSheet :: BitmapData
+digitsSheet = loadBMPData $(embedFile "assets/images/spritesheets/digits.bmp")
+
+digit :: Int -> Picture
+digit d
+    -- Each digit is exactly 61x73 pixels
+    | d >= 0 && d <= 9 = bitmapSection (Rectangle (d * 61, 0) (61, 73)) digitsSheet
+    | otherwise = error "Invalid digit" -- Should be impossible
+
+--- Misc images
 -- Pause overlay
 pauseOverlay :: Picture
 pauseOverlay = loadPNG $(embedFile "assets/pauseOverlay.png")
+
+
+-- SOUNDS
 
 -- Samples can be unpacked with unsafePerformIO just fine.
 -- They are only packed in IOs because the code that loads them is foreign.

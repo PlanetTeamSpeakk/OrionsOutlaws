@@ -33,10 +33,11 @@ step elapsed gstate = do
 
       -- Handle projectile collision with enemies. Filters projectiles and enemies.
       let (fps, es, nas) = handleProjectileCollision (filter friendly p) $ enemies gstateN2
+      let hit = length $ enemies gstateN2 \\ es -- Number of enemies that were hit
 
       -- Filter out projectiles that collide with the player
-      let nfps  = filter (not . friendly) p
-      let cnfps = filter (collidesWith (player gstate)) nfps
+      let nfps  = filter (not . friendly) p                   -- Non-friendly projectiles
+      let cnfps = filter (collidesWith (player gstate)) nfps  -- Colliding non-friendly projectiles
 
       -- Check if any enemies collide with the player
       let eCollision = any (collidesWith (player gstate)) es
@@ -52,6 +53,7 @@ step elapsed gstate = do
             -- Friendly projectiles, non-friendly projectiles that didn't collide with the player, and new enemy projectiles
             projectiles = fps ++ (nfps \\ cnfps) ++ snd ep,
             animations  = as ++ nas,
+            score       = score gstateN2 + hit,
             lastStep    = time,
             steps       = steps gstateN2 + 1
           }

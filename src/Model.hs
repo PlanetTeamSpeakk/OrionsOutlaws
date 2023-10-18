@@ -32,7 +32,7 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
 initialState :: IO GameState
-initialState = GameState Menu initialPlayer [] [] [] 0 0 False False (1280, 720) 0 <$> msTime
+initialState = GameState Menu initialPlayer [] [] [] 0 0 0 False False (1280, 720) 0 <$> msTime
 
 enemySize :: Float
 enemySize = 48
@@ -59,6 +59,7 @@ data GameState = GameState {
     enemies     :: [Enemy],                 -- A list of enemies
     projectiles :: [Projectile],            -- A list of projectiles currently on the field
     animations  :: [PositionedAnimation],   -- A list of animations currently on the field
+    score       :: Int,                     -- The player's score
     lastSpawn   :: Float,                   -- The time at which the last enemy was spawned
     elapsedTime :: Float,                   -- The time elapsed since the game started
     started     :: Bool,                    -- Whether the game has started or not
@@ -189,6 +190,8 @@ instance Show Animation where
 data PlayerFacing = LeftLeft | Left | Normal | Right | RightRight deriving (Show, Eq)
 
 data ShipFrame = First | Second deriving (Show, Eq)
+
+data Alignment = LeftToRight | RightToLeft deriving (Show, Eq)
 
 -- Types and helper functions
 -- The Position type, a tuple of two ints representing the x and y coordinates of a point.
