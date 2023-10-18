@@ -2,7 +2,15 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Assets (explosionAnimation, pauseOverlay, fromPlayerFacing, digit, bgMusic, laser1) where
+module Assets (
+    explosionAnimation, 
+    pauseOverlay, 
+    fromPlayerFacing, 
+    digit, 
+    bgMusic, 
+    laser1, laser2,
+    explosion1, explosion2
+    ) where
 
 import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
@@ -100,7 +108,19 @@ bgMusic = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/bg.og
 {-# NOINLINE bgMusic #-}
 
 -- | Laser sound
---   Source: https://pixabay.com/sound-effects/blaster-2-81267/
+--   ~~Source: https://pixabay.com/sound-effects/blaster-2-81267/~~ - me
 laser1 :: Sample
-laser1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser.ogg") 1
+laser1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser1.ogg") 1
 {-# NOINLINE laser1 #-}
+
+laser2 :: Sample
+laser2 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser2.ogg") 1
+{-# NOINLINE laser2 #-}
+
+explosion1 :: Sample
+explosion1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/explosion1.ogg") 1
+{-# NOINLINE explosion1 #-}
+
+explosion2 :: Sample
+explosion2 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/explosion2.ogg") 1
+{-# NOINLINE explosion2 #-}

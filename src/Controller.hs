@@ -6,12 +6,12 @@ import Model
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger (debugM)
 import View (onScreen, inBounds)
-import Util (msTime)
+import Util (msTime, randomElem)
 import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
-import Assets (explosionAnimation, laser1)
+import Assets (explosionAnimation, laser1, laser2, explosion1, explosion2)
 import Audio
 
 -- | Handle one iteration of the game
@@ -32,7 +32,7 @@ step elapsed gstate = do
       let as = stepAnimations $ animations gstateN2
 
       -- Handle projectile collision with enemies. Filters projectiles and enemies.
-      let (fps, es, nas) = handleProjectileCollision (filter friendly p) $ enemies gstateN2
+      (fps, es, nas) <- handleProjectileCollision (filter friendly p) $ enemies gstateN2
       let hit = length $ enemies gstateN2 \\ es -- Number of enemies that were hit
 
       -- Filter out projectiles that collide with the player
@@ -79,14 +79,17 @@ step elapsed gstate = do
 
       -- Handles projectile collision. For each projectile, check if it collides with any enemy.
       -- If it does, remove the projectile and the enemy it collided with.
-      handleProjectileCollision :: [Projectile] -> [Enemy] -> ([Projectile], [Enemy], [PositionedAnimation])
-      handleProjectileCollision ps [] = (ps, [], []) -- No enemies, no collision
-      handleProjectileCollision [] es = ([], es, []) -- No projectiles, no collision
-      handleProjectileCollision (p:ps) es = let (ps', es', as) = handleProjectileCollision ps es in
+      handleProjectileCollision :: [Projectile] -> [Enemy] -> IO ([Projectile], [Enemy], [PositionedAnimation])
+      handleProjectileCollision ps [] = return (ps, [], []) -- No enemies, no collision
+      handleProjectileCollision [] es = return ([], es, []) -- No projectiles, no collision
+      handleProjectileCollision (p:ps) es = do
+        (ps', es', as) <- handleProjectileCollision ps es
         case filter (collidesWith p) es' of
-          []   -> (p:ps', es', as) -- No collision, keep projectile and all enemies
+          []   -> return (p:ps', es', as) -- No collision, keep projectile and all enemies
           -- Collision, remove projectile and all enemies that collided. Add an explosion animation for each collided enemy
-          es'' -> (ps', es' \\ es'', map (PositionedAnimation explosionAnimation . curPosition) es'')
+          es'' -> do
+            playExplosionSound
+            return (ps', es' \\ es'', map (PositionedAnimation explosionAnimation . curPosition) es'')
 
       -- Decreases the player's cooldown and applies movement
       stepPlayer :: Player -> Player
@@ -182,7 +185,7 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
     then do
       let (px, py) = playerPos $ player gstate
       let proj = createProjectile (px + 24 + 2.5, py) True
-      playSound laser1
+      playLaserSound
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
@@ -213,3 +216,13 @@ moveRight    gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 movePlayer :: GameState -> (Movement -> Movement) -> GameState
 movePlayer gstate modifier = if paused gstate then gstate else
   gstate { player = (player gstate) { playerMovement = (modifier $ playerMovement (player gstate)) { lastChange = elapsedTime gstate } } }
+
+playLaserSound :: IO ()
+playLaserSound = do 
+  sound <- randomElem [laser1, laser2]
+  playSound sound
+
+playExplosionSound :: IO ()
+playExplosionSound = do 
+  sound <- randomElem [explosion1, explosion2]
+  playSound sound
