@@ -90,9 +90,8 @@ digs x = digs' x
 -- | Renders a number into a picture.
 --   The number can be rendered either from left to right or from right to left.
 --   The digits themselves will always be rendered in the same order, but the
---   direction in which the rendering is done is different.
---   Use RightToLeft if you wish to render the number on the left side of the screen.
---   Use LeftToRight otherwise.
+--   direction in which the rendering is done and which digit is considered
+--   the origin are different.
 renderNumber :: Alignment -> Int -> Picture
 renderNumber LeftToRight n = renderNumber'   1  n id
 renderNumber RightToLeft n = renderNumber' (-1) n reverse

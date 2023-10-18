@@ -102,5 +102,5 @@ bgMusic = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/bg.og
 -- | Laser sound
 --   Source: https://pixabay.com/sound-effects/blaster-2-81267/
 laser1 :: Sample
-laser1 = unsafePerformIO $ sampleFromMemoryMp3 $(embedFile "assets/sounds/laser1.mp3") 1
+laser1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser.ogg") 1
 {-# NOINLINE laser1 #-}
