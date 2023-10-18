@@ -8,7 +8,7 @@ module Assets (
     fromPlayerFacing, 
     digit, 
     bgMusic, 
-    laser1, laser2,
+    laserOld, laser1, laser2,
     explosion1, explosion2
     ) where
 
@@ -108,7 +108,11 @@ bgMusic = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/bg.og
 {-# NOINLINE bgMusic #-}
 
 -- | Laser sound
---   ~~Source: https://pixabay.com/sound-effects/blaster-2-81267/~~ - me
+--   Source: https://pixabay.com/sound-effects/blaster-2-81267/
+laserOld :: Sample
+laserOld = unsafePerformIO $ sampleFromMemoryMp3 $(embedFile "assets/sounds/laser1.mp3") 1
+{-# NOINLINE laserOld #-}
+
 laser1 :: Sample
 laser1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser1.ogg") 1
 {-# NOINLINE laser1 #-}

@@ -39,14 +39,10 @@ playSound sample = do
     sound <- soundPlay sample 1 1 0 1 -- Numbers are: left volume, right volume, time difference and pitch
     addSound sound
 
-    return ()
-
 loopSound :: Sample -> IO ()
 loopSound sample = do
     sound <- soundLoop sample 1 1 0 1
     addSound sound
-
-    return ()
 
 loopBgMusic :: IO ()
 loopBgMusic = loopSound bgMusic

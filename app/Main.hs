@@ -23,7 +23,7 @@ main =
     debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh logFormatter
     updateGlobalLogger debugLog $ addHandler debugHandler
 
-    -- Init SDL2 audio related stuff
+    -- Init audio related stuff
     scs <- initAudio
     debugM debugLog $ "Audio init success: " ++ show scs
     loopBgMusic
@@ -45,4 +45,4 @@ main =
       step        -- Step function
     
     debugM debugLog "Exiting"
-    finishAudio
+    finishAudio -- Shutdown audio system
