@@ -278,5 +278,5 @@ facing gstate m =
     let (v, h) = calcMovement m 
         c = elapsedTime gstate - lastChange m in
             if c > 0.3 && v == 0 -- If the player hasn't changed direction in the last 0.3 seconds and is not moving vertically
-                then if h > 0 then LeftLeft else if h < 0 then RightRight else Normal
+                then if h > 0 then LeftLeft   else if h < 0 then RightRight  else Normal
                 else if h > 0 then Model.Left else if h < 0 then Model.Right else Normal
