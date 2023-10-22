@@ -28,6 +28,7 @@ library
       Assets
       Audio
       Controller
+      Data
       Model
       Util
       View
@@ -41,6 +42,8 @@ library
   build-depends:
       GLUT
     , JuicyPixels
+    , aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , bmp
     , bytestring
@@ -67,6 +70,8 @@ executable OrionsOutlaws-exe
       GLUT
     , JuicyPixels
     , OrionsOutlaws
+    , aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , bmp
     , bytestring
@@ -94,6 +99,8 @@ test-suite OrionsOutlaws-test
       GLUT
     , JuicyPixels
     , OrionsOutlaws
+    , aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , bmp
     , bytestring

@@ -1,0 +1,18 @@
+{
+    "backwardKey": {
+        "contents": "s",
+        "tag": "Char"
+    },
+    "forwardKey": {
+        "contents": "f",
+        "tag": "Char"
+    },
+    "leftKey": {
+        "contents": "a",
+        "tag": "Char"
+    },
+    "rightKey": {
+        "contents": "d",
+        "tag": "Char"
+    }
+}

@@ -11,6 +11,7 @@ import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
 import Audio (initAudio, finishAudio, loopBgMusic)
+import Data
 
 main :: IO ()
 main = do
@@ -26,6 +27,10 @@ main = do
   scs <- initAudio
   debugM debugLog $ "Audio init success: " ++ show scs
   loopBgMusic
+
+  -- Load settings
+  settings <- loadSettings
+  debugM debugLog $ "Loaded settings: " ++ show settings
 
   state <- initialState
   size <- getScreenSize

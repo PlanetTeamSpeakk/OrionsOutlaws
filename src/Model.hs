@@ -8,6 +8,7 @@ import Util (msTime, lerp)
 import Data.Ord (clamp)
 import Data.Bifunctor (bimap)
 import Graphics.Gloss.Data.Picture (Picture)
+import Graphics.Gloss.Interface.IO.Game (Key (..))
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -192,6 +193,33 @@ data PlayerFacing = LeftLeft | Left | Normal | Right | RightRight deriving (Show
 data ShipFrame = First | Second deriving (Show, Eq)
 
 data Alignment = LeftToRight | RightToLeft deriving (Show, Eq)
+
+-- Game settings that stores anything the user can change.
+data Settings = Settings {
+    forwardKey  :: Key,
+    backwardKey :: Key,
+    leftKey     :: Key,
+    rightKey    :: Key
+} deriving (Show, Eq)
+
+-- Default settings
+defaultSettings :: Settings
+defaultSettings = Settings {
+    forwardKey  = Char 'w',
+    backwardKey = Char 's',
+    leftKey     = Char 'a',
+    rightKey    = Char 'd'
+}
+
+-- | A score that someone achieved once.
+--   For use in saving and loading high scores.
+data Score = Score {
+    name       :: String,
+    scoreValue :: Int
+} deriving (Show, Eq)
+
+instance Ord Score where
+    compare s1 s2 = compare (scoreValue s1) (scoreValue s2)
 
 -- Types and helper functions
 -- The Position type, a tuple of two ints representing the x and y coordinates of a point.

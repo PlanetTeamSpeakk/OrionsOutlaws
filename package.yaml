@@ -33,6 +33,8 @@ dependencies:
 - gloss-juicy
 - vector
 - proteaaudio
+- aeson
+- aeson-pretty
 
 ghc-options:
 - -Wall
