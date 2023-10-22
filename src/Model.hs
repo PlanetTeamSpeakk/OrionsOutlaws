@@ -12,8 +12,8 @@ import Graphics.Gloss.Interface.IO.Game (Key (..))
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
-logFormatter :: LogFormatter a
-logFormatter = tfLogFormatter "%X" "[$time : $loggername : $prio] $msg"
+logFormatter :: Bool -> LogFormatter a
+logFormatter includeName = tfLogFormatter "%X" $ "[$time : " ++ (if includeName then "$loggername : " else "") ++ "$prio] $msg"
 
 defLog :: String
 defLog = rootLoggerName
@@ -200,7 +200,8 @@ data Settings = Settings {
     forwardKey  :: Key,
     backwardKey :: Key,
     leftKey     :: Key,
-    rightKey    :: Key
+    rightKey    :: Key,
+    volume      :: Float
 } deriving (Show, Eq)
 
 -- Default settings
@@ -209,7 +210,8 @@ defaultSettings = Settings {
     forwardKey  = Char 'w',
     backwardKey = Char 's',
     leftKey     = Char 'a',
-    rightKey    = Char 'd'
+    rightKey    = Char 'd',
+    volume      = 1
 }
 
 -- | A score that someone achieved once.

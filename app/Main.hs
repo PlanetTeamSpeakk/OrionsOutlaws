@@ -21,17 +21,22 @@ main = do
   updateGlobalLogger debugLog $ setLevel DEBUG
   updateGlobalLogger defLog $ setLevel INFO
 
-  debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh logFormatter
+  -- Set up logging for the DEBUG log.
+  debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh $ logFormatter True
   updateGlobalLogger debugLog $ addHandler debugHandler
 
-  -- Init audio related stuff
-  scs <- initAudio
-  debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
-  loopBgMusic
+  -- Set up logging for the regular log.
+  defHandler <- streamHandler stdout INFO >>= \lh -> return $ setFormatter lh $ logFormatter False
+  updateGlobalLogger defLog $ addHandler defHandler
 
   -- Load settings
   s <- loadSettings
   debugM debugLog $ "Loaded settings: " ++ show s
+
+  -- Init audio related stuff
+  scs <- initAudio
+  debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
+  loopBgMusic $ volume s
 
   state <- initialState s
   size <- getScreenSize

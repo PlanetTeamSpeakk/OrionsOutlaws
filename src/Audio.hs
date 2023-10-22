@@ -56,15 +56,15 @@ resumeSound sound = do
     _ <- soundUpdate sound False 1 1 0 1
     return ()
 
-playSound :: Sample -> IO ()
-playSound sample = do
-    sound <- soundPlay sample 1 1 0 1 -- Numbers are: left volume, right volume, time difference and pitch
+playSound :: Float -> Sample -> IO ()
+playSound v sample = do
+    sound <- soundPlay sample v v 0 1 -- Numbers are: left volume, right volume, time difference and pitch
     addSound sound
 
-loopSound :: Sample -> IO ()
-loopSound sample = do
-    sound <- soundLoop sample 1 1 0 1
+loopSound :: Float -> Sample -> IO ()
+loopSound v sample = do
+    sound <- soundLoop sample v v 0 1
     addSound sound
 
-loopBgMusic :: IO ()
-loopBgMusic = loopSound bgMusic
+loopBgMusic :: Float -> IO ()
+loopBgMusic v = loopSound v bgMusic

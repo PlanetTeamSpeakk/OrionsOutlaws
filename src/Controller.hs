@@ -88,7 +88,7 @@ step elapsed gstate = do
           []   -> return (p:ps', es', as) -- No collision, keep projectile and all enemies
           -- Collision, remove projectile and all enemies that collided. Add an explosion animation for each collided enemy
           es'' -> do
-            playExplosionSound
+            playExplosionSound $ vol gstate
             return (ps', es' \\ es'', map (PositionedAnimation explosionAnimation . curPosition) es'')
 
       -- Decreases the player's cooldown and applies movement
@@ -185,7 +185,7 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
     then do
       let (px, py) = playerPos $ player gstate
       let proj = createProjectile (px + 24 + 2.5, py) True
-      playLaserSound
+      playLaserSound $ vol gstate
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
@@ -215,12 +215,16 @@ movePlayer :: GameState -> (Movement -> Movement) -> GameState
 movePlayer gstate modifier = if paused gstate then gstate else
   gstate { player = (player gstate) { playerMovement = (modifier $ playerMovement (player gstate)) { lastChange = elapsedTime gstate } } }
 
-playLaserSound :: IO ()
-playLaserSound = do 
-  sound <- randomElem [laser1, laser2]
-  playSound sound
+-- | Gets volume for the given GameState's settings.
+vol :: GameState -> Float
+vol GameState { settings = Settings { volume = v } } = v
 
-playExplosionSound :: IO ()
-playExplosionSound = do 
+playLaserSound :: Float -> IO ()
+playLaserSound v = do 
+  sound <- randomElem [laser1, laser2]
+  playSound v sound
+
+playExplosionSound :: Float -> IO ()
+playExplosionSound v = do 
   sound <- randomElem [explosion1, explosion2]
-  playSound sound
+  playSound v sound
