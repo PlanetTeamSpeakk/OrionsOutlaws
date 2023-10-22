@@ -30,10 +30,10 @@ main = do
   loopBgMusic
 
   -- Load settings
-  settings <- loadSettings
-  debugM debugLog $ "Loaded settings: " ++ show settings
+  s <- loadSettings
+  debugM debugLog $ "Loaded settings: " ++ show s
 
-  state <- initialState settings
+  state <- initialState s
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
       (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Model.windowSize state
