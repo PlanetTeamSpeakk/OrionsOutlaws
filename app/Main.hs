@@ -12,6 +12,7 @@ import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
 import Audio (initAudio, finishAudio, loopBgMusic)
 import Data
+import Data.Bifunctor (Bifunctor(bimap))
 
 main :: IO ()
 main = do
@@ -25,22 +26,22 @@ main = do
 
   -- Init audio related stuff
   scs <- initAudio
-  debugM debugLog $ "Audio init success: " ++ show scs
+  debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
   loopBgMusic
 
   -- Load settings
   settings <- loadSettings
   debugM debugLog $ "Loaded settings: " ++ show settings
 
-  state <- initialState
+  state <- initialState settings
   size <- getScreenSize
-  let (screenWidth, screenHeight) = size
-      (windowWidth, windowHeight) = Model.windowSize state
+  let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
+      (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Model.windowSize state
 
   -- Center screen
-  playIO (InWindow "Orion's Outlaws" (windowWidth, windowHeight) 
+  playIO (InWindow "Orion's Outlaws" (windowWidth * 2, windowHeight * 2)
       -- Ensure that the window is centered
-      ((screenWidth `div` 2) - (windowWidth `div` 2), (screenHeight `div` 2) - (windowHeight `div` 2)))
+      (screenWidth - windowWidth, screenHeight - windowHeight))
     white       -- Background color
     stepsPerSec -- Steps (ticks) per second
     state       -- Initial state

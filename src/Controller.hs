@@ -190,14 +190,12 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
     else do
       return gstate
 -- Movement keys, move the player.
-inputKey (EventKey (Char 'w') down _ _) gstate = return $ moveForward   gstate $ down == Down
-inputKey (EventKey (Char 'a') down _ _) gstate = return $ moveLeft      gstate $ down == Down
-inputKey (EventKey (Char 's') down _ _) gstate = return $ moveBackward  gstate $ down == Down
-inputKey (EventKey (Char 'd') down _ _) gstate = return $ moveRight     gstate $ down == Down
-inputKey (EventKey (SpecialKey KeyUp)    down _ _) gstate = return $ moveForward   gstate $ down == Down
-inputKey (EventKey (SpecialKey KeyLeft)  down _ _) gstate = return $ moveLeft      gstate $ down == Down
-inputKey (EventKey (SpecialKey KeyDown)  down _ _) gstate = return $ moveBackward  gstate $ down == Down
-inputKey (EventKey (SpecialKey KeyRight) down _ _) gstate = return $ moveRight     gstate $ down == Down
+inputKey (EventKey key down _ _) gstate@GameState{ settings = s }
+  | key == forwardKey  s = return $ moveForward  gstate $ down == Down
+  | key == backwardKey s = return $ moveBackward gstate $ down == Down
+  | key == leftKey     s = return $ moveLeft     gstate $ down == Down
+  | key == rightKey    s = return $ moveRight    gstate $ down == Down
+-- Fallback
 inputKey _ gstate = return gstate
 
 moveForward :: GameState -> Bool -> GameState

@@ -32,8 +32,8 @@ initialPlayer :: Player
 initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
-initialState :: IO GameState
-initialState = GameState Menu initialPlayer [] [] [] 0 0 0 False False (1280, 720) 0 <$> msTime
+initialState :: Settings -> IO GameState
+initialState s = msTime >>= (\time -> return $ GameState Menu initialPlayer [] [] [] 0 0 0 False False (1280, 720) 0 time s)
 
 enemySize :: Float
 enemySize = 48
@@ -67,7 +67,8 @@ data GameState = GameState {
     paused      :: Bool,                    -- Whether the game is paused or not
     windowSize  :: Bounds,                  -- The size of the window
     steps       :: Integer,                 -- The number of steps that have been taken since the game started
-    lastStep    :: Integer                  -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+    lastStep    :: Integer,                 -- The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+    settings    :: Settings                 -- The game settings
 } deriving (Show, Eq)
 
 data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
@@ -181,7 +182,7 @@ data PositionedAnimation = PositionedAnimation {
 } deriving (Show, Eq)
 
 instance Eq Animation where
-    a1 == a2 = frameCount a1 == frameCount a2 && frameDuration a1 == frameDuration a2 && 
+    a1 == a2 = frameCount a1 == frameCount a2 && frameDuration a1 == frameDuration a2 &&
         curFrame a1 == curFrame a2 && animationStep a1 == animationStep a2
 
 instance Show Animation where
@@ -302,8 +303,8 @@ positionAnimation :: Animation -> Position -> PositionedAnimation
 positionAnimation = PositionedAnimation
 
 facing :: GameState -> Movement -> PlayerFacing
-facing gstate m = 
-    let (v, h) = calcMovement m 
+facing gstate m =
+    let (v, h) = calcMovement m
         c = elapsedTime gstate - lastChange m in
             if c > 0.3 && v == 0 -- If the player hasn't changed direction in the last 0.3 seconds and is not moving vertically
                 then if h > 0 then LeftLeft   else if h < 0 then RightRight  else Normal
