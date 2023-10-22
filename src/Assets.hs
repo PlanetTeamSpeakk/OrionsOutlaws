@@ -3,6 +3,7 @@
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
 module Assets (
+    assetScale,
     explosionAnimation, 
     pauseOverlay, 
     fromPlayerFacing, 

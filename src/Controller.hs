@@ -11,7 +11,7 @@ import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
-import Assets (explosionAnimation, laser1, laser2, explosion1, explosion2)
+import Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
 import Audio
 
 -- | Handle one iteration of the game
@@ -178,13 +178,16 @@ inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
     then resumeAllSounds
     else pauseAllSounds
 
-  return $ gstate { paused = not $ paused gstate }
+  return $ gstate { 
+    paused = not $ paused gstate, 
+    player = (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
+  }
 -- Space key, fires a projectile.
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
   if cooldown (player gstate) == 0 && not (paused gstate)
     then do
       let (px, py) = playerPos $ player gstate
-      let proj = createProjectile (px + 24 + 2.5, py) True
+      let proj = createProjectile (px + (24 * assetScale / 2) + 2.5, py) True
       playLaserSound $ vol gstate
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
