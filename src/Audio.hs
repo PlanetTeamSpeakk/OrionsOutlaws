@@ -1,15 +1,17 @@
 {-# LANGUAGE TypeFamilies #-}
-module Audio (Audio.initAudio, finishAudio, playSound, loopSound, getPlaying, stopAllSounds, loopBgMusic) where
+-- | Very simple audio manager.
+module Audio (Audio.initAudio, finishAudio, playSound, loopSound, getPlaying, stopAllSounds, pauseAllSounds, resumeAllSounds, loopBgMusic) where
 
 import Sound.ProteaAudio
 import Assets (bgMusic)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import GHC.IO (unsafePerformIO)
+import Control.Monad (filterM)
 
 initAudio :: IO Bool
 initAudio = Sound.ProteaAudio.initAudio 32 44100 512
 
--- | All sounds currently playing
+-- | All sounds currently playing, internal use only.
 playing :: IORef [Sound]
 playing = unsafePerformIO $ newIORef []
 {-# NOINLINE playing #-}
@@ -25,7 +27,7 @@ addSound sound = do
 getPlaying :: IO [Sound]
 getPlaying = do
     sounds <- readIORef playing
-    let stillActive = filter (unsafePerformIO . soundActive) sounds
+    stillActive <- filterM soundActive sounds
     writeIORef playing stillActive
     return stillActive
 
@@ -33,6 +35,26 @@ stopAllSounds :: IO ()
 stopAllSounds = do
     sounds <- getPlaying
     mapM_ soundStop sounds
+
+pauseAllSounds :: IO ()
+pauseAllSounds = do
+    sounds <- getPlaying
+    mapM_ pauseSound sounds
+
+pauseSound :: Sound -> IO ()
+pauseSound sound = do
+    _ <- soundUpdate sound True 1 1 0 1
+    return ()
+
+resumeAllSounds :: IO ()
+resumeAllSounds = do
+    sounds <- getPlaying
+    mapM_ resumeSound sounds
+
+resumeSound :: Sound -> IO ()
+resumeSound sound = do
+    _ <- soundUpdate sound False 1 1 0 1
+    return ()
 
 playSound :: Sample -> IO ()
 playSound sample = do

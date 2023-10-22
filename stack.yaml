@@ -45,7 +45,7 @@ packages:
 extra-deps:
 # The version of ProteaAudio on Hackage is outdated. The newest version on GitHub has MP3 support.
 - github: csabahruska/proteaaudio
-  commit: aa482067333b01361cc370571c900b76e2267fbb
+  commit: aae6c29ff33659487cdda78007622aaca18bb1aa
   subdirs:
   - proteaaudio
 - gloss-juicy-0.2.3

@@ -175,8 +175,8 @@ inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
 
   -- If the game is already paused, loop the background music, otherwise stop all sounds
   if paused gstate
-    then loopBgMusic
-    else stopAllSounds
+    then resumeAllSounds
+    else pauseAllSounds
 
   return $ gstate { paused = not $ paused gstate }
 -- Space key, fires a projectile.
