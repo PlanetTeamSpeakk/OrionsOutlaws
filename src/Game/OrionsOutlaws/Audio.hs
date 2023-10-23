@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | Very simple audio manager.
-module Audio (Audio.initAudio, finishAudio, playSound, loopSound, getPlaying, stopAllSounds, pauseAllSounds, resumeAllSounds, loopBgMusic) where
+module Game.OrionsOutlaws.Audio (Game.OrionsOutlaws.Audio.initAudio, finishAudio, playSound, loopSound, getPlaying, stopAllSounds, pauseAllSounds, resumeAllSounds, loopBgMusic) where
 
 import Sound.ProteaAudio
-import Assets (bgMusic)
+import Game.OrionsOutlaws.Assets (bgMusic)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import GHC.IO (unsafePerformIO)
 import Control.Monad (filterM)

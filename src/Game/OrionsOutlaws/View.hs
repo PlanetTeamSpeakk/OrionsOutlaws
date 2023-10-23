@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wno-unused-local-binds #-}   -- We have some functions that are only used for debugging that we leave in.
 -- | This module defines how to turn
 --   the game state into a picture
-module View (module View) where
+module Game.OrionsOutlaws.View (module Game.OrionsOutlaws.View) where
 
 import Graphics.Gloss
-import Model
-import Assets
-import Util (msTime)
+import Game.OrionsOutlaws.Model
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, digit, pauseOverlay)
+import Game.OrionsOutlaws.Util (msTime)
 import Data.Bifunctor (Bifunctor(bimap))
 
 -- | Simply calls viewPure with the current stepdelta and the given gamestate

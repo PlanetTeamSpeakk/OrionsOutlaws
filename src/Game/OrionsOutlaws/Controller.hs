@@ -1,18 +1,18 @@
 -- | This module defines how the state changes
 --   in response to time and user input
-module Controller (module Controller) where
+module Game.OrionsOutlaws.Controller (module Game.OrionsOutlaws.Controller) where
 
-import Model
+import Game.OrionsOutlaws.Model
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger (debugM)
-import View (onScreen, inBounds)
-import Util (msTime, randomElem)
+import Game.OrionsOutlaws.View (onScreen, inBounds)
+import Game.OrionsOutlaws.Util (msTime, randomElem)
 import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
-import Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
-import Audio
+import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
+import Game.OrionsOutlaws.Audio
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState

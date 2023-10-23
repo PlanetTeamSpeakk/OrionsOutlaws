@@ -1,10 +1,10 @@
 -- | This module contains the data types
 --   which represent the state of the game
-module Model (module Model) where
+module Game.OrionsOutlaws.Model (module Game.OrionsOutlaws.Model) where
 
 import System.Log.Formatter (tfLogFormatter, LogFormatter)
 import System.Log.Logger (rootLoggerName)
-import Util (msTime, lerp)
+import Game.OrionsOutlaws.Util (msTime, lerp)
 import Data.Ord (clamp)
 import Data.Bifunctor (bimap)
 import Graphics.Gloss.Data.Picture (Picture)
@@ -189,7 +189,7 @@ instance Show Animation where
     show a = "Animation { frameCount = " ++ show (frameCount a) ++ ", frameDuration = " ++ show (frameDuration a) ++
         ", curFrame = " ++ show (curFrame a) ++ ", animationStep = " ++ show (animationStep a) ++ " }"
 
-data PlayerFacing = LeftLeft | Left | Normal | Right | RightRight deriving (Show, Eq)
+data PlayerFacing = FacingLeftLeft | FacingLeft | FacingNormal | FacingRight | FacingRightRight deriving (Show, Eq)
 
 data ShipFrame = First | Second deriving (Show, Eq)
 
@@ -311,5 +311,5 @@ facing gstate m =
     let (v, h) = calcMovement m
         c = elapsedTime gstate - lastChange m in
             if c > 0.3 && v == 0 -- If the player hasn't changed direction in the last 0.3 seconds and is not moving vertically
-                then if h > 0 then LeftLeft   else if h < 0 then RightRight  else Normal
-                else if h > 0 then Model.Left else if h < 0 then Model.Right else Normal
+                then if h > 0 then FacingLeftLeft else if h < 0 then FacingRightRight else FacingNormal
+                else if h > 0 then FacingLeft     else if h < 0 then FacingRight      else FacingNormal

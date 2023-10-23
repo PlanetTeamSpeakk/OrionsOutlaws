@@ -2,7 +2,7 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Assets (
+module Game.OrionsOutlaws.Assets (
     assetScale,
     explosionAnimation, 
     pauseOverlay, 
@@ -17,7 +17,7 @@ import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
 import Data.FileEmbed -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
 import Codec.BMP (parseBMP)
-import Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
+import Game.OrionsOutlaws.Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
 import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
@@ -71,16 +71,16 @@ ship :: Int -> Int -> Picture
 ship c r = rotate 90 $ scale assetScale assetScale $ bitmapSection (Rectangle (c * 16, r * 24) (16, 24)) shipSheet
 
 fromPlayerFacing :: PlayerFacing -> ShipFrame -> Picture
-fromPlayerFacing LeftLeft    First  = ship 0 0
-fromPlayerFacing LeftLeft    Second = ship 0 1
-fromPlayerFacing Model.Left  First  = ship 1 0
-fromPlayerFacing Model.Left  Second = ship 1 1
-fromPlayerFacing Normal      First  = ship 2 0
-fromPlayerFacing Normal      Second = ship 2 1
-fromPlayerFacing Model.Right First  = ship 3 0
-fromPlayerFacing Model.Right Second = ship 3 1
-fromPlayerFacing RightRight  First  = ship 4 0
-fromPlayerFacing RightRight  Second = ship 4 1
+fromPlayerFacing FacingLeftLeft    First  = ship 0 0
+fromPlayerFacing FacingLeftLeft    Second = ship 0 1
+fromPlayerFacing FacingLeft        First  = ship 1 0
+fromPlayerFacing FacingLeft        Second = ship 1 1
+fromPlayerFacing FacingNormal      First  = ship 2 0
+fromPlayerFacing FacingNormal      Second = ship 2 1
+fromPlayerFacing FacingRight       First  = ship 3 0
+fromPlayerFacing FacingRight       Second = ship 3 1
+fromPlayerFacing FacingRightRight  First  = ship 4 0
+fromPlayerFacing FacingRightRight  Second = ship 4 1
 
 
 -- Digits spritesheet

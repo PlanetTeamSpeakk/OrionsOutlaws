@@ -1,8 +1,10 @@
 module Main (main) where
 
-import Controller
-import Model
-import View
+import Game.OrionsOutlaws.Controller
+import Game.OrionsOutlaws.Model
+import Game.OrionsOutlaws.View
+import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic)
+import Game.OrionsOutlaws.Data
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger
@@ -10,8 +12,6 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
-import Audio (initAudio, finishAudio, loopBgMusic)
-import Data
 import Data.Bifunctor (Bifunctor(bimap))
 
 main :: IO ()
@@ -41,7 +41,7 @@ main = do
   state <- initialState s
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
-      (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Model.windowSize state
+      (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Game.OrionsOutlaws.Model.windowSize state
 
   -- Center screen
   playIO (InWindow "Orion's Outlaws" (windowWidth * 2, windowHeight * 2)

@@ -25,13 +25,13 @@ source-repository head
 
 library
   exposed-modules:
-      Assets
-      Audio
-      Controller
-      Data
-      Model
-      Util
-      View
+      Game.OrionsOutlaws.Assets
+      Game.OrionsOutlaws.Audio
+      Game.OrionsOutlaws.Controller
+      Game.OrionsOutlaws.Data
+      Game.OrionsOutlaws.Model
+      Game.OrionsOutlaws.Util
+      Game.OrionsOutlaws.View
   other-modules:
       Paths_OrionsOutlaws
   autogen-modules:
