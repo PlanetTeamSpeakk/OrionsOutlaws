@@ -5,6 +5,7 @@ import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.View
 import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic)
 import Game.OrionsOutlaws.Data
+import Game.OrionsOutlaws.Assets (pixeboyFont)
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger
@@ -37,6 +38,8 @@ main = do
   scs <- initAudio
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
   loopBgMusic $ volume s
+
+  debugM debugLog $ "Pixeboy: " ++ show pixeboyFont
 
   state <- initialState s
   size <- getScreenSize

@@ -35,6 +35,8 @@ dependencies:
 - proteaaudio
 - aeson
 - aeson-pretty
+- containers
+- split
 
 ghc-options:
 - -Wall

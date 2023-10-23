@@ -4,6 +4,7 @@
 -- | Assets are packed using file-embed
 module Game.OrionsOutlaws.Assets (
     assetScale,
+    pixeboyFont,
     explosionAnimation, 
     pauseOverlay, 
     fromPlayerFacing, 
@@ -22,6 +23,7 @@ import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
 import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
 import System.IO.Unsafe (unsafePerformIO)
+import Game.OrionsOutlaws.Font (Font, loadFont)
 
 -- Helper function for turning bytestrings into bitmapdata
 loadBMPData :: ByteString -> BitmapData
@@ -39,6 +41,10 @@ loadPNG bstr = case decodePng bstr of
 
 assetScale :: Float
 assetScale = 4
+
+-- Pixeboy font
+pixeboyFont :: Font
+pixeboyFont = loadFont $(embedStringFile "assets/fonts/pixeboy.fnt") $(embedFile "assets/fonts/pixeboy.bmp")
 
 -- IMAGES
 --- Spritesheets
