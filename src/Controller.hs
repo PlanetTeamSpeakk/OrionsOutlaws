@@ -173,17 +173,28 @@ inputKey :: Event -> GameState -> IO GameState
 inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
 
-  -- If the game is already paused, loop the background music, otherwise stop all sounds
+  -- Pause/resume all sounds
   if paused gstate
     then resumeAllSounds
     else pauseAllSounds
 
   return $ gstate { 
     paused = not $ paused gstate, 
-    player = (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
+    player = if paused gstate then player gstate else 
+      (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
   }
--- Space key, fires a projectile.
-inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
+-- Configurable keys (fire and movement)
+inputKey (EventKey key down _ _) gstate@GameState { settings = s }
+  | key == fireKey     s = fireProjectile gstate
+  | key == forwardKey  s = return $ moveForward  gstate $ down == Down
+  | key == backwardKey s = return $ moveBackward gstate $ down == Down
+  | key == leftKey     s = return $ moveLeft     gstate $ down == Down
+  | key == rightKey    s = return $ moveRight    gstate $ down == Down
+-- Fallback
+inputKey _ gstate = return gstate
+
+fireProjectile :: GameState -> IO GameState
+fireProjectile gstate = do
   if cooldown (player gstate) == 0 && not (paused gstate)
     then do
       let (px, py) = playerPos $ player gstate
@@ -192,25 +203,17 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = do
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do
       return gstate
--- Movement keys, move the player.
-inputKey (EventKey key down _ _) gstate@GameState{ settings = s }
-  | key == forwardKey  s = return $ moveForward  gstate $ down == Down
-  | key == backwardKey s = return $ moveBackward gstate $ down == Down
-  | key == leftKey     s = return $ moveLeft     gstate $ down == Down
-  | key == rightKey    s = return $ moveRight    gstate $ down == Down
--- Fallback
-inputKey _ gstate = return gstate
 
-moveForward :: GameState -> Bool -> GameState
+moveForward   :: GameState -> Bool -> GameState
 moveForward  gstate isDown = movePlayer gstate (\m -> m { forward = isDown })
 
-moveBackward :: GameState -> Bool -> GameState
+moveBackward  :: GameState -> Bool -> GameState
 moveBackward gstate isDown = movePlayer gstate (\m -> m { backward = isDown })
 
-moveLeft :: GameState -> Bool -> GameState
+moveLeft      :: GameState -> Bool -> GameState
 moveLeft     gstate isDown = movePlayer gstate (\m -> m { left = isDown })
 
-moveRight :: GameState -> Bool -> GameState
+moveRight     :: GameState -> Bool -> GameState
 moveRight    gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
 -- | Sets the player's movement. Does not directly modify the position, that's done in the next step.

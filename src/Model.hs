@@ -197,6 +197,7 @@ data Alignment = LeftToRight | RightToLeft deriving (Show, Eq)
 
 -- Game settings that stores anything the user can change.
 data Settings = Settings {
+    fireKey     :: Key,
     forwardKey  :: Key,
     backwardKey :: Key,
     leftKey     :: Key,
@@ -207,6 +208,7 @@ data Settings = Settings {
 -- Default settings
 defaultSettings :: Settings
 defaultSettings = Settings {
+    fireKey     = Char ' ',
     forwardKey  = Char 'w',
     backwardKey = Char 's',
     leftKey     = Char 'a',
