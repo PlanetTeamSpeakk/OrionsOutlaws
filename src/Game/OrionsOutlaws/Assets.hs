@@ -27,17 +27,16 @@ import Game.OrionsOutlaws.Font (Font, loadFont)
 
 -- Helper function for turning bytestrings into bitmapdata
 loadBMPData :: ByteString -> BitmapData
-loadBMPData bstr =
-    case parseBMP $ fromStrict bstr of
-        Prelude.Left err -> error $ show err
-        Prelude.Right bmp -> bitmapDataOfBMP bmp
+loadBMPData bstr = case parseBMP $ fromStrict bstr of
+  Left err  -> error $ show err
+  Right bmp -> bitmapDataOfBMP bmp
 
 loadPNG :: ByteString -> Picture
 loadPNG bstr = case decodePng bstr of
-    Prelude.Left err -> error err
-    Prelude.Right pic -> case fromDynamicImage pic of
-        Nothing -> error "Could not load image"
-        Just p -> p
+  Left err -> error err
+  Right pic -> case fromDynamicImage pic of
+    Nothing -> error "Could not load image"
+    Just p -> p
 
 assetScale :: Float
 assetScale = 4
@@ -60,7 +59,7 @@ explosionFrame 1 = explosionFrame' 1
 explosionFrame 2 = explosionFrame' 2
 explosionFrame 3 = explosionFrame' 3
 explosionFrame 4 = explosionFrame' 4
-explosionFrame _ = explosionFrame 0
+explosionFrame n = explosionFrame $ n `mod` 5
 
 explosionFrame' :: Int -> Picture
 explosionFrame' n = scale assetScale assetScale $ bitmapSection (Rectangle (n * 16, 0) (16, 16)) explosionSheet

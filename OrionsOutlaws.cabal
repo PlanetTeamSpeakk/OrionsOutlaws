@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -49,6 +49,7 @@ library
     , base >=4.7 && <5
     , bmp
     , bytestring
+    , containers
     , file-embed
     , gloss
     , gloss-juicy
@@ -78,6 +79,7 @@ executable OrionsOutlaws-exe
     , base >=4.7 && <5
     , bmp
     , bytestring
+    , containers
     , file-embed
     , gloss
     , gloss-juicy
@@ -108,6 +110,7 @@ test-suite OrionsOutlaws-test
     , base >=4.7 && <5
     , bmp
     , bytestring
+    , containers
     , file-embed
     , gloss
     , gloss-juicy
