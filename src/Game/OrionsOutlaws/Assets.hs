@@ -45,7 +45,7 @@ assetScale = 4
 
 -- Pixeboy font
 pixeboyFont :: Font
-pixeboyFont = loadFont $(embedStringFile "assets/fonts/pixeboy.fnt") $(embedFile "assets/fonts/pixeboy.bmp")
+pixeboyFont = loadFont $(embedStringFile "assets/fonts/pixeboy.fnt") $ loadBMPData $(embedFile "assets/fonts/pixeboy.bmp")
 
 -- IMAGES
 --- Spritesheets

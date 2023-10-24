@@ -13,10 +13,8 @@ module Game.OrionsOutlaws.Font
   ) where
 
 import Data.Map (Map, fromList, (!), lookup, member)
-import Data.ByteString (ByteString, fromStrict)
 import Data.List (isPrefixOf, intercalate)
-import Graphics.Gloss.Data.Bitmap (BitmapData, bitmapDataOfBMP)
-import Codec.BMP (parseBMP)
+import Graphics.Gloss.Data.Bitmap (BitmapData, bitmapSize)
 import Data.List.Split (splitOn)
 import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection)
 import Graphics.Gloss (pictures, Rectangle (Rectangle))
@@ -36,10 +34,9 @@ data Glyph = Glyph
 
 data TextAlignment = LeftToRight | RightToLeft deriving (Show, Eq)
 
-loadFont :: String -> ByteString -> Font
-loadFont metadata spritesheet = case parseBMP $ fromStrict spritesheet of
-  Left err -> error $ show err -- Couldn't parse font spritesheet
-  Right bmp -> Font (bitmapDataOfBMP bmp) $ ensureHasSpace parseMetadata
+-- | Loads a font from metadata and a spritesheet.
+loadFont :: String -> BitmapData -> Font
+loadFont metadata spritesheet = Font spritesheet $ ensureHasSpace parseMetadata
   where
     -- | Ensure that the font has a space glyph, otherwise throw an error.
     --   When creating a font map using Sprite Font Builder, this should always be included.
@@ -99,8 +96,8 @@ charWidth font c = glyphAdvance $ getGlyph font c
 --   direction in which the rendering is done and which character is considered
 --   the origin are different.
 renderString :: TextAlignment -> Font -> String -> Picture
-renderString LeftToRight f s = renderString' f   1  s id
-renderString RightToLeft f s = renderString' f (-1) s reverse
+renderString LeftToRight f s = renderString' f   1  s reverse
+renderString RightToLeft f s = renderString' f (-1) s id
 
 renderString' :: Font -> Float -> String -> ([Glyph] -> [Glyph])  -> Picture
 renderString' font m s f = let glyphs = map (getGlyph font) s in
@@ -117,7 +114,11 @@ renderChar f c = renderGlyph (fontSheet f) $ getGlyph f c
 
 -- | Renders a Glyph into a picture using a spritesheet.
 renderGlyph :: BitmapData -> Glyph -> Picture
-renderGlyph sheet g = bitmapSection (Rectangle (glyphPos g) (glyphWidth g, glyphHeight g)) sheet
+renderGlyph sheet Glyph { glyphWidth = gw, glyphHeight = gh, glyphPos = (gx, gy) } = 
+  -- In Gloss, (0, 0) is the bottom left rather than the bottom right.
+  -- We need to correct that here.
+  let sheetHeight = fst $ bitmapSize sheet in
+    bitmapSection (Rectangle (gx, sheetHeight - gy - gh) (gw, gh)) sheet
 
 -- | Renders a string into a picture, centered around the center of the text.
 renderStringCentered :: Font -> String -> Picture

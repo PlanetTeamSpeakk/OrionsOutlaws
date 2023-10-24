@@ -5,9 +5,10 @@ module Game.OrionsOutlaws.View (module Game.OrionsOutlaws.View) where
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, digit, pauseOverlay)
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, digit, pixeboyFont)
 import Game.OrionsOutlaws.Util (msTime)
 import Data.Bifunctor (Bifunctor(bimap))
+import Game.OrionsOutlaws.Font (renderStringCentered, TextAlignment (..))
 
 -- | Simply calls viewPure with the current stepdelta and the given gamestate
 view :: GameState -> IO Picture
@@ -71,7 +72,7 @@ viewPure sd gstate = pictures [
                 pictures [
                         -- Background
                         color (withAlpha 0.5 black) $ uncurry rectangleSolid $ bimap fromIntegral fromIntegral $ windowSize gstate,
-                        scale s s pauseOverlay -- Text
+                        scale s s $ translate 0 200 $ scale 2 2 $ renderStringCentered pixeboyFont "PAUSED"
                     ]
             | otherwise = blank
 
@@ -92,7 +93,7 @@ digs x = digs' x
 --   The digits themselves will always be rendered in the same order, but the
 --   direction in which the rendering is done and which digit is considered
 --   the origin are different.
-renderNumber :: Alignment -> Int -> Picture
+renderNumber :: TextAlignment -> Int -> Picture
 renderNumber LeftToRight n = renderNumber'   1  n id
 renderNumber RightToLeft n = renderNumber' (-1) n reverse
 

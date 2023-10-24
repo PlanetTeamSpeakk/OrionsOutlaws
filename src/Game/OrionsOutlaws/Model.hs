@@ -98,14 +98,16 @@ data Enemy =
         prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the enemy
         enemyMovement   :: Movement,    -- Enemy's movement
         enemyCooldown   :: Int          -- How many steps until the enemy can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
-    } |
-    BossEnemy { -- Boss enemy, will not move in a straight line, but rather anywhere on the field and shoot at the player.
-        enemyPos        :: Position,    -- Boss' position on the field
-        prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the boss
-        enemyCooldown   :: Int,         -- How many steps until the boss can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
-        enemyMovement   :: Movement,    -- Enemy's movement
-        bossHealth      :: Int          -- Boss' health. Will be between 0 and 10
-    } deriving (Show, Eq)
+    } 
+    -- |
+    -- BossEnemy { -- Boss enemy, will not move in a straight line, but rather anywhere on the field and shoot at the player.
+    --     enemyPos        :: Position,    -- Boss' position on the field
+    --     prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the boss
+    --     enemyCooldown   :: Int,         -- How many steps until the boss can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
+    --     enemyMovement   :: Movement,    -- Enemy's movement
+    --     bossHealth      :: Int          -- Boss' health. Will be between 0 and 10
+    -- } 
+    deriving (Show, Eq)
 
 data Projectile = RegularProjectile {
     projPos         :: Position,    -- Projectile's position on the field
@@ -160,7 +162,7 @@ instance Collidable Player where
 
 instance Collidable Enemy where
     createBoxes (RegularEnemy (x, y) _ _ _) = [((x - 20, y - 20), (x + 20, y + 20))]
-    createBoxes (BossEnemy (_, _) _ _ _ _)  = undefined -- TODO - Implement this
+    -- createBoxes (BossEnemy (_, _) _ _ _ _)  = undefined -- TODO - Implement this
 
 instance Collidable Projectile where
     createBoxes (RegularProjectile (x, y) _ _ _ _) = [((x - 5, y - 5), (x + 5, y + 5))]
@@ -192,8 +194,6 @@ instance Show Animation where
 data PlayerFacing = FacingLeftLeft | FacingLeft | FacingNormal | FacingRight | FacingRightRight deriving (Show, Eq)
 
 data ShipFrame = First | Second deriving (Show, Eq)
-
-data Alignment = LeftToRight | RightToLeft deriving (Show, Eq)
 
 -- Game settings that stores anything the user can change.
 data Settings = Settings {
