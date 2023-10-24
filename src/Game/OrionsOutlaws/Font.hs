@@ -7,6 +7,8 @@ module Game.OrionsOutlaws.Font
   , getGlyph          -- | Get the glyph for a given character.
   , renderString      -- | Render a string into a picture.
   , renderChar        -- | Render a single character into a picture.
+  , stringWidth       -- | Get the width of a string in pixels when rendered with the given font.
+  , renderStringCentered -- | Renders a string into a picture, centered around the center of the text.
   ) where
 
 import Data.Map (Map, fromList, (!), lookup, member)
@@ -27,6 +29,7 @@ data Glyph = Glyph
   { glyphWidth   :: Int
   , glyphHeight  :: Int
   , glyphPos     :: (Int, Int)
+  , glyphOffset  :: (Int, Int)
   , glyphAdvance :: Int
   } deriving (Eq, Show)
 
@@ -52,14 +55,20 @@ loadFont metadata spritesheet = case parseBMP $ fromStrict spritesheet of
 
     -- | Parse a line of metadata into a Glyph
     parseGlyph :: String -> (Char, Glyph)
-    parseGlyph line = let props = parseLine line in
+    parseGlyph line =
       -- The letter is encapsulated in double quotes, use init $ tail to remove em.
       (let l = init $ tail $ props ! "letter" in if l == "space" then ' ' else head l, 
         Glyph 
-          (read $ props ! "width")                  -- Glyph width
-          (read $ props ! "height")                 -- Glyph height
-          (read $ props ! "x", read $ props ! "y")  -- Glyph position in sheet
-          (read $ props ! "xadvance"))              -- Glyph "width" when rendering
+          (intProp "width")                  -- Glyph width
+          (intProp "height")                 -- Glyph height
+          (intProp "x", intProp "y")  -- Glyph position in sheet
+          (intProp "xoffset", intProp "yoffset") -- Glyph offset for rendering`
+          (intProp "xadvance"))              -- Glyph "width" when rendering
+      where
+        props = parseLine line
+
+        intProp :: String -> Int
+        intProp p = read $ props ! p
     
     -- | Parse a line of metadata into a map of properties.
     parseLine :: String -> Map String String
@@ -73,6 +82,13 @@ getGlyph font c = case Data.Map.lookup c $ fontGlyphs font of
 
 -- renderString :: TextAlignment -> Font -> String -> Picture
 -- renderString font a str = undefined
+
+-- | Get the width of a string in pixels when rendered with the given font.
+stringWidth :: Font -> String -> Int
+stringWidth font str = sum $ map (glyphAdvance . getGlyph font) str
+
+charWidth :: Font -> Char -> Int
+charWidth font c = glyphAdvance $ getGlyph font c
 
 -- | Renders a string into a picture.
 --   The string can be rendered either from left to right or from right to left.
@@ -90,10 +106,17 @@ renderString' font m s f = let glyphs = map (getGlyph font) s in
     renderGlyph' :: Glyph -> (Float, [Picture]) -> (Float, [Picture])
     renderGlyph' g (offset, ps) = let glyphOffset = m * fromIntegral (glyphAdvance g) in 
       (offset + glyphOffset, translate offset 0 (renderGlyph (fontSheet font) g) : ps)
-  --(zipWith (\i glyph -> translate (i * m * fromIntegral (glyphAdvance glyph)) 0 $ renderGlyph (fontSheet font) glyph) [0 ..] (f glyphs))
 
+-- | Renders a single character into a picture.
+--   Converts the character to a Glyph and renders it with renderGlyph.
 renderChar :: Font -> Char -> Picture
 renderChar f c = renderGlyph (fontSheet f) $ getGlyph f c
 
+-- | Renders a Glyph into a picture using a spritesheet.
 renderGlyph :: BitmapData -> Glyph -> Picture
 renderGlyph sheet g = bitmapSection (Rectangle (glyphPos g) (glyphWidth g, glyphHeight g)) sheet
+
+-- | Renders a string into a picture, centered around the center of the text.
+renderStringCentered :: Font -> String -> Picture
+-- TODO this is not quite centered, but it's close enough for now
+renderStringCentered f s = translate (-fromIntegral (stringWidth f s) / 2) 0 $ renderString LeftToRight f s

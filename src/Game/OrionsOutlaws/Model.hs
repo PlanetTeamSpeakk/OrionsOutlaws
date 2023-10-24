@@ -8,7 +8,7 @@ import Game.OrionsOutlaws.Util (msTime, lerp)
 import Data.Ord (clamp)
 import Data.Bifunctor (bimap)
 import Graphics.Gloss.Data.Picture (Picture)
-import Graphics.Gloss.Interface.IO.Game (Key (..))
+import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -208,7 +208,7 @@ data Settings = Settings {
 -- Default settings
 defaultSettings :: Settings
 defaultSettings = Settings {
-    fireKey     = Char ' ',
+    fireKey     = SpecialKey KeySpace,
     forwardKey  = Char 'w',
     backwardKey = Char 's',
     leftKey     = Char 'a',

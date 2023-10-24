@@ -5,11 +5,11 @@
 module Game.OrionsOutlaws.Assets (
     assetScale,
     pixeboyFont,
-    explosionAnimation, 
-    pauseOverlay, 
-    fromPlayerFacing, 
-    digit, 
-    bgMusic, 
+    explosionAnimation,
+    pauseOverlay,
+    fromPlayerFacing,
+    digit,
+    bgMusic,
     laserOld, laser1, laser2,
     explosion1, explosion2
     ) where
@@ -24,6 +24,7 @@ import Graphics.Gloss.Juicy (fromDynamicImage)
 import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
 import System.IO.Unsafe (unsafePerformIO)
 import Game.OrionsOutlaws.Font (Font, loadFont)
+import Data.Maybe (fromMaybe)
 
 -- Helper function for turning bytestrings into bitmapdata
 loadBMPData :: ByteString -> BitmapData
@@ -31,13 +32,14 @@ loadBMPData bstr = case parseBMP $ fromStrict bstr of
   Left err  -> error $ show err
   Right bmp -> bitmapDataOfBMP bmp
 
+-- | Attempts to load a ByteString representing a PNG into a Picture.
+--   If the bytestring is not a valid PNG, returns a blank picture.
 loadPNG :: ByteString -> Picture
 loadPNG bstr = case decodePng bstr of
-  Left err -> error err
-  Right pic -> case fromDynamicImage pic of
-    Nothing -> error "Could not load image"
-    Just p -> p
+  Left _    -> blank
+  Right pic -> fromMaybe blank (fromDynamicImage pic)
 
+-- | The value assets are scaled by when displayed in the game.
 assetScale :: Float
 assetScale = 4
 
