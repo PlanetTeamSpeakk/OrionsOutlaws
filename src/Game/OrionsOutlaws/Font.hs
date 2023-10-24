@@ -1,5 +1,5 @@
 -- | Utility module for loading fonts created with Sprite Font Builder (https://www.johnwordsworth.com/projects/sprite-font-builder/)
-module Game.OrionsOutlaws.Font 
+module Game.OrionsOutlaws.Font
   ( Font                 -- | The main font type, contains the glyphs and some metadata.
   , Glyph                -- | A single glyph, contains necessary information for rendering.
   , TextAlignment(..)    -- | The alignment of the text.
@@ -14,7 +14,7 @@ module Game.OrionsOutlaws.Font
 
 import Data.Map (Map, fromList, (!), lookup, member)
 import Data.ByteString (ByteString, fromStrict)
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf, intercalate)
 import Graphics.Gloss.Data.Bitmap (BitmapData, bitmapDataOfBMP)
 import Codec.BMP (parseBMP)
 import Data.List.Split (splitOn)
@@ -58,8 +58,8 @@ loadFont metadata spritesheet = case parseBMP $ fromStrict spritesheet of
     parseGlyph :: String -> (Char, Glyph)
     parseGlyph line =
       -- The letter is encapsulated in double quotes, use init $ tail to remove em.
-      (let l = init $ tail $ props ! "letter" in if l == "space" then ' ' else head l, 
-        Glyph 
+      (let l = init $ tail $ props ! "letter" in if l == "space" then ' ' else head l,
+        Glyph
           (intProp "width")                  -- Glyph width
           (intProp "height")                 -- Glyph height
           (intProp "x", intProp "y")  -- Glyph position in sheet
@@ -70,10 +70,15 @@ loadFont metadata spritesheet = case parseBMP $ fromStrict spritesheet of
 
         intProp :: String -> Int
         intProp p = read $ props ! p
-    
+
     -- | Parse a line of metadata into a map of properties.
     parseLine :: String -> Map String String
-    parseLine line = fromList $ map (\s -> let l = splitOn "=" s in (head l, head $ tail l)) $ filter (elem '=') $ words line
+    parseLine line = fromList $ map parseProp $ filter (elem '=') $ words line
+      where
+        -- | Parse a property into a key-value pair.
+        --   Ensures that properties with an '=' in their value are not split.
+        parseProp :: String -> (String, String)
+        parseProp prop = let l = splitOn "=" prop in (head l, intercalate "=" $ tail l)
 
 -- | Get the glyph for the given character.
 getGlyph :: Font -> Char -> Glyph
@@ -98,11 +103,11 @@ renderString LeftToRight f s = renderString' f   1  s id
 renderString RightToLeft f s = renderString' f (-1) s reverse
 
 renderString' :: Font -> Float -> String -> ([Glyph] -> [Glyph])  -> Picture
-renderString' font m s f = let glyphs = map (getGlyph font) s in 
+renderString' font m s f = let glyphs = map (getGlyph font) s in
   pictures $ snd $ foldr renderGlyph' (0, []) (f glyphs)
   where
     renderGlyph' :: Glyph -> (Float, [Picture]) -> (Float, [Picture])
-    renderGlyph' g (offset, ps) = let glyphOffset = m * fromIntegral (glyphAdvance g) in 
+    renderGlyph' g (offset, ps) = let glyphOffset = m * fromIntegral (glyphAdvance g) in
       (offset + glyphOffset, translate offset 0 (renderGlyph (fontSheet font) g) : ps)
 
 -- | Renders a single character into a picture.
@@ -117,6 +122,6 @@ renderGlyph sheet g = bitmapSection (Rectangle (glyphPos g) (glyphWidth g, glyph
 -- | Renders a string into a picture, centered around the center of the text.
 renderStringCentered :: Font -> String -> Picture
 -- Text is centered around the center of the first character, 
--- so we have to offset it by half the width of the first character
-renderStringCentered f s = translate ((-fromIntegral (stringWidth f s) + fromIntegral (charWidth f $ head s)) / 2) 0 $ 
+-- so we have to offset it by half the width of the text minus half the width of the first character.
+renderStringCentered f s = translate ((-fromIntegral (stringWidth f s) + fromIntegral (charWidth f $ head s)) / 2) 0 $
   renderString LeftToRight f s
