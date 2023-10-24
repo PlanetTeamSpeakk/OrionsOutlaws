@@ -5,6 +5,7 @@ import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.View
 import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic)
 import Game.OrionsOutlaws.Data
+import Game.OrionsOutlaws.Tasks (runAndClearTasks)
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger
@@ -47,12 +48,17 @@ main = do
   playIO (InWindow "Orion's Outlaws" (windowWidth * 2, windowHeight * 2)
       -- Ensure that the window is centered
       (screenWidth - windowWidth, screenHeight - windowHeight))
-    white       -- Background color
-    stepsPerSec -- Steps (ticks) per second
-    state       -- Initial state
-    view        -- View function
-    input       -- Event function
-    step        -- Step function
+    white           -- Background color
+    stepsPerSec     -- Steps (ticks) per second
+    state           -- Initial state
+    view            -- View function
+    input           -- Event function
+    runTasksAndStep -- Step function
   
   debugM debugLog "Exiting"
   finishAudio -- Shutdown audio system
+
+runTasksAndStep :: Float -> GameState -> IO GameState
+runTasksAndStep sd gstate = do
+  gstate' <- runAndClearTasks gstate
+  step sd gstate'

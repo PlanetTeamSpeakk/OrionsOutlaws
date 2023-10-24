@@ -16,8 +16,8 @@ import Data.Map (Map, fromList, (!), lookup, member)
 import Data.List (isPrefixOf, intercalate)
 import Graphics.Gloss.Data.Bitmap (BitmapData, bitmapSize)
 import Data.List.Split (splitOn)
-import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection)
-import Graphics.Gloss (pictures, Rectangle (Rectangle))
+import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, color)
+import Graphics.Gloss (pictures, Rectangle (Rectangle), red)
 
 data Font = Font
   { fontSheet  :: BitmapData
@@ -28,7 +28,6 @@ data Glyph = Glyph
   { glyphWidth   :: Int
   , glyphHeight  :: Int
   , glyphPos     :: (Int, Int)
-  , glyphOffset  :: (Int, Int)
   , glyphAdvance :: Int
   } deriving (Eq, Show)
 
@@ -57,11 +56,10 @@ loadFont metadata spritesheet = Font spritesheet $ ensureHasSpace parseMetadata
       -- The letter is encapsulated in double quotes, use init $ tail to remove em.
       (let l = init $ tail $ props ! "letter" in if l == "space" then ' ' else head l,
         Glyph
-          (intProp "width")                  -- Glyph width
-          (intProp "height")                 -- Glyph height
-          (intProp "x", intProp "y")  -- Glyph position in sheet
-          (intProp "xoffset", intProp "yoffset") -- Glyph offset for rendering`
-          (intProp "xadvance"))              -- Glyph "width" when rendering
+          (intProp "width")                      -- Glyph width
+          (intProp "height")                     -- Glyph height
+          (intProp "x", intProp "y")             -- Glyph position in sheet
+          (intProp "xadvance"))                  -- Glyph "width" when rendering
       where
         props = parseLine line
 
@@ -105,12 +103,12 @@ renderString RightToLeft f s = renderString' f (-1) s id
 --   outputs a picture representing the given text.
 renderString' :: Font -> Float -> String -> ([Glyph] -> [Glyph])  -> Picture
 renderString' font m s f = let glyphs = map (getGlyph font) s in -- Translate all chars to glyphs
-  pictures $ snd $ foldr renderGlyph' (0, []) (f glyphs)         -- Render all glyphs and combine them into one picture
+  pictures $ snd $ foldr renderGlyph' (0, []) $ f glyphs         -- Render all glyphs and combine them into one picture
   where
     -- | Renders a single glyph while keeping track of the horizontal offset.
     renderGlyph' :: Glyph -> (Float, [Picture]) -> (Float, [Picture])
-    renderGlyph' g (offset, ps) = let glyphOffset = m * fromIntegral (glyphAdvance g) in
-      (offset + glyphOffset, translate offset 0 (renderGlyph (fontSheet font) g) : ps)
+    renderGlyph' g (offset, ps) = (offset + (m * fromIntegral (glyphAdvance g)), 
+      color red (translate offset 0 (renderGlyph (fontSheet font) g)) : ps)
 
 -- | Renders a single character into a picture.
 --   Converts the character to a Glyph and renders it with renderGlyph.

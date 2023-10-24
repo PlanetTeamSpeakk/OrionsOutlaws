@@ -13,6 +13,10 @@ import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
 import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
 import Game.OrionsOutlaws.Audio
+import Control.Monad (when)
+import Data.Maybe (isJust, fromJust)
+import Game.OrionsOutlaws.UI.Base (handleClick)
+import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -156,17 +160,20 @@ input :: Event -> GameState -> IO GameState
 input e@(EventKey (MouseButton _) Down _ _) gstate = inputMouse e gstate
 -- Keyboard events (both special and chars)
 input e@(EventKey {}) gstate = inputKey e gstate
+input e@(EventMotion {}) gstate = return $ inputMouseMove e gstate
 -- Resize event
 input (EventResize (nx, ny)) gstate = return gstate { windowSize = (nx, ny) }
--- Any other event
-input _ gstate = return gstate
 
 inputMouse :: Event -> GameState -> IO GameState
 -- Mouse button pressed, doesn't do anything for now.
 inputMouse (EventKey (MouseButton btn) Down _ (x, y)) gstate = do
-  debugM debugLog $ "Mouse pressed " ++ unwords [show btn, show x, show y]
+  when (btn == LeftButton && isJust (activeUI gstate)) $ handleClick (fromJust $ activeUI gstate) (x, y)
   return gstate
 inputMouse _ gstate = return gstate
+
+inputMouseMove :: Event -> GameState -> GameState
+inputMouseMove (EventMotion mPos) gstate = gstate { mousePos = mPos }
+inputMouseMove _ gstate = gstate
 
 inputKey :: Event -> GameState -> IO GameState
 -- Escape key, pauses the game.
@@ -178,9 +185,10 @@ inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
     then resumeAllSounds
     else pauseAllSounds
 
-  return $ gstate { 
-    paused = not $ paused gstate, 
-    player = if paused gstate then player gstate else 
+  return $ gstate {
+    paused = not $ paused gstate,
+    activeUI = if paused gstate then Nothing else Just pausedUI,
+    player = if paused gstate then player gstate else
       (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
   }
 -- Configurable keys (fire and movement)
@@ -226,11 +234,11 @@ vol :: GameState -> Float
 vol GameState { settings = Settings { volume = v } } = v
 
 playLaserSound :: Float -> IO ()
-playLaserSound v = do 
+playLaserSound v = do
   sound <- randomElem [laser1, laser2]
   playSound v sound
 
 playExplosionSound :: Float -> IO ()
-playExplosionSound v = do 
+playExplosionSound v = do
   sound <- randomElem [explosion1, explosion2]
   playSound v sound

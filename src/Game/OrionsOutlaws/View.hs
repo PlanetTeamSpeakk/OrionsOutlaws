@@ -7,6 +7,7 @@ import Graphics.Gloss
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont)
 import Game.OrionsOutlaws.Util (msTime)
+import Game.OrionsOutlaws.UI.Base (uiToPicture)
 import Data.Bifunctor (Bifunctor(bimap))
 import Game.OrionsOutlaws.Font (renderStringCentered, TextAlignment (..), renderString)
 
@@ -20,13 +21,14 @@ view gstate = do
 -- | Renders the gamestate into a picture
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate = pictures [
-        renderPlayer $ player gstate,                   -- render player
-        -- renderPlayerBoxes $ player gstate,             -- render player boxes (debugging only)
-        renderProjectiles $ projectiles gstate,         -- render projectiles
-        renderEnemies $ enemies gstate,                 -- render enemies
-        renderAnimations $ animations gstate,           -- render animations
-        renderScore (windowSize gstate) $ score gstate, -- render score
-        renderPauseOverlay                              -- render pause overlay
+        renderPlayer $ player gstate,                                 -- render player
+        -- renderPlayerBoxes $ player gstate,                         -- render player boxes (debugging only)
+        renderProjectiles $ projectiles gstate,                       -- render projectiles
+        renderEnemies $ enemies gstate,                               -- render enemies
+        renderAnimations $ animations gstate,                         -- render animations
+        renderScore (windowSize gstate) $ score gstate,               -- render score
+        -- renderPauseOverlay,                                        -- render pause overlay
+        maybe blank (uiToPicture (mousePos gstate)) $ activeUI gstate -- render active UI
     ]
     where
         -- Renders the player, curently just a green circle

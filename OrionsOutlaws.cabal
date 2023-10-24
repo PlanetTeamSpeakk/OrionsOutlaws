@@ -31,7 +31,10 @@ library
       Game.OrionsOutlaws.Data
       Game.OrionsOutlaws.Font
       Game.OrionsOutlaws.Model
+      Game.OrionsOutlaws.Tasks
       Game.OrionsOutlaws.UI.Base
+      Game.OrionsOutlaws.UI.PausedUI
+      Game.OrionsOutlaws.UI.SettingsUI
       Game.OrionsOutlaws.Util
       Game.OrionsOutlaws.View
   other-modules:
