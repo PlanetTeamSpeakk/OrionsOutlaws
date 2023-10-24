@@ -8,7 +8,6 @@ module Game.OrionsOutlaws.Assets (
     explosionAnimation,
     pauseOverlay,
     fromPlayerFacing,
-    digit,
     bgMusic,
     laserOld, laser1, laser2,
     explosion1, explosion2
@@ -89,16 +88,6 @@ fromPlayerFacing FacingRight       Second = ship 3 1
 fromPlayerFacing FacingRightRight  First  = ship 4 0
 fromPlayerFacing FacingRightRight  Second = ship 4 1
 
-
--- Digits spritesheet
-digitsSheet :: BitmapData
-digitsSheet = loadBMPData $(embedFile "assets/images/spritesheets/digits.bmp")
-
-digit :: Int -> Picture
-digit d
-    -- Each digit is exactly 61x73 pixels
-    | d >= 0 && d <= 9 = bitmapSection (Rectangle (d * 61, 0) (61, 73)) digitsSheet
-    | otherwise = error "Invalid digit" -- Should be impossible
 
 --- Misc images
 -- Pause overlay

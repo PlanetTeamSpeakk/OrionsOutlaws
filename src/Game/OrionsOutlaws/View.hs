@@ -5,10 +5,10 @@ module Game.OrionsOutlaws.View (module Game.OrionsOutlaws.View) where
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, digit, pixeboyFont)
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont)
 import Game.OrionsOutlaws.Util (msTime)
 import Data.Bifunctor (Bifunctor(bimap))
-import Game.OrionsOutlaws.Font (renderStringCentered, TextAlignment (..))
+import Game.OrionsOutlaws.Font (renderStringCentered, TextAlignment (..), renderString)
 
 -- | Simply calls viewPure with the current stepdelta and the given gamestate
 view :: GameState -> IO Picture
@@ -63,7 +63,7 @@ viewPure sd gstate = pictures [
         renderScore :: Bounds ->  Int -> Picture
         renderScore (w, h) s = let x = fromIntegral $ w `div` (-2) + 120
                                    y = fromIntegral $ h `div` (-2) + 45
-                                   in translate x y $ scale 0.75 0.75 $ renderNumber RightToLeft s
+                                   in translate x y $ scale 0.75 0.75 $ renderString RightToLeft pixeboyFont $ show s
 
         -- | Renders the pause overlay if the game is paused
         renderPauseOverlay :: Picture
@@ -87,18 +87,6 @@ digs x = digs' x
     where
         digs' 0 = []
         digs' y = digs' (y `div` 10) ++ [y `mod` 10]
-
--- | Renders a number into a picture.
---   The number can be rendered either from left to right or from right to left.
---   The digits themselves will always be rendered in the same order, but the
---   direction in which the rendering is done and which digit is considered
---   the origin are different.
-renderNumber :: TextAlignment -> Int -> Picture
-renderNumber LeftToRight n = renderNumber'   1  n id
-renderNumber RightToLeft n = renderNumber' (-1) n reverse
-
-renderNumber' :: Float -> Int -> ([Picture] -> [Picture])  -> Picture
-renderNumber' m n f = pictures (zipWith (\i d -> translate (i * m * 70) 0 d) [0 ..] (f $ map digit $ digs n))
 
 -- | Translates a picture by a position 
 translateP :: Position -> Picture -> Picture

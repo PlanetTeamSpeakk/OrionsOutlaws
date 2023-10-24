@@ -5,7 +5,6 @@ import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.View
 import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic)
 import Game.OrionsOutlaws.Data
-import Game.OrionsOutlaws.Assets (pixeboyFont)
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger
@@ -14,7 +13,6 @@ import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
 import Data.Bifunctor (Bifunctor(bimap))
-import Game.OrionsOutlaws.Font (getGlyph)
 
 main :: IO ()
 main = do
@@ -39,8 +37,6 @@ main = do
   scs <- initAudio
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
   loopBgMusic $ volume s
-
-  debugM debugLog $ "Pixeboy A: " ++ show (getGlyph pixeboyFont 'A')
 
   state <- initialState s
   size <- getScreenSize

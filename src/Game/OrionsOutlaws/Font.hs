@@ -95,14 +95,19 @@ charWidth font c = glyphAdvance $ getGlyph font c
 --   The characters themselves will always be rendered in the same order, but the
 --   direction in which the rendering is done and which character is considered
 --   the origin are different.
+--   Does not take line-breaks into account.
 renderString :: TextAlignment -> Font -> String -> Picture
 renderString LeftToRight f s = renderString' f   1  s reverse
 renderString RightToLeft f s = renderString' f (-1) s id
 
+-- | Actually renders a string into a picture.
+--   Given a font, a horizontal multiplier a string and a function to transform the glyphs,
+--   outputs a picture representing the given text.
 renderString' :: Font -> Float -> String -> ([Glyph] -> [Glyph])  -> Picture
-renderString' font m s f = let glyphs = map (getGlyph font) s in
-  pictures $ snd $ foldr renderGlyph' (0, []) (f glyphs)
+renderString' font m s f = let glyphs = map (getGlyph font) s in -- Translate all chars to glyphs
+  pictures $ snd $ foldr renderGlyph' (0, []) (f glyphs)         -- Render all glyphs and combine them into one picture
   where
+    -- | Renders a single glyph while keeping track of the horizontal offset.
     renderGlyph' :: Glyph -> (Float, [Picture]) -> (Float, [Picture])
     renderGlyph' g (offset, ps) = let glyphOffset = m * fromIntegral (glyphAdvance g) in
       (offset + glyphOffset, translate offset 0 (renderGlyph (fontSheet font) g) : ps)
