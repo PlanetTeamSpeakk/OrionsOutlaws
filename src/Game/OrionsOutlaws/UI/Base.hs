@@ -11,7 +11,7 @@ module Game.OrionsOutlaws.UI.Base
   , defaultBackground
   ) where
 
-import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font, stringWidth)
+import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
 
 import Graphics.Gloss.Data.Color (black, white, withAlpha)
 import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)
@@ -72,8 +72,9 @@ elemToPicture _ (UIText txt jst fnt sze p)
     textToPic f = transformSP sze p $ f fnt txt
 elemToPicture _ (UIImage i s p) = transformSP s p i
 elemToPicture mousePos (UIButton t f (w, h) (x, y) _) =
-  let textWidth = stringWidth f t
-      ts = (w * 0.9) / fromIntegral textWidth
+  let textHeight  = fontLineHeight f -- The height of a line of text in the font
+      textWidth   = stringWidth f t  -- The width of the text in the font
+      ts          = min ((w * 0.9) / fromIntegral textWidth) (h / fromIntegral textHeight) -- The scale of the text
       borderColor = withAlpha 0.8 white
       borderWidth = 5 in
   translate x y $ pictures
@@ -83,7 +84,7 @@ elemToPicture mousePos (UIButton t f (w, h) (x, y) _) =
     , translate ( (w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid 5 h -- Right border
     , color (withAlpha 0.8 black) $ rectangleSolid w h -- Background
     , Pic.scale ts ts $ renderStringCentered f t       -- Text
-    , if isInBounds mousePos (x, y) (w, h) borderWidth        -- Highlight
+    , if isInBounds mousePos (x, y) (w, h) borderWidth -- Highlight
       then color (withAlpha 0.35 black) $ rectangleSolid (w + 2 * borderWidth) (h + 2 * borderWidth)
       else blank
     ]

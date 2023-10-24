@@ -1,8 +1,8 @@
 -- | Utility module for loading fonts created with Sprite Font Builder (https://www.johnwordsworth.com/projects/sprite-font-builder/)
 module Game.OrionsOutlaws.Font
-  ( Font                 -- | The main font type, contains the glyphs and some metadata.
-  , Glyph                -- | A single glyph, contains necessary information for rendering.
-  , TextAlignment(..)    -- | The alignment of the text.
+  ( Font (..)            -- | The main font type, contains the glyphs and some metadata.
+  , Glyph (..)           -- | A single glyph, contains necessary information for rendering.
+  , TextAlignment (..)   -- | The alignment of the text.
   , loadFont             -- | Load a font from a spritesheet and metadata file.
   , getGlyph             -- | Get the glyph for a given character.
   , renderString         -- | Render a string into a picture.
@@ -18,10 +18,12 @@ import Graphics.Gloss.Data.Bitmap (BitmapData, bitmapSize)
 import Data.List.Split (splitOn)
 import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, color)
 import Graphics.Gloss (pictures, Rectangle (Rectangle), red)
+import Data.Bifunctor (first)
 
 data Font = Font
-  { fontSheet  :: BitmapData
-  , fontGlyphs :: Map Char Glyph
+  { fontSheet      :: BitmapData
+  , fontGlyphs     :: Map Char Glyph
+  , fontLineHeight :: Int
   } deriving (Eq, Show)
 
 data Glyph = Glyph
@@ -35,7 +37,7 @@ data TextAlignment = LeftToRight | RightToLeft deriving (Show, Eq)
 
 -- | Loads a font from metadata and a spritesheet.
 loadFont :: String -> BitmapData -> Font
-loadFont metadata spritesheet = Font spritesheet $ ensureHasSpace parseMetadata
+loadFont metadata spritesheet = uncurry (Font spritesheet) $ first ensureHasSpace parseMetadata
   where
     -- | Ensure that the font has a space glyph, otherwise throw an error.
     --   When creating a font map using Sprite Font Builder, this should always be included.
@@ -43,12 +45,18 @@ loadFont metadata spritesheet = Font spritesheet $ ensureHasSpace parseMetadata
     ensureHasSpace glyphs = if member ' ' glyphs then glyphs else error "Font does not contain space glyph"
 
     -- | Parse the font metadata into a map of chars to glyphs.
-    parseMetadata :: Map Char Glyph
-    parseMetadata = fromList $ map parseGlyph $ filter isCharLine $ lines metadata
+    parseMetadata :: (Map Char Glyph, Int)
+    parseMetadata = let l = lines metadata in
+      (fromList $ map parseGlyph $ filter isCharLine l, read $ parseLine (head $ filter isCommonLine l) ! "lineHeight")
 
     -- | Whether the given line is a character information line.
     isCharLine :: String -> Bool
     isCharLine line = "char " `isPrefixOf` line
+
+    -- | Whether the given line is a common information line.
+    --   Contains information such as the line height.
+    isCommonLine :: String -> Bool
+    isCommonLine line = "common " `isPrefixOf` line
 
     -- | Parse a line of metadata into a Glyph
     parseGlyph :: String -> (Char, Glyph)
@@ -107,7 +115,7 @@ renderString' font m s f = let glyphs = map (getGlyph font) s in -- Translate al
   where
     -- | Renders a single glyph while keeping track of the horizontal offset.
     renderGlyph' :: Glyph -> (Float, [Picture]) -> (Float, [Picture])
-    renderGlyph' g (offset, ps) = (offset + (m * fromIntegral (glyphAdvance g)), 
+    renderGlyph' g (offset, ps) = (offset + (m * fromIntegral (glyphAdvance g)),
       color red (translate offset 0 (renderGlyph (fontSheet font) g)) : ps)
 
 -- | Renders a single character into a picture.
@@ -117,7 +125,7 @@ renderChar f c = renderGlyph (fontSheet f) $ getGlyph f c
 
 -- | Renders a Glyph into a picture using a spritesheet.
 renderGlyph :: BitmapData -> Glyph -> Picture
-renderGlyph sheet Glyph { glyphWidth = gw, glyphHeight = gh, glyphPos = (gx, gy) } = 
+renderGlyph sheet Glyph { glyphWidth = gw, glyphHeight = gh, glyphPos = (gx, gy) } =
   -- In Gloss, (0, 0) is the bottom left rather than the bottom right.
   -- We need to correct that here.
   let sheetHeight = fst $ bitmapSize sheet in

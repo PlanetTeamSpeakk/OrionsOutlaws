@@ -156,28 +156,61 @@ step elapsed gstate = do
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
--- Mouse events
-input e@(EventKey (MouseButton _) Down _ _) gstate = inputMouse e gstate
--- Keyboard events (both special and chars)
-input e@(EventKey {}) gstate = inputKey e gstate
-input e@(EventMotion {}) gstate = return $ inputMouseMove e gstate
+input e gstate = do
+  -- Prioritize pause input
+  -- This makes it impossible to bind the escape key to anything,
+  -- even when you modify settings.json manually.
+  (consumed, gstate') <- inputPause e gstate
+  if consumed
+    then return gstate' -- Don't handle any other input if inputPause consumed the event
+    else do
+      -- Ensure mouse input is always handled.
+      -- This is so binding anything to LeftButton doesn't break UI buttons.
+      gstate'' <- inputMouse e gstate'
+      input' e gstate'' -- Continue to next stage (key listeners and configurable keys)
+
+-- If there's a keylistener, call it and remove it from the list
+input' :: Event -> GameState -> IO GameState
+input' e@(EventKey key down _ _) gstate
+  | key /= SpecialKey KeyEsc && down == Down && not (null $ keyListeners gstate) = do
+    let keyListener = head $ keyListeners gstate
+    keyListener key
+    return gstate { keyListeners = tail $ keyListeners gstate }
+  -- Handle configurable keys (fire and movement)
+  | d && key == fireKey s = fireProjectile gstate
+  | key == forwardKey   s = return $ moveForward  gstate d
+  | key == backwardKey  s = return $ moveBackward gstate d
+  | key == leftKey      s = return $ moveLeft     gstate d
+  | key == rightKey     s = return $ moveRight    gstate $ down == Down
+  | otherwise  = input'' e gstate -- Continue to last stage (mouse move and window resize)
+    where
+      d = down == Down
+      s = settings gstate
+input' e gstate = input'' e gstate -- Continue to last stage
+
+input'' :: Event -> GameState -> IO GameState
+-- Mouse move event
+input'' e@(EventMotion {}) gstate = return $ inputMouseMove e gstate
 -- Resize event
-input (EventResize (nx, ny)) gstate = return gstate { windowSize = (nx, ny) }
+input'' (EventResize ns) gstate = return gstate { windowSize = ns }
+-- Fallback
+input'' _ gstate = return gstate
 
 inputMouse :: Event -> GameState -> IO GameState
--- Mouse button pressed, doesn't do anything for now.
+-- Mouse button pressed, handle UI click.
 inputMouse (EventKey (MouseButton btn) Down _ (x, y)) gstate = do
   when (btn == LeftButton && isJust (activeUI gstate)) $ handleClick (fromJust $ activeUI gstate) (x, y)
   return gstate
 inputMouse _ gstate = return gstate
 
+-- Mouse moved, update mouse position (used for UI).
 inputMouseMove :: Event -> GameState -> GameState
 inputMouseMove (EventMotion mPos) gstate = gstate { mousePos = mPos }
 inputMouseMove _ gstate = gstate
 
-inputKey :: Event -> GameState -> IO GameState
+inputPause :: Event -> GameState -> IO (Bool, GameState)
 -- Escape key, pauses the game.
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
+inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
 
   -- Pause/resume all sounds
@@ -185,26 +218,14 @@ inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
     then resumeAllSounds
     else pauseAllSounds
 
-  return $ gstate {
+  return (True, gstate {
     paused = not $ paused gstate,
     activeUI = if paused gstate then Nothing else Just pausedUI,
     player = if paused gstate then player gstate else
       (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
-  }
--- Configurable keys (fire and movement)
-inputKey (EventKey key down _ _) gstate@GameState { settings = s }
-  -- If there's a keylistener, call it and remove it from the list
-  | down == Down && not (null $ keyListeners gstate) = do
-    let keyListener = head $ keyListeners gstate
-    keyListener key
-    return gstate { keyListeners = tail $ keyListeners gstate }
-  | key == fireKey     s = fireProjectile gstate
-  | key == forwardKey  s = return $ moveForward  gstate $ down == Down
-  | key == backwardKey s = return $ moveBackward gstate $ down == Down
-  | key == leftKey     s = return $ moveLeft     gstate $ down == Down
-  | key == rightKey    s = return $ moveRight    gstate $ down == Down
+  })
 -- Fallback
-inputKey _ gstate = return gstate
+inputPause _ gstate = return (False, gstate)
 
 fireProjectile :: GameState -> IO GameState
 fireProjectile gstate = do
