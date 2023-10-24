@@ -105,10 +105,10 @@ transformSP s (x, y) = translate x y . Pic.scale s s
 -- | Handles a click on a UI.
 --   Checks if the click is on a button and if so, performs the button's action.
 --   Does nothing if the click is not on a button.
-handleClick :: UI -> Position -> IO ()
-handleClick ui mousePos = mapM_ handleClick' $ elements ui
+handleClick :: UI -> MousePosition -> AxialScale -> IO ()
+handleClick ui mousePos s = mapM_ handleClick' $ elements ui
   where
-    handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds mousePos (x, y) (w, h) 5 (1, 1)) a
+    handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds mousePos (x, y) (w, h) 5 s) a
     handleClick' _ = return ()
 
 -- | The default background for a UI. Simply transparent black.

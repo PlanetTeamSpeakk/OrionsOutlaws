@@ -199,7 +199,9 @@ input'' _ gstate = return gstate
 inputMouse :: Event -> GameState -> IO GameState
 -- Mouse button pressed, handle UI click.
 inputMouse (EventKey (MouseButton btn) Down _ (x, y)) gstate = do
-  when (btn == LeftButton && isJust (activeUI gstate)) $ handleClick (fromJust $ activeUI gstate) (x, y)
+  let (ww, wh) = windowSize gstate
+  let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
+  when (btn == LeftButton && isJust (activeUI gstate)) $ handleClick (fromJust $ activeUI gstate) (x, y) s
   return gstate
 inputMouse _ gstate = return gstate
 
