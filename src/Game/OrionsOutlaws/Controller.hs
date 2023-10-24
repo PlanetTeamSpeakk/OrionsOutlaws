@@ -193,6 +193,11 @@ inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   }
 -- Configurable keys (fire and movement)
 inputKey (EventKey key down _ _) gstate@GameState { settings = s }
+  -- If there's a keylistener, call it and remove it from the list
+  | down == Down && not (null $ keyListeners gstate) = do
+    let keyListener = head $ keyListeners gstate
+    keyListener key
+    return gstate { keyListeners = tail $ keyListeners gstate }
   | key == fireKey     s = fireProjectile gstate
   | key == forwardKey  s = return $ moveForward  gstate $ down == Down
   | key == backwardKey s = return $ moveBackward gstate $ down == Down

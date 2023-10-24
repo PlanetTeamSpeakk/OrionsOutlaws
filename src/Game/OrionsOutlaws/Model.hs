@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 -- | This module contains the data types
 --   which represent the state of the game
 module Game.OrionsOutlaws.Model (module Game.OrionsOutlaws.Model) where
@@ -35,22 +36,23 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 -- | The initial game state
 initialState :: Settings -> IO GameState
 initialState s = msTime >>= (\time -> return $ GameState 
-  { stateType   = Menu
-  , player      = initialPlayer
-  , enemies     = []
-  , projectiles = []
-  , animations  = []
-  , activeUI    = Nothing
-  , score       = 0
-  , lastSpawn   = 0
-  , elapsedTime = 0
-  , started     = False
-  , paused      = False
-  , windowSize  = (1280, 720)
-  , mousePos    = (0, 0)
-  , steps       = 0
-  , lastStep    = time
-  , settings    = s
+  { stateType    = Menu
+  , player       = initialPlayer
+  , enemies      = []
+  , projectiles  = []
+  , animations   = []
+  , activeUI     = Nothing
+  , score        = 0
+  , lastSpawn    = 0
+  , elapsedTime  = 0
+  , started      = False
+  , paused       = False
+  , windowSize   = (1280, 720)
+  , mousePos     = (999999, 999999) -- A position that is not on the screen
+  , steps        = 0
+  , lastStep     = time
+  , settings     = s
+  , keyListeners = []
   })
 
 enemySize :: Float
@@ -73,23 +75,40 @@ stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLength
 
 -- Data types
 data GameState = GameState 
-  { stateType   :: GameStateType         -- | The type of the game state
-  , player      :: Player                -- | The player
-  , enemies     :: [Enemy]               -- | A list of enemies
-  , projectiles :: [Projectile]          -- | A list of projectiles currently on the field
-  , animations  :: [PositionedAnimation] -- | A list of animations currently on the field
-  , activeUI    :: Maybe UI              -- | The currently active UI, if any
-  , score       :: Int                   -- | The player's score
-  , lastSpawn   :: Float                 -- | The time at which the last enemy was spawned
-  , elapsedTime :: Float                 -- | The time elapsed since the game started
-  , started     :: Bool                  -- | Whether the game has started or not
-  , paused      :: Bool                  -- | Whether the game is paused or not
-  , windowSize  :: Bounds                -- | The size of the window
-  , mousePos    :: Position              -- | The position of the mouse
-  , steps       :: Integer               -- | The number of steps that have been taken since the game started
-  , lastStep    :: Integer               -- | The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
-  , settings    :: Settings              -- | The game settings
-  } deriving (Show, Eq)
+  { stateType    :: GameStateType         -- | The type of the game state
+  , player       :: Player                -- | The player
+  , enemies      :: [Enemy]               -- | A list of enemies
+  , projectiles  :: [Projectile]          -- | A list of projectiles currently on the field
+  , animations   :: [PositionedAnimation] -- | A list of animations currently on the field
+  , activeUI     :: Maybe UI              -- | The currently active UI, if any
+  , score        :: Int                   -- | The player's score
+  , lastSpawn    :: Float                 -- | The time at which the last enemy was spawned
+  , elapsedTime  :: Float                 -- | The time elapsed since the game started
+  , started      :: Bool                  -- | Whether the game has started or not
+  , paused       :: Bool                  -- | Whether the game is paused or not
+  , windowSize   :: Bounds                -- | The size of the window
+  , mousePos     :: Position              -- | The position of the mouse
+  , steps        :: Integer               -- | The number of steps that have been taken since the game started
+  , lastStep     :: Integer               -- | The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+  , settings     :: Settings              -- | The game settings
+  , keyListeners :: [Key -> IO ()]        -- | A list of key listeners that will be called when a key is pressed
+  }
+
+instance Show GameState where
+  show :: GameState -> String
+  show g = "GameState { stateType = " ++ show (stateType g) ++ ", player = " ++ show (player g) ++ ", enemies = " ++ show (enemies g) ++
+    ", projectiles = " ++ show (projectiles g) ++ ", animations = " ++ show (animations g) ++ ", activeUI = " ++ show (activeUI g) ++
+    ", score = " ++ show (score g) ++ ", lastSpawn = " ++ show (lastSpawn g) ++ ", elapsedTime = " ++ show (elapsedTime g) ++
+    ", started = " ++ show (started g) ++ ", paused = " ++ show (paused g) ++ ", windowSize = " ++ show (windowSize g) ++
+    ", mousePos = " ++ show (mousePos g) ++ ", steps = " ++ show (steps g) ++ ", lastStep = " ++ show (lastStep g) ++
+    ", settings = " ++ show (settings g) ++ " }"
+
+instance Eq GameState where
+  (==) :: GameState -> GameState -> Bool
+  g1 == g2 = stateType g1 == stateType g2 && player g1 == player g2 && enemies g1 == enemies g2 && projectiles g1 == projectiles g2 &&
+    animations g1 == animations g2 && activeUI g1 == activeUI g2 && score g1 == score g2 && lastSpawn g1 == lastSpawn g2 &&
+    elapsedTime g1 == elapsedTime g2 && started g1 == started g2 && paused g1 == paused g2 && windowSize g1 == windowSize g2 &&
+    mousePos g1 == mousePos g2 && steps g1 == steps g2 && lastStep g1 == lastStep g2 && settings g1 == settings g2
 
 data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
 
