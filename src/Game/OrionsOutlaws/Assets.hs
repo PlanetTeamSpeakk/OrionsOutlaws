@@ -53,7 +53,7 @@ pixeboyFont = loadFont $(embedStringFile "assets/fonts/pixeboy.fnt") $(embedFile
 -- Explosion animation
 -- Spritesheets have to be bitmaps so that we can use bitmapSection
 explosionSheet :: BitmapData
-explosionSheet = loadBMPData $(embedFile "assets/explosion.bmp")
+explosionSheet = loadBMPData $(embedFile "assets/images/spritesheets/explosion.bmp")
 
 explosionFrame :: Int -> Picture
 explosionFrame 0 = explosionFrame' 0
@@ -72,7 +72,7 @@ explosionAnimation = Animation 5 2 0 0 explosionFrame
 
 -- Ship (player)
 shipSheet :: BitmapData
-shipSheet = loadBMPData $(embedFile "assets/ship.bmp")
+shipSheet = loadBMPData $(embedFile "assets/images/spritesheets/ship.bmp")
 
 ship :: Int -> Int -> Picture
 ship c r = rotate 90 $ scale assetScale assetScale $ bitmapSection (Rectangle (c * 16, r * 24) (16, 24)) shipSheet
@@ -103,7 +103,7 @@ digit d
 --- Misc images
 -- Pause overlay
 pauseOverlay :: Picture
-pauseOverlay = loadPNG $(embedFile "assets/pauseOverlay.png")
+pauseOverlay = loadPNG $(embedFile "assets/images/pauseOverlay.png")
 
 
 -- SOUNDS
@@ -118,7 +118,7 @@ bgMusic = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/bg.og
 -- | Laser sound
 --   Source: https://pixabay.com/sound-effects/blaster-2-81267/
 laserOld :: Sample
-laserOld = unsafePerformIO $ sampleFromMemoryMp3 $(embedFile "assets/sounds/laser1.mp3") 1
+laserOld = unsafePerformIO $ sampleFromMemoryMp3 $(embedFile "assets/sounds/laserOld.mp3") 1
 {-# NOINLINE laserOld #-}
 
 laser1 :: Sample
