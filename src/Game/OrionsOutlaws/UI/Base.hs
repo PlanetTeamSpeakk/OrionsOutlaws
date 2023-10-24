@@ -61,7 +61,6 @@ uiToPicture :: MousePosition -> AxialScale -> UI -> Picture
 uiToPicture mousePos s@(hs, vs) (UI elems bg) = pictures 
   [ Pic.scale hs vs bg -- Scaled background
   , Pic.scale hs hs $ pictures $ map (elemToPicture mousePos s) elems -- Elements
-  , translate (565 * hs) (310 * hs) $ color red $ rectangleWire ((100 + 10) * hs) ((50 + 10) * hs)
   ]
 
 -- | Converts a UI element to a picture.
