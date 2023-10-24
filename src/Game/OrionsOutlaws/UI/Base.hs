@@ -9,7 +9,7 @@ module Game.OrionsOutlaws.UI.Base
 
 import Game.OrionsOutlaws.Model (Position)
 import Game.OrionsOutlaws.Assets (pixeboyFont)
-import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight))
+import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight), renderStringCentered)
 
 import Graphics.Gloss (Picture, rectangleSolid, color, withAlpha)
 import Graphics.Gloss.Data.Color (black)
@@ -48,7 +48,7 @@ elemToPicture (UIText t s p) = transformSP s p $ renderString LeftToRight pixebo
 elemToPicture (UIImage i s p) = transformSP s p i
 elemToPicture (UIButton t (w, h) (x, y) _) = translate x y $ pictures 
   [ color (withAlpha 0.8 black) $ rectangleSolid w h -- Background
-  , renderString LeftToRight pixeboyFont t           -- Text
+  , renderStringCentered pixeboyFont t               -- Text
   ]
 
 transformSP :: Float -> Position -> Picture -> Picture

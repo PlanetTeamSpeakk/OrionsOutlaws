@@ -1,13 +1,14 @@
 -- | Utility module for loading fonts created with Sprite Font Builder (https://www.johnwordsworth.com/projects/sprite-font-builder/)
 module Game.OrionsOutlaws.Font 
-  ( Font              -- | The main font type, contains the glyphs and some metadata.
-  , Glyph             -- | A single glyph, contains necessary information for rendering.
-  , TextAlignment(..) -- | The alignment of the text.
-  , loadFont          -- | Load a font from a spritesheet and metadata file.
-  , getGlyph          -- | Get the glyph for a given character.
-  , renderString      -- | Render a string into a picture.
-  , renderChar        -- | Render a single character into a picture.
-  , stringWidth       -- | Get the width of a string in pixels when rendered with the given font.
+  ( Font                 -- | The main font type, contains the glyphs and some metadata.
+  , Glyph                -- | A single glyph, contains necessary information for rendering.
+  , TextAlignment(..)    -- | The alignment of the text.
+  , loadFont             -- | Load a font from a spritesheet and metadata file.
+  , getGlyph             -- | Get the glyph for a given character.
+  , renderString         -- | Render a string into a picture.
+  , renderChar           -- | Render a single character into a picture.
+  , stringWidth          -- | Get the width of a string in pixels when rendered with the given font.
+  , charWidth            -- | Get the width of a character in pixels when rendered with the given font.
   , renderStringCentered -- | Renders a string into a picture, centered around the center of the text.
   ) where
 
@@ -80,9 +81,6 @@ getGlyph font c = case Data.Map.lookup c $ fontGlyphs font of
   Just g  -> g
   Nothing -> getGlyph font ' ' -- Default to space if the character is not found
 
--- renderString :: TextAlignment -> Font -> String -> Picture
--- renderString font a str = undefined
-
 -- | Get the width of a string in pixels when rendered with the given font.
 stringWidth :: Font -> String -> Int
 stringWidth font str = sum $ map (glyphAdvance . getGlyph font) str
@@ -118,5 +116,7 @@ renderGlyph sheet g = bitmapSection (Rectangle (glyphPos g) (glyphWidth g, glyph
 
 -- | Renders a string into a picture, centered around the center of the text.
 renderStringCentered :: Font -> String -> Picture
--- TODO this is not quite centered, but it's close enough for now
-renderStringCentered f s = translate (-fromIntegral (stringWidth f s) / 2) 0 $ renderString LeftToRight f s
+-- Text is centered around the center of the first character, 
+-- so we have to offset it by half the width of the first character
+renderStringCentered f s = translate ((-fromIntegral (stringWidth f s) + fromIntegral (charWidth f $ head s)) / 2) 0 $ 
+  renderString LeftToRight f s
