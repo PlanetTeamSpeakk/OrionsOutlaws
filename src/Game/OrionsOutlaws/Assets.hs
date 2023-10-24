@@ -2,16 +2,15 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Game.OrionsOutlaws.Assets (
-    assetScale,
-    pixeboyFont,
-    explosionAnimation,
-    pauseOverlay,
-    fromPlayerFacing,
-    bgMusic,
-    laserOld, laser1, laser2,
-    explosion1, explosion2
-    ) where
+module Game.OrionsOutlaws.Assets 
+  ( assetScale
+  , pixeboyFont
+  , explosionAnimation
+  , fromPlayerFacing
+  , bgMusic
+  , laserOld, laser1, laser2
+  , explosion1, explosion2
+  ) where
 
 import Graphics.Gloss
 import Data.ByteString (ByteString, fromStrict)
@@ -87,12 +86,6 @@ fromPlayerFacing FacingRight       First  = ship 3 0
 fromPlayerFacing FacingRight       Second = ship 3 1
 fromPlayerFacing FacingRightRight  First  = ship 4 0
 fromPlayerFacing FacingRightRight  Second = ship 4 1
-
-
---- Misc images
--- Pause overlay
-pauseOverlay :: Picture
-pauseOverlay = loadPNG $(embedFile "assets/images/pauseOverlay.png")
 
 
 -- SOUNDS

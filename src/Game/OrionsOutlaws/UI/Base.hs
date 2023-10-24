@@ -13,8 +13,8 @@ module Game.OrionsOutlaws.UI.Base
 
 import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
 
-import Graphics.Gloss.Data.Color (black, white, withAlpha)
-import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)
+import Graphics.Gloss.Data.Color (black, white, withAlpha, red)
+import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank, rectangleWire)
 import Control.Monad (when)
 
 data UI = UI
@@ -56,22 +56,24 @@ instance Eq UIElement where
   UIButton t1 f1 s1 p1 _ == UIButton t2 f2 s2 p2 _ = t1 == t2 && f1 == f2 && s1 == s2 && p1 == p2
   _ == _ = False
 
-type Position = (Float, Float)
-
 -- | Converts a UI to a picture.
-uiToPicture :: Position -> UI -> Picture
-uiToPicture mousePos (UI elems bg) = pictures $ bg : map (elemToPicture mousePos) elems
+uiToPicture :: MousePosition -> AxialScale -> UI -> Picture
+uiToPicture mousePos s@(hs, vs) (UI elems bg) = pictures 
+  [ Pic.scale hs vs bg -- Scaled background
+  , Pic.scale hs hs $ pictures $ map (elemToPicture mousePos s) elems -- Elements
+  , translate (565 * hs) (310 * hs) $ color red $ rectangleWire ((100 + 10) * hs) ((50 + 10) * hs)
+  ]
 
 -- | Converts a UI element to a picture.
-elemToPicture :: Position -> UIElement -> Picture
-elemToPicture _ (UIText txt jst fnt sze p)
+elemToPicture :: MousePosition -> AxialScale -> UIElement -> Picture
+elemToPicture _ _ (UIText txt jst fnt sze p)
   | jst == JustLeft  = textToPic $ renderString LeftToRight
   | jst == JustRight = textToPic $ renderString RightToLeft
   | otherwise        = textToPic renderStringCentered
   where
     textToPic f = transformSP sze p $ f fnt txt
-elemToPicture _ (UIImage i s p) = transformSP s p i
-elemToPicture mousePos (UIButton t f (w, h) (x, y) _) =
+elemToPicture _ _ (UIImage i s p) = transformSP s p i
+elemToPicture mousePos s (UIButton t f (w, h) (x, y) _) =
   let textHeight  = fontLineHeight f -- The height of a line of text in the font
       textWidth   = stringWidth f t  -- The width of the text in the font
       ts          = min ((w * 0.9) / fromIntegral textWidth) (h / fromIntegral textHeight) -- The scale of the text
@@ -82,18 +84,19 @@ elemToPicture mousePos (UIButton t f (w, h) (x, y) _) =
     , translate 0 (-(h + borderWidth) / 2) $ color borderColor $ rectangleSolid (w + 2 * borderWidth) 5 -- Bottom border
     , translate (-(w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid 5 h -- Left border
     , translate ( (w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid 5 h -- Right border
-    , color (withAlpha 0.8 black) $ rectangleSolid w h -- Background
-    , Pic.scale ts ts $ renderStringCentered f t       -- Text
-    , if isInBounds mousePos (x, y) (w, h) borderWidth -- Highlight
+    , color (withAlpha 0.8 black) $ rectangleSolid w h   -- Background
+    , Pic.scale ts ts $ renderStringCentered f t         -- Text
+    , if isInBounds mousePos (x, y) (w, h) borderWidth s -- Highlight
       then color (withAlpha 0.35 black) $ rectangleSolid (w + 2 * borderWidth) (h + 2 * borderWidth)
       else blank
     ]
 
 -- | Checks whether the given mouse position is in bounds
---   given a center position of an element, its width and height and a border width.
---   Internal use only.
-isInBounds :: Position -> Position -> (Float, Float) -> Float -> Bool
-isInBounds (mx, my) (ex, ey) (w, h) b = let (x, y) = (mx - ex, my - ey) in x >= -w / 2 - b && x <= w / 2 + b && y >= -h / 2 - b && y <= h / 2 + b
+isInBounds :: MousePosition -> Position -> Size -> BorderWidth -> AxialScale -> Bool
+isInBounds (mx, my) (ex, ey) (w, h) b (hs, _) = 
+  let (x, y) = (mx - (ex * hs), my - (ey * hs))          -- Apply scaling to the position
+      (sw, sh) = ((w / 2 + b) * hs, (h / 2 + b) * hs) in -- Apply scaling to the size
+  x >= -sw && x <= sw && y >= -sh && y <= sh -- Check if scaled position is in scaled bounds
 
 -- | Transforms a picture by a scale and a position.
 --   Internal use only.
@@ -106,9 +109,15 @@ transformSP s (x, y) = translate x y . Pic.scale s s
 handleClick :: UI -> Position -> IO ()
 handleClick ui mousePos = mapM_ handleClick' $ elements ui
   where
-    handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds mousePos (x, y) (w, h) 5) a
+    handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds mousePos (x, y) (w, h) 5 (1, 1)) a
     handleClick' _ = return ()
 
 -- | The default background for a UI. Simply transparent black.
 defaultBackground :: Picture
 defaultBackground = color (withAlpha 0.5 black) $ rectangleSolid 1280 720
+
+type Position      = (Float, Float)
+type MousePosition = Position
+type BorderWidth   = Float
+type Size          = (Float, Float)
+type AxialScale    = (Float, Float)
