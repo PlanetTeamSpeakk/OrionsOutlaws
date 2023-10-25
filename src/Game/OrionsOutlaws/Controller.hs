@@ -13,9 +13,8 @@ import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
 import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
 import Game.OrionsOutlaws.Audio
-import Control.Monad (when)
 import Data.Maybe (isJust, fromJust)
-import Game.OrionsOutlaws.UI.Base (handleClick)
+import Game.OrionsOutlaws.UI.Base (handleMouse, handleMotion)
 import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
 
 -- | Handle one iteration of the game
@@ -190,7 +189,7 @@ input' e gstate = input'' e gstate -- Continue to last stage
 
 input'' :: Event -> GameState -> IO GameState
 -- Mouse move event
-input'' e@(EventMotion {}) gstate = return $ inputMouseMove e gstate
+input'' e@(EventMotion {}) gstate = inputMouseMove e gstate
 -- Resize event
 input'' (EventResize ns) gstate = return gstate { windowSize = ns }
 -- Fallback
@@ -198,17 +197,32 @@ input'' _ gstate = return gstate
 
 inputMouse :: Event -> GameState -> IO GameState
 -- Mouse button pressed, handle UI click.
-inputMouse (EventKey (MouseButton btn) Down _ (x, y)) gstate = do
+inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
   let (ww, wh) = windowSize gstate
   let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
-  when (btn == LeftButton && isJust (activeUI gstate)) $ handleClick (fromJust $ activeUI gstate) (x, y) s
-  return gstate
+  if btn == LeftButton && isJust (activeUI gstate)
+    then do
+      ui' <- handleMouse (fromJust $ activeUI gstate) state (x, y) s
+      return gstate { activeUI = Just ui' }
+    else return gstate
 inputMouse _ gstate = return gstate
 
 -- Mouse moved, update mouse position (used for UI).
-inputMouseMove :: Event -> GameState -> GameState
-inputMouseMove (EventMotion mPos) gstate = gstate { mousePos = Just mPos }
-inputMouseMove _ gstate = gstate
+inputMouseMove :: Event -> GameState -> IO GameState
+inputMouseMove (EventMotion mPos) gstate = do
+  let (ww, wh) = windowSize gstate
+  let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
+  
+  -- Handle UI motion if there's an active UI
+  ui' <- case activeUI gstate of
+    Just ui -> Just <$> handleMotion ui mPos s
+    Nothing -> return Nothing
+
+  return $ gstate 
+    { mousePos = Just mPos 
+    , activeUI = ui'
+    }
+inputMouseMove _ gstate = return gstate
 
 inputPause :: Event -> GameState -> IO (Bool, GameState)
 -- Escape key, pauses the game.
@@ -221,7 +235,7 @@ inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
     else pauseAllSounds
 
   let paused' = paused gstate
-  return (True, gstate 
+  return (True, gstate
     { activeUI = if paused' then Nothing else Just pausedUI
     , player = if paused' then player gstate else
         (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement

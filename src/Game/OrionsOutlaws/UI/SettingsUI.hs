@@ -33,12 +33,15 @@ settingsUI s = UI
 
   , UIText "FIRE" JustLeft pixeboyFont 0.35 (-150, -50)
   , keyBtn "fir" (75, -50) s fireKey     (\s' k -> s' { fireKey = k })
+
+  , UIText "VOLUME" JustLeft pixeboyFont 0.35 (-150, -100)
+  , UISlider (75, -100) (200, 20) (volume s) onVolumeChange False
   ]
   defaultBackground
 
 -- | Creates a new keybind button for a keybind.
 keyBtn :: ElementKey -> Position -> Settings -> (Settings -> Key) -> (Settings -> Key -> Settings) -> UIElement
-keyBtn k p s getter setter = ModifiableUIElement k $ UIButton (keyToString $ getter s) pixeboyFont (75, 35) p $ onKeyBtn k setter
+keyBtn k p s getter setter = ModifiableUIElement k $ UIButton (keyToString $ getter s) pixeboyFont p (75, 35) $ onKeyBtn k setter
 
 -- | Queues a key change task.
 --   Called when a keybind button is pressed.
@@ -78,3 +81,10 @@ keyToString (MouseButton MiddleButton)         = "MMB"                         -
 keyToString (MouseButton RightButton)          = "RMB"                         -- MouseButton RightButton          -> "RMB"
 keyToString (MouseButton WheelUp)              = "WHEEL UP"                    -- MouseButton WheelUp              -> "WHEEL UP"
 keyToString (MouseButton WheelDown)            = "WHEEL DOWN"                  -- MouseButton WheelDown            -> "WHEEL DOWN"
+
+-- | Called when the volume slider is changed.
+onVolumeChange :: Float -> IO ()
+onVolumeChange v = queueTask $ \gs -> do
+  let settings' = (settings gs) { volume = v }
+  writeSettings settings'
+  return gs { settings = settings' }
