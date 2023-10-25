@@ -77,14 +77,14 @@ modifyElement ui k m = ui { elements = applyModifier $ elements ui }
     applyModifier (e:es) = e : applyModifier es
 
 -- | Converts a UI to a picture.
-uiToPicture :: MousePosition -> AxialScale -> UI -> Picture
+uiToPicture :: Maybe MousePosition -> AxialScale -> UI -> Picture
 uiToPicture mousePos s@(hs, vs) (UI elems bg) = let s' = min hs vs in pictures 
   [ Pic.scale hs vs bg -- Scaled background
   , Pic.scale s' s' $ pictures $ map (elemToPicture mousePos s) elems -- Elements
   ]
 
 -- | Converts a UI element to a picture.
-elemToPicture :: MousePosition -> AxialScale -> UIElement -> Picture
+elemToPicture :: Maybe MousePosition -> AxialScale -> UIElement -> Picture
 elemToPicture _ _ (UIText txt jst fnt sze p)
   | jst == JustLeft  = textToPic $ renderString LeftToRight
   | jst == JustRight = textToPic $ renderString RightToLeft
@@ -112,8 +112,9 @@ elemToPicture mousePos s (UIButton t f (w, h) (x, y) _) =
 elemToPicture mp s (ModifiableUIElement _ e) = elemToPicture mp s e
 
 -- | Checks whether the given mouse position is in bounds
-isInBounds :: MousePosition -> Position -> Size -> BorderWidth -> AxialScale -> Bool
-isInBounds (mx, my) (ex, ey) (w, h) b (hs, vs) = 
+isInBounds :: Maybe MousePosition -> Position -> Size -> BorderWidth -> AxialScale -> Bool
+isInBounds Nothing _ _ _ _                            = False
+isInBounds (Just (mx, my)) (ex, ey) (w, h) b (hs, vs) = 
   let s = min hs vs -- The smaller of the two scales
       (x, y) = (mx - (ex * s), my - (ey * s))          -- Apply scaling to the position
       (sw, sh) = ((w / 2 + b) * s, (h / 2 + b) * s) in -- Apply scaling to the size
@@ -130,7 +131,7 @@ transformSP s (x, y) = translate x y . Pic.scale s s
 handleClick :: UI -> MousePosition -> AxialScale -> IO ()
 handleClick ui mousePos s = mapM_ handleClick' $ elements ui
   where
-    handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds mousePos (x, y) (w, h) 5 s) a
+    handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds (Just mousePos) (x, y) (w, h) 5 s) a
     handleClick' (ModifiableUIElement _ e)      = handleClick' e
     handleClick' _                              = return ()
 

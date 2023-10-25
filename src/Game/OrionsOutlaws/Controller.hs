@@ -207,7 +207,7 @@ inputMouse _ gstate = return gstate
 
 -- Mouse moved, update mouse position (used for UI).
 inputMouseMove :: Event -> GameState -> GameState
-inputMouseMove (EventMotion mPos) gstate = gstate { mousePos = mPos }
+inputMouseMove (EventMotion mPos) gstate = gstate { mousePos = Just mPos }
 inputMouseMove _ gstate = gstate
 
 inputPause :: Event -> GameState -> IO (Bool, GameState)

@@ -14,6 +14,10 @@ import System.Log.Handler.Simple
 import System.IO
 import Graphics.Gloss.Interface.Environment (getScreenSize)
 import Data.Bifunctor (Bifunctor(bimap))
+import Graphics.UI.GLUT (($=), crossingCallback, Crossing (WindowEntered))
+import Control.Monad (when)
+import Data.IORef (IORef, newIORef, writeIORef, readIORef)
+import System.IO.Unsafe (unsafePerformIO)
 
 main :: IO ()
 main = do
@@ -54,11 +58,30 @@ main = do
     view            -- View function
     input           -- Event function
     runTasksAndStep -- Step function
-  
+
   debugM debugLog "Exiting"
   finishAudio -- Shutdown audio system
 
 runTasksAndStep :: Float -> GameState -> IO GameState
 runTasksAndStep sd gstate = do
-  gstate' <- runAndClearTasks gstate
-  step sd gstate'
+  -- First step, has to be called after playIO to ensure that a window is made.
+  when (steps gstate == 0) registerCrossingCallback
+
+  -- If the mouse is no longer inside the window, we reset the mouse position to Nothing.
+  c <- readIORef crossingState
+  let gstate' = gstate { mousePos = if c == WindowEntered then mousePos gstate else Nothing }
+  
+  gstate'' <- runAndClearTasks gstate'
+  step sd gstate''
+
+-- | The current crossing state of the mouse.
+--   Gloss does not have an event for this, so we make our own using GLUT.
+crossingState :: IORef Crossing
+crossingState = unsafePerformIO $ newIORef WindowEntered
+{-# NOINLINE crossingState #-}
+
+-- | Registers a callback that's fired when the mouse enters or leaves the window.
+registerCrossingCallback :: IO ()
+registerCrossingCallback = do
+  debugM debugLog "Registering crossing callback"
+  crossingCallback $= Just (writeIORef crossingState)

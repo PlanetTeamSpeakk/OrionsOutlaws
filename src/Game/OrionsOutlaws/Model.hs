@@ -46,7 +46,7 @@ initialState s = msTime >>= (\time -> return $ GameState
   , lastSpawn    = 0
   , elapsedTime  = 0
   , windowSize   = (1280, 720)
-  , mousePos     = (999999, 999999) -- A position that is not on the screen
+  , mousePos     = Nothing
   , steps        = 0
   , lastStep     = time
   , settings     = s
@@ -82,7 +82,7 @@ data GameState = GameState
   , lastSpawn    :: Float                 -- | The time at which the last enemy was spawned
   , elapsedTime  :: Float                 -- | The time elapsed since the game started
   , windowSize   :: Bounds                -- | The size of the window
-  , mousePos     :: Position              -- | The position of the mouse
+  , mousePos     :: Maybe Position        -- | The position of the mouse. 'Nothing' if the mouse is outside the window
   , steps        :: Integer               -- | The number of steps that have been taken since the game started
   , lastStep     :: Integer               -- | The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
   , settings     :: Settings              -- | The game settings
