@@ -1,10 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module Game.OrionsOutlaws.UI.Base
   ( UI (..)
   , UIElement (..)
   , Justification (..)
+  , ElementKey
+  , modifyElement
   , uiToPicture
   , elemToPicture
   , handleClick
@@ -44,7 +47,13 @@ data UIElement =
     , btnSize :: (Float, Float) -- | The width and height of the button
     , pos     :: Position       -- | The position of the button
     , action  :: IO ()          -- | The action to perform when the button is clicked
-    } deriving Show
+    } |
+  -- | UI element that can later be modified
+  ModifiableUIElement
+    { key     :: ElementKey
+    , element :: UIElement
+    }
+    deriving Show
 
 data Justification = JustLeft | JustCentered | JustRight deriving (Show, Eq)
 
@@ -55,6 +64,17 @@ instance Eq UIElement where
   UIImage i1 s1 p1 == UIImage i2 s2 p2 = i1 == i2 && s1 == s2 && p1 == p2
   UIButton t1 f1 s1 p1 _ == UIButton t2 f2 s2 p2 _ = t1 == t2 && f1 == f2 && s1 == s2 && p1 == p2
   _ == _ = False
+
+-- | Modifies the element with the given key, if one exists.
+modifyElement :: UI -> ElementKey -> (UIElement -> UIElement) -> UI
+modifyElement ui k m = ui { elements = applyModifier $ elements ui }
+  where
+    applyModifier :: [UIElement] -> [UIElement]
+    applyModifier [] = []
+    applyModifier (e@(ModifiableUIElement k' _):es) 
+      | k' == k   = m e : es
+      | otherwise = e : applyModifier es
+    applyModifier (e:es) = e : applyModifier es
 
 -- | Converts a UI to a picture.
 uiToPicture :: MousePosition -> AxialScale -> UI -> Picture
@@ -89,6 +109,7 @@ elemToPicture mousePos s (UIButton t f (w, h) (x, y) _) =
       then color (withAlpha 0.35 black) $ rectangleSolid (w + 2 * borderWidth) (h + 2 * borderWidth)
       else blank
     ]
+elemToPicture mp s (ModifiableUIElement _ e) = elemToPicture mp s e
 
 -- | Checks whether the given mouse position is in bounds
 isInBounds :: MousePosition -> Position -> Size -> BorderWidth -> AxialScale -> Bool
@@ -109,7 +130,8 @@ handleClick :: UI -> MousePosition -> AxialScale -> IO ()
 handleClick ui mousePos s = mapM_ handleClick' $ elements ui
   where
     handleClick' (UIButton _ _ (w, h) (x, y) a) = when (isInBounds mousePos (x, y) (w, h) 5 s) a
-    handleClick' _ = return ()
+    handleClick' (ModifiableUIElement _ e)      = handleClick' e
+    handleClick' _                              = return ()
 
 -- | The default background for a UI. Simply transparent black.
 defaultBackground :: Picture
@@ -120,3 +142,4 @@ type MousePosition = Position
 type BorderWidth   = Float
 type Size          = (Float, Float)
 type AxialScale    = (Float, Float)
+type ElementKey    = String

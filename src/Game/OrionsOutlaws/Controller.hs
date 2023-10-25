@@ -221,11 +221,12 @@ inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
     else pauseAllSounds
 
   let paused' = paused gstate
-  return (True, gstate {
-    activeUI = if paused' then Nothing else Just pausedUI,
-    player = if paused' then player gstate else
-      (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
-  })
+  return (True, gstate 
+    { activeUI = if paused' then Nothing else Just pausedUI
+    , player = if paused' then player gstate else
+        (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
+    , keyListeners = [] -- Clear key listeners
+    })
 -- Fallback
 inputPause _ gstate = return (False, gstate)
 

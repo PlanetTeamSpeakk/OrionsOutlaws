@@ -1,15 +1,16 @@
-module Game.OrionsOutlaws.UI.SettingsUI 
+module Game.OrionsOutlaws.UI.SettingsUI
   ( settingsUI
   ) where
 
-import Game.OrionsOutlaws.UI.Base (UI (UI), UIElement (..), defaultBackground, Justification (..))
+import Game.OrionsOutlaws.UI.Base (UI (UI), UIElement (..), defaultBackground, Justification (..), modifyElement, ElementKey)
 import Game.OrionsOutlaws.Assets (pixeboyFont)
 import Game.OrionsOutlaws.Tasks (queueTask)
 import Game.OrionsOutlaws.Model (debugLog, GameState (keyListeners, settings, activeUI), Settings (..), Position)
 import System.Log.Logger (debugM)
-import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeyEsc), MouseButton (AdditionalButton))
+import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeyEsc), MouseButton (..))
 import Data.Char (toUpper)
 import Game.OrionsOutlaws.Data (writeSettings)
+import Data.Maybe (fromJust)
 
 -- | Creates a settings UI for the given settings.
 settingsUI :: Settings -> UI
@@ -19,37 +20,50 @@ settingsUI s = UI
   , UIText "PRESS ESC TO CONTINUE" JustCentered pixeboyFont 0.3 (0, -220)
 
   , UIText "FORWARD" JustLeft pixeboyFont 0.35 (-150, 150)
-  , keyBtn (75, 150) s forwardKey  (\s' k -> s' { forwardKey = k })
+  , keyBtn "fwd" (75, 150) s forwardKey  (\s' k -> s' { forwardKey = k })
 
   , UIText "BACKWARD" JustLeft pixeboyFont 0.35 (-150, 100)
-  , keyBtn (75, 100) s backwardKey (\s' k -> s' { backwardKey = k })
+  , keyBtn "bwd" (75, 100) s backwardKey (\s' k -> s' { backwardKey = k })
 
   , UIText "LEFT" JustLeft pixeboyFont 0.35 (-150, 50)
-  , keyBtn (75, 50)  s leftKey     (\s' k -> s' { leftKey = k })
+  , keyBtn "lft" (75, 50)  s leftKey     (\s' k -> s' { leftKey = k })
 
   , UIText "RIGHT" JustLeft pixeboyFont 0.35 (-150, 0)
-  , keyBtn (75, 0)   s rightKey    (\s' k -> s' { rightKey = k })
+  , keyBtn "rgt" (75, 0)   s rightKey    (\s' k -> s' { rightKey = k })
 
   , UIText "FIRE" JustLeft pixeboyFont 0.35 (-150, -50)
-  , keyBtn (75, -50) s fireKey     (\s' k -> s' { fireKey = k })
+  , keyBtn "fir" (75, -50) s fireKey     (\s' k -> s' { fireKey = k })
   ]
   defaultBackground
 
-keyBtn :: Position -> Settings -> (Settings -> Key) -> (Settings -> Key -> Settings) -> UIElement
-keyBtn p s getter setter = UIButton (keyToString $ getter s) pixeboyFont (75, 35) p $ onKeyBtn setter
+-- | Creates a new keybind button for a keybind.
+keyBtn :: ElementKey -> Position -> Settings -> (Settings -> Key) -> (Settings -> Key -> Settings) -> UIElement
+keyBtn k p s getter setter = ModifiableUIElement k $ UIButton (keyToString $ getter s) pixeboyFont (75, 35) p $ onKeyBtn k setter
 
 -- | Queues a key change task.
-onKeyBtn :: (Settings -> Key -> Settings) -> IO ()
-onKeyBtn setter = queueTask $ \gs -> return gs { keyListeners = onKeyChange setter : keyListeners gs }
+--   Called when a keybind button is pressed.
+onKeyBtn :: ElementKey -> (Settings -> Key -> Settings) -> IO ()
+onKeyBtn k setter = queueTask $ \gs -> do
+  debugM debugLog $ "Keybind button pressed: " ++ show k
+  return gs
+    { keyListeners = onKeyChange setter : keyListeners gs
+    , activeUI = Just $ modifyElement (fromJust $ activeUI gs) k setBtnText
+    }
+  where
+    setBtnText :: UIElement -> UIElement
+    setBtnText e@ModifiableUIElement { element = b@(UIButton {})} = e { element = b { text = "PRESS A KEY" } }
+    setBtnText e = e
 
+-- | Sets the keybind to the given key.
+--   Called after a keybind button was pressed and the user pressed a key.
 onKeyChange :: (Settings -> Key -> Settings) -> Key -> IO ()
-onKeyChange setter key 
-  | key == SpecialKey KeyEsc = return () -- Do nothing on escape
+onKeyChange setter k
+  | k == SpecialKey KeyEsc = return () -- Do nothing on escape
   | otherwise = queueTask $ \gs -> do
-    debugM debugLog $ "Key pressed: " ++ show key
-    let settings' = setter (settings gs) key
+    debugM debugLog $ "Key pressed: " ++ show k
+    let settings' = setter (settings gs) k
     writeSettings settings'
-    return gs 
+    return gs
       { settings = settings'
       , activeUI = Just $ settingsUI settings'
       }
@@ -59,4 +73,8 @@ keyToString :: Key -> String
 keyToString (Char c)                           = [toUpper c]                   -- Char 'e'                         -> "E"
 keyToString (SpecialKey k)                     = map toUpper $ drop 3 $ show k -- SpecialKey KeySpace              -> "SPACE"
 keyToString (MouseButton (AdditionalButton n)) = "BUTTON " ++ show n           -- MouseButton (AdditionalButton 4) -> "BUTTON 4"
-keyToString (MouseButton mb)                   = map toUpper $ show mb         -- MouseButton LeftButton           -> "LEFTBUTTON"
+keyToString (MouseButton LeftButton)           = "LMB"                         -- MouseButton LeftButton           -> "LMB"
+keyToString (MouseButton MiddleButton)         = "MMB"                         -- MouseButton MiddleButton         -> "MMB"
+keyToString (MouseButton RightButton)          = "RMB"                         -- MouseButton RightButton          -> "RMB"
+keyToString (MouseButton WheelUp)              = "WHEEL UP"                    -- MouseButton WheelUp              -> "WHEEL UP"
+keyToString (MouseButton WheelDown)            = "WHEEL DOWN"                  -- MouseButton WheelDown            -> "WHEEL DOWN"
