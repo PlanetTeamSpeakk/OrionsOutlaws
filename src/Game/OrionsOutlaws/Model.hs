@@ -11,6 +11,7 @@ import Data.Bifunctor (bimap)
 import Graphics.Gloss.Data.Picture (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 import Game.OrionsOutlaws.UI.Base (UI)
+import Data.Maybe (isJust)
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -36,8 +37,7 @@ initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 -- | The initial game state
 initialState :: Settings -> IO GameState
 initialState s = msTime >>= (\time -> return $ GameState 
-  { stateType    = Menu
-  , player       = initialPlayer
+  { player       = initialPlayer
   , enemies      = []
   , projectiles  = []
   , animations   = []
@@ -45,8 +45,6 @@ initialState s = msTime >>= (\time -> return $ GameState
   , score        = 0
   , lastSpawn    = 0
   , elapsedTime  = 0
-  , started      = False
-  , paused       = False
   , windowSize   = (1280, 720)
   , mousePos     = (999999, 999999) -- A position that is not on the screen
   , steps        = 0
@@ -75,8 +73,7 @@ stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLength
 
 -- Data types
 data GameState = GameState 
-  { stateType    :: GameStateType         -- | The type of the game state
-  , player       :: Player                -- | The player
+  { player       :: Player                -- | The player
   , enemies      :: [Enemy]               -- | A list of enemies
   , projectiles  :: [Projectile]          -- | A list of projectiles currently on the field
   , animations   :: [PositionedAnimation] -- | A list of animations currently on the field
@@ -84,8 +81,6 @@ data GameState = GameState
   , score        :: Int                   -- | The player's score
   , lastSpawn    :: Float                 -- | The time at which the last enemy was spawned
   , elapsedTime  :: Float                 -- | The time elapsed since the game started
-  , started      :: Bool                  -- | Whether the game has started or not
-  , paused       :: Bool                  -- | Whether the game is paused or not
   , windowSize   :: Bounds                -- | The size of the window
   , mousePos     :: Position              -- | The position of the mouse
   , steps        :: Integer               -- | The number of steps that have been taken since the game started
@@ -96,28 +91,23 @@ data GameState = GameState
 
 instance Show GameState where
   show :: GameState -> String
-  show g = "GameState { stateType = " ++ show (stateType g) ++ ", player = " ++ show (player g) ++ ", enemies = " ++ show (enemies g) ++
-    ", projectiles = " ++ show (projectiles g) ++ ", animations = " ++ show (animations g) ++ ", activeUI = " ++ show (activeUI g) ++
-    ", score = " ++ show (score g) ++ ", lastSpawn = " ++ show (lastSpawn g) ++ ", elapsedTime = " ++ show (elapsedTime g) ++
-    ", started = " ++ show (started g) ++ ", paused = " ++ show (paused g) ++ ", windowSize = " ++ show (windowSize g) ++
-    ", mousePos = " ++ show (mousePos g) ++ ", steps = " ++ show (steps g) ++ ", lastStep = " ++ show (lastStep g) ++
-    ", settings = " ++ show (settings g) ++ " }"
+  show g = "GameState { player = " ++ show (player g) ++ ", enemies = " ++ show (enemies g) ++ ", projectiles = " ++ show (projectiles g) ++
+    ", animations = " ++ show (animations g) ++ ", activeUI = " ++ show (activeUI g) ++ ", score = " ++ show (score g) ++ ", lastSpawn = " ++ show (lastSpawn g) ++
+    ", elapsedTime = " ++ show (elapsedTime g) ++ ", windowSize = " ++ show (windowSize g) ++ ", mousePos = " ++ show (mousePos g) ++ ", steps = " ++ show (steps g) ++
+    ", lastStep = " ++ show (lastStep g) ++ ", settings = " ++ show (settings g) ++ " }"
 
 instance Eq GameState where
   (==) :: GameState -> GameState -> Bool
-  g1 == g2 = stateType g1 == stateType g2 && player g1 == player g2 && enemies g1 == enemies g2 && projectiles g1 == projectiles g2 &&
-    animations g1 == animations g2 && activeUI g1 == activeUI g2 && score g1 == score g2 && lastSpawn g1 == lastSpawn g2 &&
-    elapsedTime g1 == elapsedTime g2 && started g1 == started g2 && paused g1 == paused g2 && windowSize g1 == windowSize g2 &&
-    mousePos g1 == mousePos g2 && steps g1 == steps g2 && lastStep g1 == lastStep g2 && settings g1 == settings g2
-
-data GameStateType = Menu | Playing | Paused | GameOver deriving (Show, Eq)
+  g1 == g2 = player g1 == player g2 && enemies g1 == enemies g2 && projectiles g1 == projectiles g2 && animations g1 == animations g2 &&
+    activeUI g1 == activeUI g2 && score g1 == score g2 && lastSpawn g1 == lastSpawn g2 && elapsedTime g1 == elapsedTime g2 &&
+    windowSize g1 == windowSize g2 && mousePos g1 == mousePos g2 && steps g1 == steps g2 && lastStep g1 == lastStep g2 && settings g1 == settings g2
 
 data Player = Player 
   { playerPos       :: Position -- | Player's position on the field.
   , prevPlayerPos   :: Position -- | Player's previous position on the field. Used for rendering the player
   , playerMovement  :: Movement -- | Player's movement
-  , health          :: Int      -- | Player's health. Will be between 0 and 3
-  , cooldown        :: Int      -- | How many steps until the player can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
+  , health          :: Int      -- | Player's health. Between 0 and 3
+  , cooldown        :: Int      -- | How many steps until the player can shoot again.
   } deriving (Show, Eq)
 
 data MovementDirection = L2R | R2L deriving (Show, Eq)
@@ -277,6 +267,11 @@ type Bounds = (Int, Int)
 
 
 -- Helper functions
+
+-- | Checks whether the game is paused.
+--   True if a UI is open.
+paused :: GameState -> Bool
+paused gstate = isJust $ activeUI gstate
 
 emptyMovement :: MovementDirection -> Movement
 emptyMovement d = Movement False False False False d 0

@@ -169,9 +169,9 @@ input e gstate = do
       gstate'' <- inputMouse e gstate'
       input' e gstate'' -- Continue to next stage (key listeners and configurable keys)
 
--- If there's a keylistener, call it and remove it from the list
 input' :: Event -> GameState -> IO GameState
 input' e@(EventKey key down _ _) gstate
+  -- If there's a keylistener, call it and remove it from the list
   | key /= SpecialKey KeyEsc && down == Down && not (null $ keyListeners gstate) = do
     let keyListener = head $ keyListeners gstate
     keyListener key
@@ -182,7 +182,7 @@ input' e@(EventKey key down _ _) gstate
   | key == backwardKey  s = return $ moveBackward gstate d
   | key == leftKey      s = return $ moveLeft     gstate d
   | key == rightKey     s = return $ moveRight    gstate $ down == Down
-  | otherwise  = input'' e gstate -- Continue to last stage (mouse move and window resize)
+  | otherwise             = input'' e gstate -- Continue to last stage (mouse move and window resize)
     where
       d = down == Down
       s = settings gstate
@@ -220,10 +220,10 @@ inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
     then resumeAllSounds
     else pauseAllSounds
 
+  let paused' = paused gstate
   return (True, gstate {
-    paused = not $ paused gstate,
-    activeUI = if paused gstate then Nothing else Just pausedUI,
-    player = if paused gstate then player gstate else
+    activeUI = if paused' then Nothing else Just pausedUI,
+    player = if paused' then player gstate else
       (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
   })
 -- Fallback
