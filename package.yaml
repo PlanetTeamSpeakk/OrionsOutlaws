@@ -26,7 +26,6 @@ dependencies:
 - GLUT
 - bytestring
 - file-embed
-- bmp
 - random
 - time
 - JuicyPixels

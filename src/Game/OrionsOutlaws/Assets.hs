@@ -13,29 +13,31 @@ module Game.OrionsOutlaws.Assets
   ) where
 
 import Graphics.Gloss
-import Data.ByteString (ByteString, fromStrict)
+import Data.ByteString (ByteString)
 import Data.FileEmbed -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
-import Codec.BMP (parseBMP)
 import Game.OrionsOutlaws.Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
 import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
 import System.IO.Unsafe (unsafePerformIO)
 import Game.OrionsOutlaws.Font (Font, loadFont)
-import Data.Maybe (fromMaybe)
 
--- Helper function for turning bytestrings into bitmapdata
-loadBMPData :: ByteString -> BitmapData
-loadBMPData bstr = case parseBMP $ fromStrict bstr of
-  Left err  -> error $ show err
-  Right bmp -> bitmapDataOfBMP bmp
-
--- | Attempts to load a ByteString representing a PNG into a Picture.
---   If the bytestring is not a valid PNG, returns a blank picture.
-loadPNG :: ByteString -> Picture
+-- | Attempts to load a ByteString representing a PNG into a BitmapData.
+--   If the bytestring is not a valid PNG, returns Nothing.
+loadPNG :: ByteString -> Maybe BitmapData
 loadPNG bstr = case decodePng bstr of
-  Left _    -> blank
-  Right pic -> fromMaybe blank (fromDynamicImage pic)
+  Left _    -> Nothing
+  Right pic -> case fromDynamicImage pic of
+    Nothing -> Nothing
+    Just p  -> Just $ extractBitmapData p
+
+-- | Extracts the BitmapData from a Picture.
+--   PNGs can only be loaded into a Picture and not a BitmapData.
+--   We need a BitmapData, however, so we can use bitmapSection.
+--   Behind the scenes, they're still converted to BitmapData, so this should be safe.
+extractBitmapData :: Picture -> BitmapData
+extractBitmapData (Bitmap bdata) = bdata
+extractBitmapData _              = error "extractBitmapData: Not a bitmap"
 
 -- | The value assets are scaled by when displayed in the game.
 assetScale :: Float
@@ -43,15 +45,17 @@ assetScale = 4
 
 -- Pixeboy font
 pixeboyFont :: Font
-pixeboyFont = loadFont $(embedStringFile "assets/fonts/pixeboy.fnt") $ loadBMPData $(embedFile "assets/fonts/pixeboy.bmp")
+pixeboyFont = case loadPNG $(embedFile "assets/fonts/pixeboy.png") of
+  Nothing    -> error "pixeboyFont: Could not load font"
+  Just bdata -> loadFont $(embedStringFile "assets/fonts/pixeboy.fnt") bdata
 
 -- IMAGES
 --- Spritesheets
 
 -- Explosion animation
 -- Spritesheets have to be bitmaps so that we can use bitmapSection
-explosionSheet :: BitmapData
-explosionSheet = loadBMPData $(embedFile "assets/images/spritesheets/explosion.bmp")
+explosionSheet :: Maybe BitmapData
+explosionSheet = loadPNG $(embedFile "assets/images/spritesheets/explosion.png")
 
 explosionFrame :: Int -> Picture
 explosionFrame 0 = explosionFrame' 0
@@ -62,7 +66,7 @@ explosionFrame 4 = explosionFrame' 4
 explosionFrame n = explosionFrame $ n `mod` 5
 
 explosionFrame' :: Int -> Picture
-explosionFrame' n = scale assetScale assetScale $ bitmapSection (Rectangle (n * 16, 0) (16, 16)) explosionSheet
+explosionFrame' n = maybe blank (scale assetScale assetScale . bitmapSection (Rectangle (n * 16, 0) (16, 16))) explosionSheet
 
 explosionAnimation :: Animation
 explosionAnimation = Animation 5 2 0 0 explosionFrame
@@ -70,7 +74,9 @@ explosionAnimation = Animation 5 2 0 0 explosionFrame
 
 -- Ship (player)
 shipSheet :: BitmapData
-shipSheet = loadBMPData $(embedFile "assets/images/spritesheets/ship.bmp")
+shipSheet = case loadPNG $(embedFile "assets/images/spritesheets/ship.png") of
+  Just bdata -> bdata
+  Nothing    -> error "shipSheet: Could not load spritesheet"
 
 ship :: Int -> Int -> Picture
 ship c r = rotate 90 $ scale assetScale assetScale $ bitmapSection (Rectangle (c * 16, r * 24) (16, 24)) shipSheet

@@ -50,7 +50,6 @@ library
     , aeson
     , aeson-pretty
     , base >=4.7 && <5
-    , bmp
     , bytestring
     , containers
     , file-embed
@@ -80,7 +79,6 @@ executable OrionsOutlaws-exe
     , aeson
     , aeson-pretty
     , base >=4.7 && <5
-    , bmp
     , bytestring
     , containers
     , file-embed
@@ -111,7 +109,6 @@ test-suite OrionsOutlaws-test
     , aeson
     , aeson-pretty
     , base >=4.7 && <5
-    , bmp
     , bytestring
     , containers
     , file-embed

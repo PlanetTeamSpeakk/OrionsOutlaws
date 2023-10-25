@@ -13,8 +13,8 @@ module Game.OrionsOutlaws.UI.Base
 
 import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
 
-import Graphics.Gloss.Data.Color (black, white, withAlpha, red)
-import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank, rectangleWire)
+import Graphics.Gloss.Data.Color (black, white, withAlpha)
+import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)
 import Control.Monad (when)
 
 data UI = UI

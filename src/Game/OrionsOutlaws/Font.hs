@@ -14,7 +14,7 @@ module Game.OrionsOutlaws.Font
 
 import Data.Map (Map, fromList, (!), lookup, member)
 import Data.List (isPrefixOf, intercalate)
-import Graphics.Gloss.Data.Bitmap (BitmapData, bitmapSize)
+import Graphics.Gloss.Data.Bitmap (BitmapData)
 import Data.List.Split (splitOn)
 import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, color)
 import Graphics.Gloss (pictures, Rectangle (Rectangle), red)
@@ -126,10 +126,7 @@ renderChar f c = renderGlyph (fontSheet f) $ getGlyph f c
 -- | Renders a Glyph into a picture using a spritesheet.
 renderGlyph :: BitmapData -> Glyph -> Picture
 renderGlyph sheet Glyph { glyphWidth = gw, glyphHeight = gh, glyphPos = (gx, gy) } =
-  -- In Gloss, (0, 0) is the bottom left rather than the bottom right.
-  -- We need to correct that here.
-  let sheetHeight = fst $ bitmapSize sheet in
-    bitmapSection (Rectangle (gx, sheetHeight - gy - gh) (gw, gh)) sheet
+  bitmapSection (Rectangle (gx, gy) (gw, gh)) sheet
 
 -- | Renders a string into a picture, centered around the center of the text.
 renderStringCentered :: Font -> String -> Picture
