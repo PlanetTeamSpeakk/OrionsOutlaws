@@ -1,8 +1,19 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | Very simple audio manager.
-module Game.OrionsOutlaws.Audio (Game.OrionsOutlaws.Audio.initAudio, finishAudio, playSound, loopSound, getPlaying, stopAllSounds, pauseAllSounds, resumeAllSounds, loopBgMusic) where
+module Game.OrionsOutlaws.Audio 
+  ( Game.OrionsOutlaws.Audio.initAudio
+  , finishAudio
+  , setVolume
+  , playSound
+  , loopSound
+  , getPlaying
+  , stopAllSounds
+  , pauseAllSounds
+  , resumeAllSounds
+  , loopBgMusic
+  ) where
 
-import Sound.ProteaAudio
+import Sound.ProteaAudio (Sound, Sample, finishAudio, initAudio, soundActive, soundLoop, soundPlay, soundStop, soundUpdate, volume)
 import Game.OrionsOutlaws.Assets (bgMusic)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import GHC.IO (unsafePerformIO)
@@ -15,6 +26,10 @@ initAudio = Sound.ProteaAudio.initAudio 32 44100 512
 playing :: IORef [Sound]
 playing = unsafePerformIO $ newIORef []
 {-# NOINLINE playing #-}
+
+-- | Sets the global volume.
+setVolume :: Float -> IO ()
+setVolume v = volume v v
 
 -- | Adds the given sound to the playing sounds list. Internal use only.
 addSound :: Sound -> IO ()
@@ -56,15 +71,15 @@ resumeSound sound = do
     _ <- soundUpdate sound False 1 1 0 1
     return ()
 
-playSound :: Float -> Sample -> IO ()
-playSound v sample = do
-    sound <- soundPlay sample v v 0 1 -- Numbers are: left volume, right volume, time difference and pitch
+playSound :: Sample -> IO ()
+playSound sample = do
+    sound <- soundPlay sample 1 1 0 1 -- Numbers are: left volume, right volume, time difference and pitch
     addSound sound
 
-loopSound :: Float -> Sample -> IO ()
-loopSound v sample = do
-    sound <- soundLoop sample v v 0 1
+loopSound :: Sample -> IO ()
+loopSound sample = do
+    sound <- soundLoop sample 1 1 0 1
     addSound sound
 
-loopBgMusic :: Float -> IO ()
-loopBgMusic v = loopSound v bgMusic
+loopBgMusic :: IO ()
+loopBgMusic = loopSound bgMusic

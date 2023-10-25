@@ -3,7 +3,7 @@ module Main (main) where
 import Game.OrionsOutlaws.Controller
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.View
-import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic)
+import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic, setVolume)
 import Game.OrionsOutlaws.Data
 import Game.OrionsOutlaws.Tasks (runAndClearTasks)
 
@@ -40,8 +40,9 @@ main = do
 
   -- Init audio related stuff
   scs <- initAudio
+  setVolume $ volume s
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
-  loopBgMusic $ volume s
+  loopBgMusic
 
   state <- initialState s
   size <- getScreenSize

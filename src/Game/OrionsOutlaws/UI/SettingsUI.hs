@@ -5,12 +5,12 @@ module Game.OrionsOutlaws.UI.SettingsUI
 import Game.OrionsOutlaws.UI.Base (UI (UI), UIElement (..), defaultBackground, Justification (..), modifyElement, ElementKey)
 import Game.OrionsOutlaws.Assets (pixeboyFont)
 import Game.OrionsOutlaws.Tasks (queueTask)
-import Game.OrionsOutlaws.Model (debugLog, GameState (keyListeners, settings, activeUI), Settings (..), Position)
-import System.Log.Logger (debugM)
+import Game.OrionsOutlaws.Model (GameState (keyListeners, settings, activeUI), Settings (..), Position)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeyEsc), MouseButton (..))
 import Data.Char (toUpper)
 import Game.OrionsOutlaws.Data (writeSettings)
 import Data.Maybe (fromJust)
+import Game.OrionsOutlaws.Audio (setVolume)
 
 -- | Creates a settings UI for the given settings.
 settingsUI :: Settings -> UI
@@ -47,7 +47,6 @@ keyBtn k p s getter setter = ModifiableUIElement k $ UIButton (keyToString $ get
 --   Called when a keybind button is pressed.
 onKeyBtn :: ElementKey -> (Settings -> Key -> Settings) -> IO ()
 onKeyBtn k setter = queueTask $ \gs -> do
-  debugM debugLog $ "Keybind button pressed: " ++ show k
   return gs
     { keyListeners = onKeyChange setter : keyListeners gs
     , activeUI = Just $ modifyElement (fromJust $ activeUI gs) k setBtnText
@@ -63,7 +62,6 @@ onKeyChange :: (Settings -> Key -> Settings) -> Key -> IO ()
 onKeyChange setter k
   | k == SpecialKey KeyEsc = return () -- Do nothing on escape
   | otherwise = queueTask $ \gs -> do
-    debugM debugLog $ "Key pressed: " ++ show k
     let settings' = setter (settings gs) k
     writeSettings settings'
     return gs
@@ -87,4 +85,5 @@ onVolumeChange :: Float -> IO ()
 onVolumeChange v = queueTask $ \gs -> do
   let settings' = (settings gs) { volume = v }
   writeSettings settings'
+  setVolume v
   return gs { settings = settings' }
