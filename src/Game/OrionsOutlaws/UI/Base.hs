@@ -78,9 +78,9 @@ modifyElement ui k m = ui { elements = applyModifier $ elements ui }
 
 -- | Converts a UI to a picture.
 uiToPicture :: MousePosition -> AxialScale -> UI -> Picture
-uiToPicture mousePos s@(hs, vs) (UI elems bg) = pictures 
+uiToPicture mousePos s@(hs, vs) (UI elems bg) = let s' = min hs vs in pictures 
   [ Pic.scale hs vs bg -- Scaled background
-  , Pic.scale hs hs $ pictures $ map (elemToPicture mousePos s) elems -- Elements
+  , Pic.scale s' s' $ pictures $ map (elemToPicture mousePos s) elems -- Elements
   ]
 
 -- | Converts a UI element to a picture.
@@ -113,9 +113,10 @@ elemToPicture mp s (ModifiableUIElement _ e) = elemToPicture mp s e
 
 -- | Checks whether the given mouse position is in bounds
 isInBounds :: MousePosition -> Position -> Size -> BorderWidth -> AxialScale -> Bool
-isInBounds (mx, my) (ex, ey) (w, h) b (hs, _) = 
-  let (x, y) = (mx - (ex * hs), my - (ey * hs))          -- Apply scaling to the position
-      (sw, sh) = ((w / 2 + b) * hs, (h / 2 + b) * hs) in -- Apply scaling to the size
+isInBounds (mx, my) (ex, ey) (w, h) b (hs, vs) = 
+  let s = min hs vs -- The smaller of the two scales
+      (x, y) = (mx - (ex * s), my - (ey * s))          -- Apply scaling to the position
+      (sw, sh) = ((w / 2 + b) * s, (h / 2 + b) * s) in -- Apply scaling to the size
   x >= -sw && x <= sw && y >= -sh && y <= sh -- Check if scaled position is in scaled bounds
 
 -- | Transforms a picture by a scale and a position.
