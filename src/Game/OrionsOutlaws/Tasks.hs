@@ -10,14 +10,15 @@ import Game.OrionsOutlaws.Model (GameState)
 import GHC.IO (unsafePerformIO)
 import Data.IORef (newIORef, IORef, readIORef, writeIORef)
 
--- | Clears all queued tasks.
-clearTasks :: IO ()
-clearTasks = writeIORef queuedTasks []
-
 -- | A reference to the list of queued tasks.
+--   Internal use only.
 queuedTasks :: IORef [GameState -> IO GameState]
 queuedTasks = unsafePerformIO $ newIORef []
 {-# NOINLINE queuedTasks #-}
+
+-- | Clears all queued tasks.
+clearTasks :: IO ()
+clearTasks = writeIORef queuedTasks []
 
 -- | Returns the list of queued tasks.
 getQueuedTasks :: IO [GameState -> IO GameState]
