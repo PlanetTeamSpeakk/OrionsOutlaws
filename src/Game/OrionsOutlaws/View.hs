@@ -21,7 +21,8 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in 
   pictures 
-    [ renderPlayer $ player gstate                                           -- render player
+    [ renderBackground                                                      -- render background
+    ,renderPlayer $ player gstate                                           -- render player
     -- , renderPlayerBoxes $ player gstate                                   -- render player boxes (debugging only)
     , renderProjectiles $ projectiles gstate                                 -- render projectiles
     , renderEnemies $ enemies gstate                                         -- render enemies
@@ -30,6 +31,10 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     , maybe blank (uiToPicture (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI
     ]
   where
+    -- Renders the background, currently just a black rectangle
+    renderBackground :: Picture
+    renderBackground = color black $ rectangleSolid (fromIntegral ww) (fromIntegral wh)
+
     -- Renders the player, curently just a green circle
     renderPlayer :: Player -> Picture
     renderPlayer p = color green $ translateP (position sd p) $ fromPlayerFacing (facing gstate (movement $ player gstate)) getShipFrame
