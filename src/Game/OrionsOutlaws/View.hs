@@ -10,12 +10,13 @@ import Game.OrionsOutlaws.Util (msTime)
 import Game.OrionsOutlaws.UI.Base (uiToPicture)
 import Game.OrionsOutlaws.Font (TextAlignment (..), renderString)
 
--- | Simply calls viewPure with the current stepdelta and the given gamestate
+-- | Renders the gamestate into a picture
+--   Simply calls viewPure with the current stepdelta and the given gamestate
 view :: GameState -> IO Picture
 view gstate = do
-    time <- msTime
-    let sd = stepDelta (lastStep gstate) time
-    return $ viewPure sd gstate
+  time <- msTime
+  let sd = stepDelta (lastStep gstate) time
+  return $ viewPure sd gstate
 
 -- | Renders the gamestate into a picture
 viewPure :: Float -> GameState -> Picture
@@ -42,6 +43,8 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderPlayerBoxes :: Player -> Picture
     renderPlayerBoxes = renderBoxes . createBoxes
 
+    -- | Renders a list of boxes into rectangles.
+    --   Used for debugging purposes.
     renderBoxes :: [Box] -> Picture
     renderBoxes bs = pictures $ map renderBox bs
       where
@@ -79,9 +82,9 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
 digs :: Integral x => x -> [x]
 digs 0 = [0]
 digs x = digs' x
-    where
-        digs' 0 = []
-        digs' y = digs' (y `div` 10) ++ [y `mod` 10]
+  where
+    digs' 0 = []
+    digs' y = digs' (y `div` 10) ++ [y `mod` 10]
 
 -- | Translates a picture by a position 
 translateP :: Position -> Picture -> Picture
@@ -89,9 +92,8 @@ translateP = uncurry translate
 
 -- | Checks whether the given position is within the given bounds.
 inBounds :: Bounds -> Position -> Bool
-inBounds (maxX, maxY) (x, y) =
-    let (hwx, hwy) = (fromIntegral maxX / 2, fromIntegral maxY / 2) in
-    x > -hwx && x < hwx && y > -hwy && y < hwy
+inBounds (maxX, maxY) (x, y) = let (hwx, hwy) = (fromIntegral maxX / 2, fromIntegral maxY / 2) in
+  x > -hwx && x < hwx && y > -hwy && y < hwy
 
 -- | Checks whether the given position is on the screen.
 onScreen :: GameState -> Position -> Bool

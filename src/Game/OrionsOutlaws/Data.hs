@@ -40,24 +40,25 @@ writeScores = writeJson "scores.json"
 -- | Load a file safely. If the file could not be read, write the fallback
 loadSafely :: (FromJSON a, ToJSON a) => FilePath -> a -> IO a
 loadSafely file fallback = do
-    res <- try (B.readFile file) :: IO (Either IOError B.ByteString)
-    case res of
-        -- If the file could not be read, write and return fallback.
-        Left e -> do
-            warningM defLog $ "Could not read " ++ file ++ ": " ++ show e
-            writeJson file fallback -- Write fallback
-            return fallback
+  -- Attempt to read the file as a bytestring.
+  res <- try (B.readFile file) :: IO (Either IOError B.ByteString)
+  case res of
+    -- If the file could not be read, write and return fallback.
+    Left e -> do
+      warningM defLog $ "Could not read " ++ file ++ ": " ++ show e
+      writeJson file fallback -- Write fallback
+      return fallback
 
-        -- If the file could be read, try to parse it.
-        Right content -> case eitherDecodeStrict content of
-            -- If the content could not be parsed, return fallback.
-            Left e -> do
-                warningM defLog $ "Could not parse " ++ file ++ ": " ++ e
-                writeJson file fallback -- Write fallback
-                return fallback
+    -- If the file could be read, try to parse it.
+    Right content -> case eitherDecodeStrict content of
+      -- If the content could not be parsed, return fallback.
+      Left e -> do
+        warningM defLog $ "Could not parse " ++ file ++ ": " ++ e
+        writeJson file fallback -- Write fallback
+        return fallback
 
-            -- If the content could be parsed, return it.
-            Right s -> return s
+      -- If the content could be parsed, return it.
+      Right s -> return s
 
 -- | Writes a datastructure to a file in JSON format.
 writeJson :: (ToJSON a) => FilePath -> a -> IO ()

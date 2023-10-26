@@ -18,19 +18,24 @@ import Data.Maybe (isJust)
 logFormatter :: Bool -> LogFormatter a
 logFormatter includeName = tfLogFormatter "%X" $ "[$time : " ++ (if includeName then "$loggername : " else "") ++ "$prio] $msg"
 
+-- | The default log name, rarely used.
 defLog :: String
 defLog = rootLoggerName
 
+-- | The debug log name, used for debugging.
 debugLog :: String
 debugLog = "Debug"
 
--- Constants
+-- CONSTANTS
+-- | The number of steps per second
 stepsPerSec :: Int
 stepsPerSec = 20
 
+-- | The length of a step in milliseconds
 stepLengthMs :: Int
 stepLengthMs = 1000 `div` stepsPerSec
 
+-- | The initial state of the player
 initialPlayer :: Player
 initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
@@ -53,9 +58,11 @@ initialState s = msTime >>= (\time -> return $ GameState
   , keyListeners = []
   })
 
+-- | The size of enemies in pixels
 enemySize :: Float
 enemySize = 48
 
+-- | The speed at which projectiles travel by default.
 projectileSpeed :: Float
 projectileSpeed = 30
 
@@ -67,6 +74,8 @@ margin = (140, 50)
 halfRt2 :: Float
 halfRt2 = 0.5 * sqrt 2
 
+-- | Calculates the progress between the previous step and the current step.
+--   Used to linearly interpolate positions when rendering.
 stepDelta :: Integer -> Integer -> Float
 stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLengthMs
 
@@ -122,7 +131,7 @@ data Movement = Movement
   } deriving (Show, Eq)
 
 data Enemy =
-    RegularEnemy { -- Regular enemy, will move in a straight line and shoot at the player
+    RegularEnemy { -- Regular enemy, moves in a straight line and shoots at the player
         enemyPos        :: Position,    -- Enemy's position on the field
         prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the enemy
         enemyMovement   :: Movement,    -- Enemy's movement
@@ -151,7 +160,7 @@ class Positionable a where
   curPosition  :: a -> Position
   prevPosition :: a -> Position
   withPosition :: a -> Position -> a
-  movement :: a -> Movement
+  movement     :: a -> Movement
 
 -- Calculates the interpolated position using the previous position, the current position and the step delta.
 position :: Positionable a => Float -> a -> Position
@@ -179,14 +188,23 @@ instance Positionable Projectile where
 
 -- Class for things that can collide with other things.
 class Collidable a where
+  -- | Creates a list of boxes that wrap this object.
   createBoxes :: a -> [Box]
+
+  -- | Checks whether the given collidable collides with the given box.
+  collidesWithBox :: a -> Box -> Bool
+  collidesWithBox a b = any (intersects b) $ createBoxes a
+
+  -- | Checks whether the given collidable collides with any of the given boxes.
+  collidesWith :: Collidable b => a -> b -> Bool
+  collidesWith a b = collidesWithBox a `any` createBoxes b
 
 -- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
 instance Collidable Player where
   createBoxes p = let (x, y) = playerPos p in 
     [ ((x - 12, y - 32), (x + 28, y + 32)) -- Body
     , ((x + 28, y - 24), (x + 40, y + 24)) -- Head
-    , ((x + 40, y - 16), (x + 48, y + 16))  -- Tip
+    , ((x + 40, y - 16), (x + 48, y + 16)) -- Tip
     ]
 
 instance Collidable Enemy where
@@ -194,7 +212,7 @@ instance Collidable Enemy where
   -- createBoxes (BossEnemy (_, _) _ _ _ _)  = undefined -- TODO - Implement this
 
 instance Collidable Projectile where
-  createBoxes (RegularProjectile (x, y) _ _ _ _) = [((x - 5, y - 5), (x + 5, y + 5))]
+  createBoxes (RegularProjectile { projPos = (x, y) } ) = [((x - 5, y - 5), (x + 5, y + 5))]
 
 
 -- | An animation is a set of frames that are shown in order.
@@ -325,14 +343,6 @@ applyMovement b a mult = withPosition a $ applyPositionMovement b (curPosition a
 -- | Subtracts the margin from the given bounds.
 subtractMargin :: Bounds -> Bounds
 subtractMargin (width, height) = bimap (width -) (height -) margin
-
--- | Checks whether the given collidable collides with the given box.
-collidesWithBox :: (Collidable a) => a -> Box -> Bool
-collidesWithBox a b = any (intersects b) $ createBoxes a
-
--- | Checks whether the given collidable collides with any of the given boxes.
-collidesWith :: (Collidable a, Collidable b) => a -> b -> Bool
-collidesWith a b = collidesWithBox a `any` createBoxes b
 
 frame :: Animation -> Picture
 frame a = frameGetter a $ curFrame a
