@@ -35,7 +35,7 @@ settingsUI s = UI
   , keyBtn "fir" (75, -50) s fireKey     (\s' k -> s' { fireKey = k })
 
   , UIText "VOLUME" JustLeft pixeboyFont 0.35 (-150, -100)
-  , UISlider (75, -100) (200, 20) (volume s) onVolumeChange False
+  , UISlider (75, -100) (180, 20) (volume s) onVolumeChange False
   ]
   defaultBackground
 
