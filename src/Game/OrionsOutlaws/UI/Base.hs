@@ -118,7 +118,7 @@ elemToPicture mousePos s (UIButton t f p (w, h) _) =
 
 -- Render UI Slider
 elemToPicture mousePos s (UISlider (x, y) (w, h) v _ a) = translate x y $ pictures
-  [ color (withAlpha 0.8 white) $ rectangleSolid w 10   -- Line to slide over
+  [ color (withAlpha 0.8 white) $ rectangleSolid w 10                                           -- Line to slide over
   , renderButton mousePos s 3 (0.67 * h, h) ((v - 0.5) * w, 0) (x + ((v - 0.5) * w), y) a blank -- Slider
   ]
 
@@ -126,8 +126,8 @@ elemToPicture mousePos s (UISlider (x, y) (w, h) v _ a) = translate x y $ pictur
 elemToPicture mp s (ModifiableUIElement _ e) = elemToPicture mp s e
 
 -- | Renders a button
---              mousePos               scale         border         size              position    button position  hover overwrite  content
-renderButton :: Maybe MousePosition -> AxialScale -> BorderWidth -> (Float, Float) -> Position -> Position ->      Bool ->          Picture -> Picture
+--              mousePos               scale         border         size              position    abs position  hover overwrite  content
+renderButton :: Maybe MousePosition -> AxialScale -> BorderWidth -> (Float, Float) -> Position -> Position ->   Bool ->          Picture -> Picture
 renderButton mousePos s borderWidth (w, h) (x, y) (bx, by) ho p =
   let borderColor = withAlpha 0.8 white
   in translate x y $ pictures
@@ -135,9 +135,9 @@ renderButton mousePos s borderWidth (w, h) (x, y) (bx, by) ho p =
     , translate 0 (-(h + borderWidth) / 2) $ color borderColor $ rectangleSolid (w + 2 * borderWidth) borderWidth -- Bottom border
     , translate (-(w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid borderWidth h -- Left border
     , translate ( (w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid borderWidth h -- Right border
-    , color (withAlpha 0.8 black) $ rectangleSolid w h   -- Background
-    , p                                                  -- Content (either blank or some text)
-    , if ho || isInBounds mousePos (bx, by) (w, h) borderWidth s -- Highlight
+    , color (withAlpha 0.8 black) $ rectangleSolid w h           -- Background
+    , p                                                          -- Content (either blank or some text)
+    , if ho || isInBounds mousePos (bx, by) (w, h) borderWidth s -- Hover highlight
       then color (withAlpha 0.35 black) $ rectangleSolid (w + 2 * borderWidth) (h + 2 * borderWidth)
       else blank
     ]
@@ -147,9 +147,9 @@ isInBounds :: Maybe MousePosition -> Position -> Size -> BorderWidth -> AxialSca
 isInBounds Nothing _ _ _ _                            = False
 isInBounds (Just (mx, my)) (ex, ey) (w, h) b (hs, vs) =
   let s = min hs vs -- The smaller of the two scales
-      (x, y) = (mx - (ex * s), my - (ey * s))          -- Apply scaling to the position
-      (sw, sh) = ((w / 2 + b) * s, (h / 2 + b) * s) in -- Apply scaling to the size
-  x >= -sw && x <= sw && y >= -sh && y <= sh -- Check if scaled position is in scaled bounds
+      (x, y) = (mx - (ex * s), my - (ey * s))       -- Apply scaling to the position
+      (sw, sh) = ((w / 2 + b) * s, (h / 2 + b) * s) -- Apply scaling to the size
+  in x >= -sw && x <= sw && y >= -sh && y <= sh     -- Check if scaled position is in scaled bounds
 
 -- | Transforms a picture by a scale and a position.
 --   Internal use only.
@@ -157,8 +157,8 @@ transformSP :: Float -> Position -> Picture -> Picture
 transformSP s (x, y) = translate x y . Pic.scale s s
 
 -- | Handles a click on a UI.
---   Checks if the click is on a button and if so, performs the button's action.
---   Does nothing if the click is not on a button.
+--   Checks if the click is on a button or slider and if so, performs the button's action/activates the slider.
+--   Does nothing if the click is not on a button or a slider.
 handleMouse :: UI -> KeyState -> MousePosition -> AxialScale -> IO UI
 handleMouse ui state mousePos s = do
   es <- mapM handleMouse' $ elements ui
@@ -177,7 +177,7 @@ handleMouse ui state mousePos s = do
           sliderAction sl v
           return sl { active = False }
       -- If mouse is pressed and mouse is in bounds, activate slider
-      | isInBounds (Just mousePos) (x + ((v - 0.5) * w), y) (w, h) 3 s = return sl { active = True }
+      | isInBounds (Just mousePos) (x + ((v - 0.5) * w), y) (0.67 * h, h) 3 s = return sl { active = True }
       -- Do nothing if mouse is not in bounds
       | otherwise                                                      = return sl
     -- For modifiable elements, propagate the event.
