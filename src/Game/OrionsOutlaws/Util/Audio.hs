@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | Very simple audio manager.
-module Game.OrionsOutlaws.Audio 
-  ( Game.OrionsOutlaws.Audio.initAudio
+module Game.OrionsOutlaws.Util.Audio 
+  ( Game.OrionsOutlaws.Util.Audio.initAudio
   , finishAudio
   , setVolume
   , playSound

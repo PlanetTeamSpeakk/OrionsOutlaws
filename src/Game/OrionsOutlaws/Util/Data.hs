@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-} -- Gloss didn't define them, so we do it.
 -- | Handles loading and writing of settings, scores and any other data.
-module Game.OrionsOutlaws.Data (loadSettings, writeSettings, loadScores, writeScores) where
+module Game.OrionsOutlaws.Util.Data (loadSettings, writeSettings, loadScores, writeScores) where
 
 import Game.OrionsOutlaws.Model (Settings (..), defaultSettings, Score, defLog)
 import Data.Aeson (FromJSON, ToJSON)

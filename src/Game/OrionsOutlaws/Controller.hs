@@ -5,16 +5,16 @@ module Game.OrionsOutlaws.Controller (module Game.OrionsOutlaws.Controller) wher
 import Game.OrionsOutlaws.Model
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger (debugM)
-import Game.OrionsOutlaws.View (onScreen, inBounds)
-import Game.OrionsOutlaws.Util (msTime, randomElem)
+import Game.OrionsOutlaws.Rendering.View (onScreen, inBounds)
+import Game.OrionsOutlaws.Util.Util (msTime, randomElem)
 import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
 import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
-import Game.OrionsOutlaws.Audio
+import Game.OrionsOutlaws.Util.Audio
 import Data.Maybe (isJust, fromJust)
-import Game.OrionsOutlaws.UI (handleMouse, handleMotion)
+import Game.OrionsOutlaws.Rendering.UI (handleMouse, handleMotion)
 import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
 
 -- | Handle one iteration of the game

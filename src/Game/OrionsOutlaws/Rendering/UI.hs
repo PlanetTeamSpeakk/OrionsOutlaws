@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Game.OrionsOutlaws.UI
+module Game.OrionsOutlaws.Rendering.UI
   ( UI (..)
   , UIElement (..)
   , Justification (..)
@@ -32,7 +32,7 @@ module Game.OrionsOutlaws.UI
   , defaultBackground
   ) where
 
-import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
+import Game.OrionsOutlaws.Rendering.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
 
 import Graphics.Gloss.Data.Color (black, white, withAlpha)
 import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)

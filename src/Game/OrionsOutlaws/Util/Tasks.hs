@@ -1,5 +1,5 @@
 -- | A module that allows for queuing tasks to be executed in the next step.
-module Game.OrionsOutlaws.Tasks
+module Game.OrionsOutlaws.Util.Tasks
   ( getQueuedTasks
   , queueTask
   , clearTasks

@@ -2,15 +2,15 @@ module Game.OrionsOutlaws.UI.SettingsUI
   ( settingsUI
   ) where
 
-import Game.OrionsOutlaws.UI (UIElement (..), Justification (..), modifyElement, ElementKey, ui, UI, text, slider, modifiable)
+import Game.OrionsOutlaws.Rendering.UI (UIElement (..), Justification (..), modifyElement, ElementKey, ui, UI, text, slider, modifiable)
 import Game.OrionsOutlaws.Assets (pixeboyFont)
-import Game.OrionsOutlaws.Tasks (queueTask)
+import Game.OrionsOutlaws.Util.Tasks (queueTask)
 import Game.OrionsOutlaws.Model (GameState (keyListeners, settings, activeUI), Settings (..), Position)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeyEsc), MouseButton (..))
 import Data.Char (toUpper)
-import Game.OrionsOutlaws.Data (writeSettings)
+import Game.OrionsOutlaws.Util.Data (writeSettings)
 import Data.Maybe (fromJust)
-import Game.OrionsOutlaws.Audio (setVolume)
+import Game.OrionsOutlaws.Util.Audio (setVolume)
 
 -- | Creates a settings UI for the given settings.
 settingsUI :: Settings -> UI

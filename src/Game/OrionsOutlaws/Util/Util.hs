@@ -1,4 +1,4 @@
-module Game.OrionsOutlaws.Util (module Game.OrionsOutlaws.Util) where
+module Game.OrionsOutlaws.Util.Util (module Game.OrionsOutlaws.Util.Util) where
 
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import System.Random (randomRIO)

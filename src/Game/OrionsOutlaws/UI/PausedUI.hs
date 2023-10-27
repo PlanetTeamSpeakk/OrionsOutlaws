@@ -1,10 +1,10 @@
 module Game.OrionsOutlaws.UI.PausedUI
   ( pausedUI
   ) where
-import Game.OrionsOutlaws.UI (Justification (..), ui, UI, text, button)
+import Game.OrionsOutlaws.Rendering.UI (Justification (..), ui, UI, text, button)
 import Game.OrionsOutlaws.Assets (pixeboyFont)
 import Game.OrionsOutlaws.Model (GameState (activeUI, settings))
-import Game.OrionsOutlaws.Tasks (queueTask)
+import Game.OrionsOutlaws.Util.Tasks (queueTask)
 import Game.OrionsOutlaws.UI.SettingsUI (settingsUI)
 
 pausedUI :: UI
