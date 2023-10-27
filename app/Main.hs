@@ -1,23 +1,23 @@
 module Main (main) where
 
-import Game.OrionsOutlaws.Controller
-import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Rendering.View
-import Game.OrionsOutlaws.Util.Audio (initAudio, finishAudio, loopBgMusic, setVolume)
-import Game.OrionsOutlaws.Util.Data
-import Game.OrionsOutlaws.Util.Tasks (runAndClearTasks)
+import Game.OrionsOutlaws.Controller        (input, step)
+import Game.OrionsOutlaws.Model             (GameState(mousePos, windowSize, steps), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume))
+import Game.OrionsOutlaws.Rendering.View    (view)
+import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume)
+import Game.OrionsOutlaws.Util.Data         (loadSettings)
+import Game.OrionsOutlaws.Util.Tasks        (runAndClearTasks)
 
-import Graphics.Gloss.Interface.IO.Game
-import System.Log.Logger
-import System.Log.Handler (setFormatter)
-import System.Log.Handler.Simple
-import System.IO
+import Graphics.Gloss.Interface.IO.Game     (white, playIO, Display(InWindow))
+import System.Log.Logger                    (Priority(INFO, DEBUG), addHandler, debugM, removeHandler, rootLoggerName, setLevel, updateGlobalLogger)
+import System.Log.Handler                   (setFormatter)
+import System.Log.Handler.Simple            (streamHandler)
+import System.IO                            (stdout)
 import Graphics.Gloss.Interface.Environment (getScreenSize)
-import Data.Bifunctor (Bifunctor(bimap))
-import Graphics.UI.GLUT (($=), crossingCallback, Crossing (WindowEntered))
-import Control.Monad (when)
-import Data.IORef (IORef, newIORef, writeIORef, readIORef)
-import System.IO.Unsafe (unsafePerformIO)
+import Data.Bifunctor                       (Bifunctor(bimap))
+import Graphics.UI.GLUT                     (($=), crossingCallback, Crossing (WindowEntered))
+import Control.Monad                        (when)
+import Data.IORef                           (IORef, newIORef, writeIORef, readIORef)
+import System.IO.Unsafe                     (unsafePerformIO)
 
 main :: IO ()
 main = do
@@ -71,9 +71,9 @@ runTasksAndStep sd gstate = do
   -- If the mouse is no longer inside the window, we reset the mouse position to Nothing.
   c <- readIORef crossingState
   let gstate' = gstate { mousePos = if c == WindowEntered then mousePos gstate else Nothing }
-  
-  gstate'' <- runAndClearTasks gstate'
-  step sd gstate''
+
+  gstate'' <- runAndClearTasks gstate' -- Run tasks
+  step sd gstate''                     -- Execute step
 
 -- | The current crossing state of the mouse.
 --   Gloss does not have an event for this, so we make our own using GLUT.
