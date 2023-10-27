@@ -14,7 +14,7 @@ import System.Exit (exitSuccess)
 import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
 import Game.OrionsOutlaws.Audio
 import Data.Maybe (isJust, fromJust)
-import Game.OrionsOutlaws.UI.Base (handleMouse, handleMotion)
+import Game.OrionsOutlaws.UI (handleMouse, handleMotion)
 import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
 
 -- | Handle one iteration of the game

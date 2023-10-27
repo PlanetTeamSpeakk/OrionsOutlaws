@@ -7,7 +7,7 @@ import Graphics.Gloss
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont)
 import Game.OrionsOutlaws.Util (msTime)
-import Game.OrionsOutlaws.UI.Base (uiToPicture)
+import Game.OrionsOutlaws.UI (uiToPicture)
 import Game.OrionsOutlaws.Font (TextAlignment (..), renderString)
 
 -- | Renders the gamestate into a picture

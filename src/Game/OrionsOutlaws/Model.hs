@@ -10,7 +10,7 @@ import Data.Ord (clamp)
 import Data.Bifunctor (bimap)
 import Graphics.Gloss.Data.Picture (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
-import Game.OrionsOutlaws.UI.Base (UI)
+import Game.OrionsOutlaws.UI (UI)
 import Data.Maybe (isJust)
 
 -- Some logging-related constants
