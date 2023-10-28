@@ -22,17 +22,7 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in
   pictures
-    [ renderBackground                                                      -- render background
-      [renderBackgroundColor                                                -- render background color
-      , renderShadows                                                       -- render shadows
-      , renderAnimatedLayer stars                                           -- render animated stars
-      , renderAnimatedLayer bigStars                                        -- render animated big stars
-      , renderAnimatedLayer blueStar                                        -- render animated blue star
-      , renderAnimatedLayer redStar                                         -- render animated red star
-      , renderAnimatedLayer blackHole                                       -- render animated black hole
-      , renderAnimatedLayer smallRotaryStar                                 -- render animated small rotary star
-      , renderAnimatedLayer rotaryStar                                      -- render animated rotary star
-      ]                                                     
+    [ renderBackground                                                       -- render background                                                    
     , renderPlayer $ player gstate                                           -- render player
     -- , renderPlayerBoxes $ player gstate                                   -- render player boxes (debugging only)
     , renderProjectiles $ projectiles gstate                                 -- render projectiles
@@ -43,8 +33,18 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     ]
   where
     -- Renders the background, currently just a black rectangle
-    renderBackground :: [Picture] -> Picture
+    renderBackground :: Picture
     renderBackground = pictures
+      [ renderBackgroundColor                                               -- render background color
+      , renderShadows                                                       -- render shadows
+      , renderAnimatedLayer stars                                           -- render animated stars
+      , renderAnimatedLayer bigStars                                        -- render animated big stars
+      , renderAnimatedLayer blueStar                                        -- render animated blue star
+      , renderAnimatedLayer redStar                                         -- render animated red star
+      , renderAnimatedLayer blackHole                                       -- render animated black hole
+      , renderAnimatedLayer smallRotaryStar                                 -- render animated small rotary star
+      , renderAnimatedLayer rotaryStar                                      -- render animated rotary star
+      ] 
 
     -- Renders the shadows
     renderShadows :: Picture
