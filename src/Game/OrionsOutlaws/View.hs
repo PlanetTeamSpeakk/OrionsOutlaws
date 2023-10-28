@@ -5,7 +5,7 @@ module Game.OrionsOutlaws.View (module Game.OrionsOutlaws.View) where
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont)
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar)
 import Game.OrionsOutlaws.Util (msTime)
 import Game.OrionsOutlaws.UI.Base (uiToPicture)
 import Game.OrionsOutlaws.Font (TextAlignment (..), renderString)
@@ -20,10 +20,20 @@ view gstate = do
 
 -- | Renders the gamestate into a picture
 viewPure :: Float -> GameState -> Picture
-viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in 
-  pictures 
+viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in
+  pictures
     [ renderBackground                                                      -- render background
-    ,renderPlayer $ player gstate                                           -- render player
+      [renderBackgroundColor                                                -- render background color
+      , renderShadows                                                       -- render shadows
+      , renderAnimatedLayer stars                                           -- render animated stars
+      , renderAnimatedLayer bigStars                                        -- render animated big stars
+      , renderAnimatedLayer blueStar                                        -- render animated blue star
+      , renderAnimatedLayer redStar                                         -- render animated red star
+      , renderAnimatedLayer blackHole                                       -- render animated black hole
+      , renderAnimatedLayer smallRotaryStar                                 -- render animated small rotary star
+      , renderAnimatedLayer rotaryStar                                      -- render animated rotary star
+      ]                                                     
+    , renderPlayer $ player gstate                                           -- render player
     -- , renderPlayerBoxes $ player gstate                                   -- render player boxes (debugging only)
     , renderProjectiles $ projectiles gstate                                 -- render projectiles
     , renderEnemies $ enemies gstate                                         -- render enemies
@@ -33,8 +43,23 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     ]
   where
     -- Renders the background, currently just a black rectangle
-    renderBackground :: Picture
-    renderBackground = color black $ rectangleSolid (fromIntegral ww) (fromIntegral wh)
+    renderBackground :: [Picture] -> Picture
+    renderBackground = pictures
+
+    -- Renders the shadows
+    renderShadows :: Picture
+    renderShadows = translateP (negate $ fromInteger (steps gstate `mod` 256) * 10, 0) $ scale factor factor shadows
+      where factor = fromIntegral wh / 360
+
+    -- Renders an animated layer of the background
+    renderAnimatedLayer :: (Int -> Picture) -> Picture
+    renderAnimatedLayer layer = scale factor factor $ layer f
+      where factor = fromIntegral wh / 360
+            f = fromIntegral $ steps gstate `mod` 16  `div` 2
+
+    -- Renders the background, currently just a black rectangle
+    renderBackgroundColor :: Picture
+    renderBackgroundColor = color (makeColorI 46 34 47 255) $ rectangleSolid (fromIntegral ww) (fromIntegral wh)
 
     -- Renders the player, curently just a green circle
     renderPlayer :: Player -> Picture

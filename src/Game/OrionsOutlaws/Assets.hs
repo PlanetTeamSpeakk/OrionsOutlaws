@@ -10,6 +10,7 @@ module Game.OrionsOutlaws.Assets
   , bgMusic
   , laserOld, laser1, laser2
   , explosion1, explosion2
+  , shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar
   ) where
 
 import Graphics.Gloss
@@ -93,6 +94,46 @@ fromPlayerFacing FacingRight       Second = ship 3 1
 fromPlayerFacing FacingRightRight  First  = ship 4 0
 fromPlayerFacing FacingRightRight  Second = ship 4 1
 
+-- Background
+shadows :: Picture
+shadows = case loadPNG $(embedFile "assets/images/background/shadows.png") of
+  Just bdata -> bitmap bdata
+  Nothing    -> error "shadows: Could not load background"
+
+stars :: Int -> Picture
+stars f = case loadPNG $(embedFile "assets/images/background/stars.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "stars: Could not load background"
+
+bigStars :: Int -> Picture
+bigStars f = case loadPNG $(embedFile "assets/images/background/bigStars.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "stars: Could not load background"
+
+blueStar :: Int -> Picture
+blueStar f = case loadPNG $(embedFile "assets/images/background/blueStar.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "blueStar: Could not load background"
+
+redStar :: Int -> Picture
+redStar f = case loadPNG $(embedFile "assets/images/background/redStar.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "redStar: Could not load background"
+
+blackHole :: Int -> Picture
+blackHole f = case loadPNG $(embedFile "assets/images/background/blackHole.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "blackHole: Could not load background"
+
+smallRotaryStar :: Int -> Picture
+smallRotaryStar f = case loadPNG $(embedFile "assets/images/background/smallRotaryStar.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "smallRotaryStar: Could not load background"
+
+rotaryStar :: Int -> Picture
+rotaryStar f = case loadPNG $(embedFile "assets/images/background/rotaryStar.png") of
+  Just bdata -> bitmapSection (Rectangle (f * 640, 0) (640, 360)) bdata
+  Nothing    -> error "rotaryStar: Could not load background"
 
 -- SOUNDS
 
