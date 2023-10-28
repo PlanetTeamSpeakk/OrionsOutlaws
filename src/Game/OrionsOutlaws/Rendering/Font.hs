@@ -1,5 +1,5 @@
 -- | Utility module for loading fonts created with Sprite Font Builder (https://www.johnwordsworth.com/projects/sprite-font-builder/)
-module Game.OrionsOutlaws.Font
+module Game.OrionsOutlaws.Rendering.Font
   ( Font (..)            -- | The main font type, contains the glyphs and some metadata.
   , Glyph (..)           -- | A single glyph, contains necessary information for rendering.
   , TextAlignment (..)   -- | The alignment of the text.

@@ -26,17 +26,17 @@ source-repository head
 library
   exposed-modules:
       Game.OrionsOutlaws.Assets
-      Game.OrionsOutlaws.Audio
       Game.OrionsOutlaws.Controller
-      Game.OrionsOutlaws.Data
-      Game.OrionsOutlaws.Font
       Game.OrionsOutlaws.Model
-      Game.OrionsOutlaws.Tasks
-      Game.OrionsOutlaws.UI.Base
+      Game.OrionsOutlaws.Rendering.Font
+      Game.OrionsOutlaws.Rendering.UI
+      Game.OrionsOutlaws.Rendering.View
       Game.OrionsOutlaws.UI.PausedUI
       Game.OrionsOutlaws.UI.SettingsUI
-      Game.OrionsOutlaws.Util
-      Game.OrionsOutlaws.View
+      Game.OrionsOutlaws.Util.Audio
+      Game.OrionsOutlaws.Util.Data
+      Game.OrionsOutlaws.Util.Tasks
+      Game.OrionsOutlaws.Util.Util
   other-modules:
       Paths_OrionsOutlaws
   autogen-modules:

@@ -5,12 +5,12 @@ module Game.OrionsOutlaws.Model (module Game.OrionsOutlaws.Model) where
 
 import System.Log.Formatter (tfLogFormatter, LogFormatter)
 import System.Log.Logger (rootLoggerName)
-import Game.OrionsOutlaws.Util (msTime, lerp)
+import Game.OrionsOutlaws.Util.Util (msTime, lerp)
 import Data.Ord (clamp)
 import Data.Bifunctor (bimap)
 import Graphics.Gloss.Data.Picture (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
-import Game.OrionsOutlaws.UI.Base (UI)
+import Game.OrionsOutlaws.Rendering.UI (UI)
 import Data.Maybe (isJust)
 
 -- Some logging-related constants

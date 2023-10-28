@@ -2,10 +2,10 @@ module Main (main) where
 
 import Game.OrionsOutlaws.Controller
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.View
-import Game.OrionsOutlaws.Audio (initAudio, finishAudio, loopBgMusic, setVolume)
-import Game.OrionsOutlaws.Data
-import Game.OrionsOutlaws.Tasks (runAndClearTasks)
+import Game.OrionsOutlaws.Rendering.View
+import Game.OrionsOutlaws.Util.Audio (initAudio, finishAudio, loopBgMusic, setVolume)
+import Game.OrionsOutlaws.Util.Data
+import Game.OrionsOutlaws.Util.Tasks (runAndClearTasks)
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Log.Logger

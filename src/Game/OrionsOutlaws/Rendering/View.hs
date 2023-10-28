@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wno-unused-local-binds #-}   -- We have some functions that are only used for debugging that we leave in.
 -- | This module defines how to turn
 --   the game state into a picture
-module Game.OrionsOutlaws.View (module Game.OrionsOutlaws.View) where
+module Game.OrionsOutlaws.Rendering.View (module Game.OrionsOutlaws.Rendering.View) where
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar)
-import Game.OrionsOutlaws.Util (msTime)
-import Game.OrionsOutlaws.UI.Base (uiToPicture)
-import Game.OrionsOutlaws.Font (TextAlignment (..), renderString)
+import Game.OrionsOutlaws.Util.Util (msTime)
+import Game.OrionsOutlaws.Rendering.UI (uiToPicture)
+import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
 
 -- | Renders the gamestate into a picture
 --   Simply calls viewPure with the current stepdelta and the given gamestate

@@ -2,61 +2,79 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Game.OrionsOutlaws.UI.Base
+module Game.OrionsOutlaws.Rendering.UI
   ( UI (..)
   , UIElement (..)
   , Justification (..)
   , ElementKey
+
+  -- * Utility constructor functions
+  , ui
+  , uiWithBg
+  , text
+  , image
+  , button
+  , slider
+  , modifiable
+
+  -- * Utility functions
   , modifyElement
+
+  -- * Rendering functions
   , uiToPicture
   , elemToPicture
+
+  -- * Event handling functions
   , handleMouse
   , handleMotion
+
+  -- * Constants
   , defaultBackground
   ) where
 
-import Game.OrionsOutlaws.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
+import Game.OrionsOutlaws.Rendering.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
 
 import Graphics.Gloss.Data.Color (black, white, withAlpha)
 import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)
 import Control.Monad (when)
 import Graphics.Gloss.Interface.IO.Game (KeyState (..))
 import Data.Ord (clamp)
+import qualified Data.Map as Map
 
 data UI = UI
-  { elements   :: [UIElement] -- | The elements to render
-  , background :: Picture     -- | The UI's background, will get scaled to the window size and is expected to be 1280x720.
+  { elements   :: Map.Map (Maybe ElementKey) [UIElement] -- | The elements to render
+  , background :: Picture                            -- | The UI's background, will get scaled to the window size and is expected to be 1280x720.
   } deriving (Show, Eq)
 
 data UIElement =
   UIText
-    { text     :: String        -- | The text to render
-    , just     :: Justification -- | The justification of the text
-    , font     :: Font          -- | The font to render the text with
-    , textSize :: Float         -- | The size of the text
-    , pos      :: Position      -- | The position of the text
+    { textText   :: String         -- | The text to render
+    , textJust   :: Justification  -- | The justification of the text
+    , textFont   :: Font           -- | The font to render the text with
+    , textSize   :: TextSize       -- | The size of the text
+    , elemPos    :: Position       -- | The position of the text
     } |
   UIImage
-    { image :: Picture  -- | The image to render
-    , scale :: Float    -- | The scale of the image
-    , pos   :: Position -- | The position of the image
+    { imageImg   :: Picture        -- | The image to render
+    , imageScale :: Float          -- | The scale of the image
+    , elemPos    :: Position       -- | The position of the image
     } |
   -- We cannot make button actions a GameState -> IO GameState function
   -- as that would create a circular dependency between the UI and Model modules.
   -- Hence, you should enqueue tasks in the button action if you wish to use the gamestate.
   UIButton
-    { text    :: String         -- | The text on the button
-    , font    :: Font           -- | The font to render the text with
-    , pos     :: Position       -- | The position of the button
-    , btnSize :: (Float, Float) -- | The width and height of the button
-    , action  :: IO ()          -- | The action to perform when the button is clicked
+    { btnText    :: String         -- | The text on the button
+    , btnFont    :: Font           -- | The font to render the text with
+    , elemPos    :: Position       -- | The position of the button
+    , btnSize    :: Size           -- | The width and height of the button
+    , btnAction  :: IO ()          -- | The action to perform when the button is clicked
     } |
   UISlider
-    { pos          :: Position       -- | The position of the slider
-    , size         :: (Float, Float) -- | The width and height of the slider
-    , value        :: Float          -- | The current value of the slider
-    , sliderAction :: Float -> IO () -- | The action to perform when the slider is moved
-    , active       :: Bool           -- | Whether the slider is currently being moved. Must always be False when creating a new slider.
+    { elemPos    :: Position             -- | The position of the slider
+    , sldrSize   :: Size                 -- | The width and height of the slider
+    , sldrValue  :: SliderValue          -- | The current value of the slider
+    , sldrAction :: SliderValue -> IO () -- | The action to perform when the slider is moved
+    , sldrActive :: Bool                 -- | Whether the slider is currently being moved. Must always be False when creating a new slider.
     } |
   -- | UI element that can later be modified
   ModifiableUIElement
@@ -80,20 +98,21 @@ instance Eq UIElement where
 
 -- | Modifies the element with the given key, if one exists.
 modifyElement :: UI -> ElementKey -> (UIElement -> UIElement) -> UI
-modifyElement ui k m = ui { elements = applyModifier $ elements ui }
+modifyElement ui' k m = case Map.lookup (Just k) $ elements ui' of
+  Just e  -> ui' { elements = Map.insert (Just k) (applyModifier e) $ elements ui' }
+  Nothing -> ui'
   where
+    -- The list should not be empty nor should it contain more than one element
+    -- nor should that one element be anything other than a ModifiableUIElement.
     applyModifier :: [UIElement] -> [UIElement]
-    applyModifier [] = []
-    applyModifier (e@(ModifiableUIElement k' _):es)
-      | k' == k   = m e : es
-      | otherwise = e : applyModifier es
-    applyModifier (e:es) = e : applyModifier es
+    applyModifier (e@(ModifiableUIElement {}):es) = e { element = m e } : applyModifier es
+    applyModifier e                               = error $ "modifyElement: Unexpected UI element: " ++ show e
 
 -- | Converts a UI to a picture.
 uiToPicture :: Maybe MousePosition -> AxialScale -> UI -> Picture
-uiToPicture mousePos s@(hs, vs) (UI elems bg) = let s' = min hs vs in pictures
+uiToPicture mousePos s@(hs, vs) (UI es bg) = let s' = min hs vs in pictures
   [ Pic.scale hs vs bg -- Scaled background
-  , Pic.scale s' s' $ pictures $ map (elemToPicture mousePos s) elems -- Elements
+  , Pic.scale s' s' $ pictures $ map (elemToPicture mousePos s) $ concat $ Map.elems es -- Elements
   ]
 
 -- | Converts a UI element to a picture.
@@ -160,56 +179,105 @@ transformSP s (x, y) = translate x y . Pic.scale s s
 --   Checks if the click is on a button or slider and if so, performs the button's action/activates the slider.
 --   Does nothing if the click is not on a button or a slider.
 handleMouse :: UI -> KeyState -> MousePosition -> AxialScale -> IO UI
-handleMouse ui state mousePos s = do
-  es <- mapM handleMouse' $ elements ui
-  return $ ui { elements = es }
+handleMouse ui' state mousePos s = do
+  es <- mapM handleMouse' $ elements ui'
+  return $ ui' { elements = es }
   where
-    handleMouse' :: UIElement -> IO UIElement
+    handleMouse' :: [UIElement] -> IO [UIElement]
+    handleMouse' = mapM handleMouse''
+
+    handleMouse'' :: UIElement -> IO UIElement
     -- For buttons, click them if KeyState is Down.
-    handleMouse' b@(UIButton _ _ (x, y) (w, h) a) | state == Down = do
+    handleMouse'' b@(UIButton _ _ (x, y) (w, h) a) | state == Down = do
       when (isInBounds (Just mousePos) (x, y) (w, h) 5 s) a
       return b
 
     -- For sliders, toggle the active state.
-    handleMouse' sl@(UISlider (x, y) (w, h) v _ _)
+    handleMouse'' sl@(UISlider (x, y) (w, h) v _ _)
       -- Release slider if mouse is released
       | state == Up = do
-          sliderAction sl v
-          return sl { active = False }
+          sldrAction sl v
+          return sl { sldrActive = False }
       -- If mouse is pressed and mouse is in bounds, activate slider
-      | isInBounds (Just mousePos) (x + ((v - 0.5) * w), y) (0.67 * h, h) 3 s = return sl { active = True }
+      | isInBounds (Just mousePos) (x + ((v - 0.5) * w), y) (0.67 * h, h) 3 s = return sl { sldrActive = True }
       -- Do nothing if mouse is not in bounds
-      | otherwise                                                      = return sl
+      | otherwise  = return sl
     -- For modifiable elements, propagate the event.
-    handleMouse' (ModifiableUIElement _ e)                      = handleMouse' e
+    handleMouse'' (ModifiableUIElement _ e) = handleMouse'' e
 
     -- For anything else, do nothing.
-    handleMouse' e                                              = return e
+    handleMouse'' e                         = return e
 
+-- | Handles a mouse motion event on a UI.
 handleMotion :: UI -> MousePosition -> AxialScale -> IO UI
-handleMotion ui mousePos (hs, vs) = do
-  es <- mapM handleMotion' $ elements ui
-  return $ ui { elements = es }
+handleMotion ui' mousePos (hs, vs) = do
+  es <- mapM handleMotion' $ elements ui'
+  return $ ui' { elements = es }
   where
     s = min hs vs -- Scale to use
-    handleMotion' :: UIElement -> IO UIElement
+    handleMotion' :: [UIElement] -> IO [UIElement]
+    handleMotion' = mapM handleMotion''
+
+    handleMotion'' :: UIElement -> IO UIElement
     -- For sliders, update the value if the slider is active.
-    handleMotion' sl@(UISlider (x, _) (w, _) _ _ True) = do
+    handleMotion'' sl@(UISlider (x, _) (w, _) _ _ True) = do
       let v' = (fst mousePos - (x * s)) / w / s + 0.5 -- Calculate new value
       let v'' = clamp (0, 1) v'                       -- Clamp value to [0, 1]
-      return sl { value = v'' }                       -- Update slider value
+      return sl { sldrValue = v'' }                   -- Update slider value
     -- For modifiable elements, propagate the event.
-    handleMotion' (ModifiableUIElement _ e) = handleMotion' e
+    handleMotion'' (ModifiableUIElement _ e) = handleMotion'' e
     -- For anything else, do nothing.
-    handleMotion' e                         = return e
+    handleMotion'' e                         = return e
 
 -- | The default background for a UI. Simply transparent black.
 defaultBackground :: Picture
 defaultBackground = color (withAlpha 0.5 black) $ rectangleSolid 1280 720
 
+-- | Builds a map from a list of UI elements.
+--   Internal use only.
+buildMap :: [UIElement] -> Map.Map (Maybe ElementKey) [UIElement]
+buildMap = Map.fromListWith (++) . map (\e -> (key' e, [e]))
+  where
+    key' :: UIElement -> Maybe ElementKey
+    key' (ModifiableUIElement k _) = Just k
+    key' _                         = Nothing
+
+--- Utility constructor functions
+-- | Constructs a UI from a list of UI elements.
+--   Uses 'defaultBackground' as the background.
+ui :: [UIElement] -> UI
+ui es = uiWithBg es defaultBackground
+
+-- | Constructs a UI from a list of UI elements and a background.
+uiWithBg :: [UIElement] -> Picture -> UI
+uiWithBg es = UI $ buildMap es
+
+-- | Constructs a text UI element.
+text :: String -> Justification -> Font -> TextSize -> Position -> UIElement
+text = UIText
+
+-- | Constructs an image UI element.
+image :: Picture -> Float -> Position -> UIElement
+image = UIImage
+
+-- | Constructs a button UI element.
+button :: String -> Font -> Position -> Size -> IO () -> UIElement
+button = UIButton
+
+-- | Constructs a slider UI element.
+slider :: Position -> Size -> SliderValue -> (SliderValue -> IO ()) -> UIElement
+slider p s v sa = UISlider p s v sa False
+
+modifiable :: ElementKey -> UIElement -> UIElement
+modifiable = ModifiableUIElement
+
+
+-- Types used in this module
 type Position      = (Float, Float)
-type MousePosition = Position
-type BorderWidth   = Float
 type Size          = (Float, Float)
 type AxialScale    = (Float, Float)
+type MousePosition = Position
+type BorderWidth   = Float
+type TextSize      = Float
+type SliderValue   = Float
 type ElementKey    = String

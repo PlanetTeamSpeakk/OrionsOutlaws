@@ -21,7 +21,7 @@ import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
 import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
 import System.IO.Unsafe (unsafePerformIO)
-import Game.OrionsOutlaws.Font (Font, loadFont)
+import Game.OrionsOutlaws.Rendering.Font (Font, loadFont)
 
 -- | Attempts to load a ByteString representing a PNG into a BitmapData.
 --   If the bytestring is not a valid PNG, returns Nothing.
