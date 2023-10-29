@@ -2,16 +2,26 @@
 
 -- | This module contains all the assets used in the game.
 -- | Assets are packed using file-embed
-module Game.OrionsOutlaws.Assets 
-  ( assetScale
+module Game.OrionsOutlaws.Assets
+  ( 
+  -- * Images
+    explosionAnimation
+  , fromPlayerFacing
+
+  -- ** Background
+  , shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar
+
+  -- * Sounds
+  , bgMusic
+  -- ** Laser sounds
+  , laserOld, laser1, laser2
+  -- ** Explosion sounds
+  , explosion1, explosion2
+
+  -- * Misc
+  , assetScale
   , freeglutDll
   , pixeboyFont
-  , explosionAnimation
-  , fromPlayerFacing
-  , bgMusic
-  , laserOld, laser1, laser2
-  , explosion1, explosion2
-  , shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar
   ) where
 
 import Graphics.Gloss
@@ -49,7 +59,7 @@ assetScale = 4
 freeglutDll :: ByteString
 freeglutDll = $(embedFile "assets/freeglut.dll")
 
--- Pixeboy font
+-- | Pixeboy font. Used for all text.
 pixeboyFont :: Font
 pixeboyFont = case loadPNG $(embedFile "assets/fonts/pixeboy.png") of
   Nothing    -> error "pixeboyFont: Could not load font"
@@ -58,11 +68,13 @@ pixeboyFont = case loadPNG $(embedFile "assets/fonts/pixeboy.png") of
 -- IMAGES
 --- Spritesheets
 
--- Explosion animation
--- Spritesheets have to be bitmaps so that we can use bitmapSection
+-- | Explosion animation
+--
+--   Spritesheets have to be bitmaps so that we can use bitmapSection.
 explosionSheet :: Maybe BitmapData
 explosionSheet = loadPNG $(embedFile "assets/images/spritesheets/explosion.png")
 
+-- | Returns the nth frame of the explosion animation.
 explosionFrame :: Int -> Picture
 explosionFrame 0 = explosionFrame' 0
 explosionFrame 1 = explosionFrame' 1
@@ -71,6 +83,9 @@ explosionFrame 3 = explosionFrame' 3
 explosionFrame 4 = explosionFrame' 4
 explosionFrame n = explosionFrame $ n `mod` 5
 
+-- | Returns the nth frame of the explosion animation.
+--
+--   Does not check if the frame is valid.
 explosionFrame' :: Int -> Picture
 explosionFrame' n = maybe blank (scale assetScale assetScale . bitmapSection (Rectangle (n * 16, 0) (16, 16))) explosionSheet
 
@@ -78,15 +93,17 @@ explosionAnimation :: Animation
 explosionAnimation = Animation 5 2 0 0 explosionFrame
 
 
--- Ship (player)
+-- | Ship spritesheet (player)
 shipSheet :: BitmapData
 shipSheet = case loadPNG $(embedFile "assets/images/spritesheets/ship.png") of
   Just bdata -> bdata
   Nothing    -> error "shipSheet: Could not load spritesheet"
 
+-- | Returns the ship sprite at the given column and row.
 ship :: Int -> Int -> Picture
 ship c r = rotate 90 $ scale assetScale assetScale $ bitmapSection (Rectangle (c * 16, r * 24) (16, 24)) shipSheet
 
+-- | Returns the ship sprite for the given player facing.
 fromPlayerFacing :: PlayerFacing -> ShipFrame -> Picture
 fromPlayerFacing FacingLeftLeft    First  = ship 0 0
 fromPlayerFacing FacingLeftLeft    Second = ship 0 1
@@ -150,23 +167,38 @@ bgMusic = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/bg.og
 {-# NOINLINE bgMusic #-}
 
 -- | Laser sound
+--
+--   Not used anymore.
+--
 --   Source: https://pixabay.com/sound-effects/blaster-2-81267/
 laserOld :: Sample
 laserOld = unsafePerformIO $ sampleFromMemoryMp3 $(embedFile "assets/sounds/laserOld.mp3") 1
 {-# NOINLINE laserOld #-}
 
+-- | Laser sound 1
+--
+--   Voiced by Tygo
 laser1 :: Sample
 laser1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser1.ogg") 1
 {-# NOINLINE laser1 #-}
 
+-- | Laser sound 2
+--
+--   Voiced by Tygo
 laser2 :: Sample
 laser2 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/laser2.ogg") 1
 {-# NOINLINE laser2 #-}
 
+-- | Explosion sound 1
+--
+--   Voiced by Tygo
 explosion1 :: Sample
 explosion1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/explosion1.ogg") 1
 {-# NOINLINE explosion1 #-}
 
+-- | Explosion sound 2
+--
+--   Voiced by Tygo
 explosion2 :: Sample
 explosion2 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/explosion2.ogg") 1
 {-# NOINLINE explosion2 #-}

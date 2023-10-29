@@ -7,7 +7,7 @@ import Graphics.Gloss
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar)
 import Game.OrionsOutlaws.Util.Util (msTime)
-import Game.OrionsOutlaws.Rendering.UI (uiToPicture)
+import Game.OrionsOutlaws.Rendering.UI (renderUI)
 import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
 
 -- | Renders the gamestate into a picture
@@ -29,10 +29,10 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     , renderEnemies $ enemies gstate                                         -- render enemies
     , renderAnimations $ animations gstate                                   -- render animations
     , renderScore (windowSize gstate) $ score gstate                         -- render score
-    , maybe blank (uiToPicture (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI
+    , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI
     ]
   where
-    -- Renders the background, currently just a black rectangle
+    -- | Renders the background and all its components.
     renderBackground :: Picture
     renderBackground = pictures
       [ renderBackgroundColor                                               -- render background color
@@ -46,25 +46,26 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
       , renderAnimatedLayer rotaryStar                                      -- render animated rotary star
       ] 
 
-    -- Renders the shadows
+    -- | Renders the background shadows.
     renderShadows :: Picture
-    renderShadows = translateP (negate $ fromInteger (steps gstate `mod` 256) * 10, 0) $ scale factor factor shadows
+    renderShadows = translateP (-fromInteger (steps gstate `mod` 256) * 10, 0) $ scale factor factor shadows
       where factor = fromIntegral wh / 360
 
-    -- Renders an animated layer of the background
+    -- | Renders an animated layer of the background.
     renderAnimatedLayer :: (Int -> Picture) -> Picture
     renderAnimatedLayer layer = scale factor factor $ layer f
       where factor = fromIntegral wh / 360
-            f = fromIntegral $ steps gstate `mod` 16  `div` 2
+            f = fromIntegral $ steps gstate `mod` 16 `div` 2
 
-    -- Renders the background, currently just a black rectangle
+    -- | Renders the background color.
     renderBackgroundColor :: Picture
     renderBackgroundColor = color (makeColorI 46 34 47 255) $ rectangleSolid (fromIntegral ww) (fromIntegral wh)
 
-    -- Renders the player, curently just a green circle
+    -- | Renders the player.
     renderPlayer :: Player -> Picture
     renderPlayer p = color green $ translateP (position sd p) $ fromPlayerFacing (facing gstate (movement $ player gstate)) getShipFrame
 
+    -- | Renders the player's boxes, used for debugging purposes.
     renderPlayerBoxes :: Player -> Picture
     renderPlayerBoxes = renderBoxes . createBoxes
 
@@ -76,13 +77,14 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
         renderBox ((minX, minY), (maxX, maxY)) = color red $ translateP ((minX + maxX) / 2, (minY + maxY) / 2) $
           rectangleWire (maxX - minX) (maxY - minY)
 
-    -- Renders the projectiles, currently just red circles
+    -- | Renders the projectiles, currently just red/cyan circles
     renderProjectiles :: [Projectile] -> Picture
     renderProjectiles = pictures . map renderProjectile
       where
         renderProjectile p = color (if friendly p then cyan else red) $
           translateP (position sd p) $ circleSolid 5
 
+    -- | Renders the enemies, currently just orange circles
     renderEnemies :: [Enemy] -> Picture
     renderEnemies = pictures . map renderEnemy
       where
@@ -94,6 +96,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
       where
         renderAnimation a = color orange $ translateP (animationPos a) $ frame $ animation a
 
+    -- | Renders the player's score.
     renderScore :: Bounds ->  Int -> Picture
     renderScore (w, h) s = let x = fromIntegral $ w `div` (-2) + 120
                                y = fromIntegral $ h `div` (-2) + 45
@@ -102,14 +105,6 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     -- | Returns the ship frame to use based on the current step
     getShipFrame :: ShipFrame
     getShipFrame = if steps gstate `mod` 4 < 2 then First else Second
-
--- | Turns an integer into a list of its digits.
-digs :: Integral x => x -> [x]
-digs 0 = [0]
-digs x = digs' x
-  where
-    digs' 0 = []
-    digs' y = digs' (y `div` 10) ++ [y `mod` 10]
 
 -- | Translates a picture by a position 
 translateP :: Position -> Picture -> Picture

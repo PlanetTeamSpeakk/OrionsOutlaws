@@ -19,6 +19,9 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import GHC.IO (unsafePerformIO)
 import Control.Monad (filterM)
 
+-- | Initializes the audio system.
+--
+--   Returns whether the audio system was successfully initialized.
 initAudio :: IO Bool
 initAudio = Sound.ProteaAudio.initAudio 32 44100 512
 
@@ -46,40 +49,39 @@ getPlaying = do
     writeIORef playing stillActive
     return stillActive
 
+-- | Stops all currently playing sounds.
 stopAllSounds :: IO ()
-stopAllSounds = do
-    sounds <- getPlaying
-    mapM_ soundStop sounds
+stopAllSounds = getPlaying >>= mapM_ soundStop
 
+-- | Pauses all currently playing sounds.
 pauseAllSounds :: IO ()
-pauseAllSounds = do
-    sounds <- getPlaying
-    mapM_ pauseSound sounds
+pauseAllSounds = getPlaying >>= mapM_ pauseSound
 
+-- | Pauses the given sound.
 pauseSound :: Sound -> IO ()
 pauseSound sound = do
     _ <- soundUpdate sound True 1 1 0 1
     return ()
 
+-- | Resumes all paused, but active sounds.
 resumeAllSounds :: IO ()
-resumeAllSounds = do
-    sounds <- getPlaying
-    mapM_ resumeSound sounds
+resumeAllSounds = getPlaying >>= mapM_ resumeSound
 
+-- | Resumes the given sound.
 resumeSound :: Sound -> IO ()
 resumeSound sound = do
     _ <- soundUpdate sound False 1 1 0 1
     return ()
 
+-- | Plays the given sound once.
 playSound :: Sample -> IO ()
-playSound sample = do
-    sound <- soundPlay sample 1 1 0 1 -- Numbers are: left volume, right volume, time difference and pitch
-    addSound sound
+-- Numbers are: left volume, right volume, time difference and pitch
+playSound sample = soundPlay sample 1 1 0 1 >>= addSound
 
+-- | Loops the given sound.
 loopSound :: Sample -> IO ()
-loopSound sample = do
-    sound <- soundLoop sample 1 1 0 1
-    addSound sound
+loopSound sample = soundLoop sample 1 1 0 1 >>= addSound
 
+-- | Loops the background music.
 loopBgMusic :: IO ()
 loopBgMusic = loopSound bgMusic

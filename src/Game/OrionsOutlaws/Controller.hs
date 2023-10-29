@@ -175,6 +175,7 @@ input e gstate = do
       gstate'' <- inputMouse e gstate'
       input' e gstate'' -- Continue to next stage (key listeners and configurable keys)
 
+-- | Stage 2 of input handling. Handles key listeners and configurable keys.
 input' :: Event -> GameState -> IO GameState
 input' e@(EventKey key down _ _) gstate
   -- If there's a keylistener, call it and remove it from the list
@@ -194,6 +195,7 @@ input' e@(EventKey key down _ _) gstate
       s = settings gstate
 input' e gstate = input'' e gstate -- Continue to last stage
 
+-- | Stage 3 of input handling. Handles mouse move and window resize.
 input'' :: Event -> GameState -> IO GameState
 -- Mouse move event
 input'' e@(EventMotion {}) gstate = inputMouseMove e gstate
@@ -202,6 +204,7 @@ input'' (EventResize ns) gstate = return gstate { windowSize = ns }
 -- Fallback
 input'' _ gstate = return gstate
 
+-- | Handle mouse input. Propagates to UI if there's an active UI.
 inputMouse :: Event -> GameState -> IO GameState
 -- Mouse button pressed, handle UI click.
 inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
@@ -214,7 +217,7 @@ inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
     else return gstate
 inputMouse _ gstate = return gstate
 
--- Mouse moved, update mouse position (used for UI).
+-- | Handle mouse motion. Propagates to UI if there's an active UI.
 inputMouseMove :: Event -> GameState -> IO GameState
 inputMouseMove (EventMotion mPos) gstate = do
   let (ww, wh) = windowSize gstate
@@ -231,7 +234,10 @@ inputMouseMove (EventMotion mPos) gstate = do
     }
 inputMouseMove _ gstate = return gstate
 
-inputPause :: Event -> GameState -> IO (Bool, GameState)
+-- | Handle pause input
+--
+--   Only does something if the given event is the escape key being down.
+inputPause :: Event -> GameState -> IO (Bool, GameState) -- ^ (Consumed, new GameState)
 -- Escape key, pauses the game.
 inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
@@ -251,6 +257,7 @@ inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
 -- Fallback
 inputPause _ gstate = return (False, gstate)
 
+-- | Fires a projectile if the player is not on cooldown.
 fireProjectile :: GameState -> IO GameState
 fireProjectile gstate = do
   if cooldown (player gstate) == 0 && not (paused gstate)
@@ -262,15 +269,19 @@ fireProjectile gstate = do
     else do
       return gstate
 
+-- | Sets the player's forward movement.
 moveForward  :: GameState -> Bool -> GameState
 moveForward  gstate isDown = movePlayer gstate (\m -> m { forward = isDown })
 
+-- | Sets the player's backward movement.
 moveBackward :: GameState -> Bool -> GameState
 moveBackward gstate isDown = movePlayer gstate (\m -> m { backward = isDown })
 
+-- | Sets the player's left movement.
 moveLeft     :: GameState -> Bool -> GameState
 moveLeft     gstate isDown = movePlayer gstate (\m -> m { left = isDown })
 
+-- | Sets the player's right movement.
 moveRight    :: GameState -> Bool -> GameState
 moveRight    gstate isDown = movePlayer gstate (\m -> m { right = isDown })
 
@@ -279,8 +290,10 @@ movePlayer :: GameState -> (Movement -> Movement) -> GameState
 movePlayer gstate modifier = if paused gstate then gstate else
   gstate { player = (player gstate) { playerMovement = (modifier $ playerMovement (player gstate)) { lastChange = elapsedTime gstate } } }
 
+-- | Plays a random laser sound
 playLaserSound :: IO ()
 playLaserSound = randomElem [laser1, laser2] >>= playSound
 
+-- | Plays a random explosion sound
 playExplosionSound :: IO ()
 playExplosionSound = randomElem [explosion1, explosion2] >>= playSound

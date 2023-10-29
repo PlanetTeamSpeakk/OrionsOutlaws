@@ -3,10 +3,18 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Game.OrionsOutlaws.Rendering.UI
-  ( UI (..)
+  ( 
+  -- * Types
+    UI (..)
   , UIElement (..)
   , Justification (..)
   , ElementKey
+  , Position
+  , MousePosition
+  , AxialScale
+  , BorderWidth
+  , TextSize
+  , SliderValue
 
   -- * Utility constructor functions
   , ui
@@ -21,8 +29,8 @@ module Game.OrionsOutlaws.Rendering.UI
   , modifyElement
 
   -- * Rendering functions
-  , uiToPicture
-  , elemToPicture
+  , renderUI
+  , renderUIElement
 
   -- * Event handling functions
   , handleMouse
@@ -41,48 +49,53 @@ import Graphics.Gloss.Interface.IO.Game (KeyState (..))
 import Data.Ord (clamp)
 import qualified Data.Map as Map
 
+-- | A User Interface.
 data UI = UI
-  { elements   :: Map.Map (Maybe ElementKey) [UIElement] -- | The elements to render
-  , background :: Picture                            -- | The UI's background, will get scaled to the window size and is expected to be 1280x720.
+  { elements   :: Map.Map (Maybe ElementKey) [UIElement] -- ^ The elements to render
+  , background :: Picture                                -- ^ The UI's background, will get scaled to the window size and is expected to be 1280x720.
   } deriving (Show, Eq)
 
+-- | An element of a User Interface.
 data UIElement =
   UIText
-    { textText   :: String         -- | The text to render
-    , textJust   :: Justification  -- | The justification of the text
-    , textFont   :: Font           -- | The font to render the text with
-    , textSize   :: TextSize       -- | The size of the text
-    , elemPos    :: Position       -- | The position of the text
+    { textText   :: String         -- ^ The text to render
+    , textJust   :: Justification  -- ^ The justification of the text
+    , textFont   :: Font           -- ^ The font to render the text with
+    , textSize   :: TextSize       -- ^ The size of the text
+    , elemPos    :: Position       -- ^ The position of the element
     } |
   UIImage
-    { imageImg   :: Picture        -- | The image to render
-    , imageScale :: Float          -- | The scale of the image
-    , elemPos    :: Position       -- | The position of the image
+    { imageImg   :: Picture        -- ^ The image to render
+    , imageScale :: Float          -- ^ The scale of the image
+    , elemPos    :: Position
     } |
   -- We cannot make button actions a GameState -> IO GameState function
   -- as that would create a circular dependency between the UI and Model modules.
-  -- Hence, you should enqueue tasks in the button action if you wish to use the gamestate.
+  -- Hence, you should enqueue tasks in the button action if you wish to use/modify the gamestate.
   UIButton
-    { btnText    :: String         -- | The text on the button
-    , btnFont    :: Font           -- | The font to render the text with
-    , elemPos    :: Position       -- | The position of the button
-    , btnSize    :: Size           -- | The width and height of the button
-    , btnAction  :: IO ()          -- | The action to perform when the button is clicked
+    { btnText    :: String         -- ^ The text on the button
+    , btnFont    :: Font           -- ^ The font to render the text with
+    , elemPos    :: Position
+    , btnSize    :: Size           -- ^ The width and height of the button
+    , btnAction  :: IO ()          -- ^ The action to perform when the button is clicked
     } |
   UISlider
-    { elemPos    :: Position             -- | The position of the slider
-    , sldrSize   :: Size                 -- | The width and height of the slider
-    , sldrValue  :: SliderValue          -- | The current value of the slider
-    , sldrAction :: SliderValue -> IO () -- | The action to perform when the slider is moved
-    , sldrActive :: Bool                 -- | Whether the slider is currently being moved. Must always be False when creating a new slider.
+    { elemPos    :: Position
+    , sldrSize   :: Size                 -- ^ The width and height of the slider
+    , sldrValue  :: SliderValue          -- ^ The current value of the slider
+    , sldrAction :: SliderValue -> IO () -- ^ The action to perform when the slider is moved
+    , sldrActive :: Bool                 -- ^ Whether the slider is currently being moved. Must always be False when creating a new slider.
     } |
   -- | UI element that can later be modified
   ModifiableUIElement
-    { key     :: ElementKey
-    , element :: UIElement
+    { key     :: ElementKey -- ^ The key of the element, used to identify it.
+    , element :: UIElement  -- ^ The actual element.
     }
     deriving Show
 
+-- | Justification of text.
+--
+--   Either left, centered or right.
 data Justification = JustLeft | JustCentered | JustRight deriving (Show, Eq)
 
 instance Show (IO ()) where show _ = "IO ()"
@@ -109,16 +122,16 @@ modifyElement ui' k m = case Map.lookup (Just k) $ elements ui' of
     applyModifier e                               = error $ "modifyElement: Unexpected UI element: " ++ show e
 
 -- | Converts a UI to a picture.
-uiToPicture :: Maybe MousePosition -> AxialScale -> UI -> Picture
-uiToPicture mousePos s@(hs, vs) (UI es bg) = let s' = min hs vs in pictures
+renderUI :: Maybe MousePosition -> AxialScale -> UI -> Picture
+renderUI mousePos s@(hs, vs) (UI es bg) = let s' = min hs vs in pictures
   [ Pic.scale hs vs bg -- Scaled background
-  , Pic.scale s' s' $ pictures $ map (elemToPicture mousePos s) $ concat $ Map.elems es -- Elements
+  , Pic.scale s' s' $ pictures $ map (renderUIElement mousePos s) $ concat $ Map.elems es -- Elements
   ]
 
 -- | Converts a UI element to a picture.
-elemToPicture :: Maybe MousePosition -> AxialScale -> UIElement -> Picture
+renderUIElement :: Maybe MousePosition -> AxialScale -> UIElement -> Picture
 -- Render UI Text
-elemToPicture _ _ (UIText txt jst fnt sze p)
+renderUIElement _ _ (UIText txt jst fnt sze p)
   | jst == JustLeft  = textToPic $ renderString LeftToRight
   | jst == JustRight = textToPic $ renderString RightToLeft
   | otherwise        = textToPic renderStringCentered
@@ -126,27 +139,34 @@ elemToPicture _ _ (UIText txt jst fnt sze p)
     textToPic f = transformSP sze p $ f fnt txt
 
 -- Render UI Image
-elemToPicture _ _ (UIImage i s p) = transformSP s p i
+renderUIElement _ _ (UIImage i s p) = transformSP s p i
 
 -- Render UI Button
-elemToPicture mousePos s (UIButton t f p (w, h) _) =
+renderUIElement mousePos s (UIButton t f p (w, h) _) =
   let textHeight  = fontLineHeight f -- The height of a line of text in the font
       textWidth   = stringWidth f t  -- The width of the text in the font
       ts          = if null t then 0 else min ((w * 0.9) / fromIntegral textWidth) (h / fromIntegral textHeight) -- The scale of the text
   in renderButton mousePos s 5 (w, h) p p False $ Pic.scale ts ts $ renderStringCentered f t
 
 -- Render UI Slider
-elemToPicture mousePos s (UISlider (x, y) (w, h) v _ a) = translate x y $ pictures
+renderUIElement mousePos s (UISlider (x, y) (w, h) v _ a) = translate x y $ pictures
   [ color (withAlpha 0.8 white) $ rectangleSolid w 10                                           -- Line to slide over
   , renderButton mousePos s 3 (0.67 * h, h) ((v - 0.5) * w, 0) (x + ((v - 0.5) * w), y) a blank -- Slider
   ]
 
 -- Render Modifiable UI Element
-elemToPicture mp s (ModifiableUIElement _ e) = elemToPicture mp s e
+renderUIElement mp s (ModifiableUIElement _ e) = renderUIElement mp s e
 
 -- | Renders a button
---              mousePos               scale         border         size              position    abs position  hover overwrite  content
-renderButton :: Maybe MousePosition -> AxialScale -> BorderWidth -> (Float, Float) -> Position -> Position ->   Bool ->          Picture -> Picture
+renderButton :: Maybe MousePosition ->  -- ^ Mouse position
+                AxialScale ->           -- ^ Horizontal and vertical scale
+                BorderWidth ->          -- ^ Width of the border in pixels
+                (Float, Float) ->       -- ^ Size of the button
+                Position ->             -- ^ Position of the button
+                Position ->             -- ^ Absolute position of the button (including any post-transformation, used for hover detection)
+                Bool ->                 -- ^ Whether to overwrite the hover detection
+                Picture ->              -- ^ Content of the button (may be blank)
+                Picture                 -- ^ The rendered button
 renderButton mousePos s borderWidth (w, h) (x, y) (bx, by) ho p =
   let borderColor = withAlpha 0.8 white
   in translate x y $ pictures
@@ -171,6 +191,7 @@ isInBounds (Just (mx, my)) (ex, ey) (w, h) b (hs, vs) =
   in x >= -sw && x <= sw && y >= -sh && y <= sh     -- Check if scaled position is in scaled bounds
 
 -- | Transforms a picture by a scale and a position.
+--
 --   Internal use only.
 transformSP :: Float -> Position -> Picture -> Picture
 transformSP s (x, y) = translate x y . Pic.scale s s
@@ -268,16 +289,25 @@ button = UIButton
 slider :: Position -> Size -> SliderValue -> (SliderValue -> IO ()) -> UIElement
 slider p s v sa = UISlider p s v sa False
 
+-- | Constructs a modifiable UI element from a key and another element.
 modifiable :: ElementKey -> UIElement -> UIElement
 modifiable = ModifiableUIElement
 
 
 -- Types used in this module
+-- | A position in 2D space.
 type Position      = (Float, Float)
+-- | A width and height.
 type Size          = (Float, Float)
+-- | A horizontal and vertical scale.
 type AxialScale    = (Float, Float)
+-- | The position of the mouse.
 type MousePosition = Position
+-- | The width of a border in pixels.
 type BorderWidth   = Float
+-- | The size of text as a multiplier of the font's default size.
 type TextSize      = Float
+-- | The value of a slider.
 type SliderValue   = Float
+-- | A key for a UI element.
 type ElementKey    = String

@@ -40,7 +40,7 @@ loadScores = loadSafely "scores.json" [] <&> sortBy (comparing Down)
 writeScores :: [Score] -> IO ()
 writeScores = writeJson "scores.json"
 
--- | Load a file safely. If the file could not be read, write the fallback
+-- | Load a file safely. If the file could not be read, writes and returns the fallback.
 loadSafely :: (FromJSON a, ToJSON a) => FilePath -> a -> IO a
 loadSafely file fallback = do
   -- Attempt to read the file as a bytestring.

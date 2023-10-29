@@ -14,8 +14,9 @@ import Game.OrionsOutlaws.Rendering.UI (UI)
 import Data.Maybe (isJust)
 import Data.Time (UTCTime)
 
--- Some logging-related constants
--- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
+-- | Some logging-related constants
+--
+--   [Formats here](https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html)
 logFormatter :: Bool -> LogFormatter a
 logFormatter includeName = tfLogFormatter "%X" $ "[$time : " ++ (if includeName then "$loggername : " else "") ++ "$prio] $msg"
 
@@ -72,33 +73,37 @@ projectileSpeed = 30
 margin :: (Int, Int)
 margin = (140, 50)
 
--- Used for movement calculations
+-- | Half of the square root of 2
+--
+--   Used for movement calculations
 halfRt2 :: Float
 halfRt2 = 0.5 * sqrt 2
 
 -- | Calculates the progress between the previous step and the current step.
+--
 --   Used to linearly interpolate positions when rendering.
 stepDelta :: Integer -> Integer -> Float
 stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLengthMs
 
 
 -- Data types
+-- | The game state. Contains everything that is needed to render and simulate the game.
 data GameState = GameState 
-  { player       :: Player                -- | The player
-  , enemies      :: [Enemy]               -- | A list of enemies
-  , projectiles  :: [Projectile]          -- | A list of projectiles currently on the field
-  , animations   :: [PositionedAnimation] -- | A list of animations currently on the field
-  , activeUI     :: Maybe UI              -- | The currently active UI, if any
-  , score        :: Int                   -- | The player's score
-  , lastSpawn    :: Float                 -- | The time at which the last enemy was spawned
-  , elapsedTime  :: Float                 -- | The time elapsed since the game started
-  , windowSize   :: Bounds                -- | The size of the window
-  , mousePos     :: Maybe Position        -- | The position of the mouse. 'Nothing' if the mouse is outside the window
-  , steps        :: Integer               -- | The number of steps that have been taken since the game started
-  , lastStep     :: Integer               -- | The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
-  , settings     :: Settings              -- | The game settings
-  , scores       :: [Score]               -- | The high scores
-  , keyListeners :: [Key -> IO ()]        -- | A list of key listeners that will be called when a key is pressed
+  { player       :: Player                -- ^ The player
+  , enemies      :: [Enemy]               -- ^ A list of enemies
+  , projectiles  :: [Projectile]          -- ^ A list of projectiles currently on the field
+  , animations   :: [PositionedAnimation] -- ^ A list of animations currently on the field
+  , activeUI     :: Maybe UI              -- ^ The currently active UI, if any
+  , score        :: Int                   -- ^ The player's score
+  , lastSpawn    :: Float                 -- ^ The time at which the last enemy was spawned
+  , elapsedTime  :: Float                 -- ^ The time elapsed since the game started
+  , windowSize   :: Bounds                -- ^ The size of the window
+  , mousePos     :: Maybe Position        -- ^ The position of the mouse. 'Nothing' if the mouse is outside the window
+  , steps        :: Integer               -- ^ The number of steps that have been taken since the game started
+  , lastStep     :: Integer               -- ^ The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+  , settings     :: Settings              -- ^ The game settings
+  , scores       :: [Score]               -- ^ The high scores
+  , keyListeners :: [Key -> IO ()]        -- ^ A list of key listeners that will be called when a key is pressed
   }
 
 instance Show GameState where
@@ -114,33 +119,38 @@ instance Eq GameState where
     activeUI g1 == activeUI g2 && score g1 == score g2 && lastSpawn g1 == lastSpawn g2 && elapsedTime g1 == elapsedTime g2 &&
     windowSize g1 == windowSize g2 && mousePos g1 == mousePos g2 && steps g1 == steps g2 && lastStep g1 == lastStep g2 && settings g1 == settings g2
 
+-- | The player. Can move and shoot and there'll only ever be one.
 data Player = Player 
-  { playerPos       :: Position -- | Player's position on the field.
-  , prevPlayerPos   :: Position -- | Player's previous position on the field. Used for rendering the player
-  , playerMovement  :: Movement -- | Player's movement
-  , health          :: Int      -- | Player's health. Between 0 and 3
-  , cooldown        :: Int      -- | How many steps until the player can shoot again.
+  { playerPos       :: Position -- ^ Player's position on the field.
+  , prevPlayerPos   :: Position -- ^ Player's previous position on the field. Used for rendering the player
+  , playerMovement  :: Movement -- ^ Player's movement
+  , health          :: Int      -- ^ Player's health. Between 0 and 3
+  , cooldown        :: Int      -- ^ How many steps until the player can shoot again.
   } deriving (Show, Eq)
 
+-- | What directions an object is moving in.
+--   Also determines whether the object is moving from left to right or right to left.
+data Movement = Movement 
+  { forward     :: Bool  -- ^ Whether the player is moving forwards
+  , backward    :: Bool  -- ^ Whether the player is moving backwards
+  , left        :: Bool  -- ^ Whether the player is moving left
+  , right       :: Bool  -- ^ Whether the player is moving right
+  , direction   :: MovementDirection -- ^ The direction this movement goes in.
+  , lastChange  :: Float -- ^ The time at which the last change in direction happened
+  } deriving (Show, Eq)
+
+-- | The direction in which something is moving. Either left to right or right to left.
 data MovementDirection = L2R | R2L deriving (Show, Eq)
 
-data Movement = Movement 
-  { forward     :: Bool  -- | Whether the player is moving forwards
-  , backward    :: Bool  -- | Whether the player is moving backwards
-  , left        :: Bool  -- | Whether the player is moving left
-  , right       :: Bool  -- | Whether the player is moving right
-  , direction   :: MovementDirection -- | The direction this movement goes in.
-  , lastChange  :: Float -- | The time at which the last change in direction happened
-  } deriving (Show, Eq)
-
 data Enemy =
-    RegularEnemy { -- Regular enemy, moves in a straight line and shoots at the player
-        enemyPos        :: Position,    -- Enemy's position on the field
-        prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the enemy
-        enemyMovement   :: Movement,    -- Enemy's movement
-        enemyCooldown   :: Int          -- How many steps until the enemy can shoot again. Will probably be between 0 and 5 if we go with 10 steps per second.
+    -- | Regular enemy, moves in a straight line and shoots at the player
+    RegularEnemy {
+        enemyPos        :: Position, -- ^ Enemy's position on the field
+        prevEnemyPos    :: Position, -- ^ Enemy's previous position on the field. Used for rendering the enemy
+        enemyMovement   :: Movement, -- ^ Enemy's movement
+        enemyCooldown   :: Int       -- ^ How many steps until the enemy can shoot again. Between 0 and 5.
     } 
-    -- |
+    -- 
     -- BossEnemy { -- Boss enemy, will not move in a straight line, but rather anywhere on the field and shoot at the player.
     --     enemyPos        :: Position,    -- Boss' position on the field
     --     prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the boss
@@ -150,22 +160,23 @@ data Enemy =
     -- } 
     deriving (Show, Eq)
 
+-- | A projectile fired by either the player or an enemy.
 data Projectile = RegularProjectile 
-  { projPos         :: Position -- | Projectile's position on the field
-  , prevProjPos     :: Position -- | Projectile's previous position on the field. Used for rendering the projectile
-  , projMovement    :: Movement -- | Projectile's movement
-  , friendly        :: Bool     -- | Whether the projectile is friendly or not. If it is, it will hurt enemies, otherwise it will hurt the player
-  , speed           :: Float    -- | How fast the projectile moves. Should be between 0.5 and 2
+  { projPos         :: Position -- ^ Projectile's position on the field
+  , prevProjPos     :: Position -- ^ Projectile's previous position on the field. Used for rendering the projectile
+  , projMovement    :: Movement -- ^ Projectile's movement
+  , friendly        :: Bool     -- ^ Whether the projectile is friendly or not. If it is, it will hurt enemies, otherwise it will hurt the player
+  , speed           :: Float    -- ^ How fast the projectile moves. Should be between 0.5 and 2
   } deriving (Show, Eq)
 
--- Make a class that has an instance for each data type so that we can use the same function for all of them.
+-- | Objects that can have a position and move.
 class Positionable a where
   curPosition  :: a -> Position
   prevPosition :: a -> Position
   withPosition :: a -> Position -> a
   movement     :: a -> Movement
 
--- Calculates the interpolated position using the previous position, the current position and the step delta.
+-- | Calculates the interpolated position using the previous position, the current position and the step delta.
 position :: Positionable a => Float -> a -> Position
 position sd a = if sd >= 1 then curPosition a else lerpPos (prevPosition a) (curPosition a) sd
 
@@ -202,7 +213,6 @@ class Collidable a where
   collidesWith :: Collidable b => a -> b -> Bool
   collidesWith a b = collidesWithBox a `any` createBoxes b
 
--- Sample implementation for Player which assumes that the player is a 20x20 square and that the position is the center of the square.
 instance Collidable Player where
   createBoxes p = let (x, y) = playerPos p in 
     [ ((x - 12, y - 32), (x + 28, y + 32)) -- Body
@@ -220,17 +230,17 @@ instance Collidable Projectile where
 
 -- | An animation is a set of frames that are shown in order.
 data Animation = Animation 
-  { frameCount      :: Int            -- | How many frames the animation has
-  , frameDuration   :: Int            -- | How long each frame lasts in steps
-  , curFrame        :: Int            -- | The current frame of the animation
-  , animationStep   :: Int            -- | The current step of the animation
-  , frameGetter     :: Int -> Picture -- | A function that returns the picture for the given frame
+  { frameCount      :: Int            -- ^ How many frames the animation has
+  , frameDuration   :: Int            -- ^ How long each frame lasts in steps
+  , curFrame        :: Int            -- ^ The current frame of the animation
+  , animationStep   :: Int            -- ^ The current step of the animation
+  , frameGetter     :: Int -> Picture -- ^ A function that returns the picture for the given frame
   }
 
 -- | An animation with a position.
 data PositionedAnimation = PositionedAnimation 
-  { animation    :: Animation  -- | The animation
-  , animationPos :: Position   -- | The position of the animation
+  { animation    :: Animation  -- ^ The animation
+  , animationPos :: Position   -- ^ The position of the animation
   } deriving (Show, Eq)
 
 instance Eq Animation where
@@ -241,11 +251,15 @@ instance Show Animation where
   show a = "Animation { frameCount = " ++ show (frameCount a) ++ ", frameDuration = " ++ show (frameDuration a) ++
     ", curFrame = " ++ show (curFrame a) ++ ", animationStep = " ++ show (animationStep a) ++ " }"
 
+-- | A direction the player is facing.
+--
+--   Determines what sprite to use when rendering the player.
 data PlayerFacing = FacingLeftLeft | FacingLeft | FacingNormal | FacingRight | FacingRightRight deriving (Show, Eq)
 
+-- | What frame to use when rendering a ship. (Such as the player or an enemy)
 data ShipFrame = First | Second deriving (Show, Eq)
 
--- Game settings that stores anything the user can change.
+-- | Game settings that stores anything the user can change.
 data Settings = Settings 
   { fireKey     :: Key
   , forwardKey  :: Key
@@ -255,7 +269,7 @@ data Settings = Settings
   , volume      :: Float
   } deriving (Show, Eq)
 
--- Default settings
+-- | Default settings
 defaultSettings :: Settings
 defaultSettings = Settings 
   { fireKey     = SpecialKey KeySpace
@@ -269,19 +283,19 @@ defaultSettings = Settings
 -- | A score that someone achieved once.
 --   For use in saving and loading high scores.
 data Score = Score 
-  { scoreName  :: String
-  , scoreValue :: Int
-  , scoreDate  :: UTCTime
+  { scoreName  :: String  -- ^ The name of the player
+  , scoreValue :: Int     -- ^ The score value
+  , scoreDate  :: UTCTime -- ^ The date at which the score was achieved
   } deriving (Show, Eq)
 
 instance Ord Score where
   compare s1 s2 = compare (scoreValue s1) (scoreValue s2)
 
 -- Types and helper functions
--- The Position type, a tuple of two ints representing the x and y coordinates of a point.
+-- | The Position type, a tuple of two ints representing the x and y coordinates of a point.
 type Position = (Float, Float)
 
--- A box goes from one position to another, representing a rectangle.
+-- | A box goes from one position to another, representing a rectangle.
 type Box = (Position, Position)
 
 -- | Represents width and height of an area.
@@ -295,18 +309,19 @@ type Bounds = (Int, Int)
 paused :: GameState -> Bool
 paused gstate = isJust $ activeUI gstate
 
+-- | A Movement with no movement.
 emptyMovement :: MovementDirection -> Movement
 emptyMovement d = Movement False False False False d 0
 
--- Produces a list of all corners of the given box.
+-- | Produces a list of all corners of the given box.
 corners :: Box -> [Position]
 corners ((x1, y1), (x2, y2)) = [(x1, y1), (x1, y2), (x2, y1), (x2, y2)]
 
--- Checks whether the given position is inside the given box.
+-- | Checks whether the given position is inside the given box.
 isInBox :: Box -> Position -> Bool
 isInBox ((x1, y1), (x2, y2)) (x, y) = x1 <= x && x <= x2 && y1 <= y && y <= y2
 
--- Checks whether the two given boxes intersect.
+-- | Checks whether the two given boxes intersect.
 intersects :: Box -> Box -> Bool
 intersects ((minx1, miny1), (maxx1, maxy1)) ((minx2, miny2), (maxx2, maxy2)) =
   minx1 <= maxx2 && maxx1 >= minx2 && miny1 <= maxy2 && maxy1 >= miny2
@@ -333,6 +348,7 @@ calcMovement m = invertIfR2L (if y /= 0 then x * halfRt2 else x, if x /= 0 then 
     y = (if left m    then 1 else 0) + (if right m    then -1 else 0)
     invertIfR2L (h, v) = if direction m == R2L then (-h, -v) else (h, v)
 
+-- | Multiplies the given movement by the given multiplier.
 multiplyMovement :: (Float, Float) -> Float -> (Float, Float)
 multiplyMovement (x, y) mult = (x * mult, y * mult)
 
@@ -348,12 +364,15 @@ applyMovement b a mult = withPosition a $ applyPositionMovement b (curPosition a
 subtractMargin :: Bounds -> Bounds
 subtractMargin (width, height) = bimap (width -) (height -) margin
 
+-- | Returns the current frame of the given animation.
 frame :: Animation -> Picture
 frame a = frameGetter a $ curFrame a
 
+-- | Positions the given animation at the given position.
 positionAnimation :: Animation -> Position -> PositionedAnimation
 positionAnimation = PositionedAnimation
 
+-- | Calculates a facing based on the given movement.
 facing :: GameState -> Movement -> PlayerFacing
 facing gstate m =
   let (v, h) = calcMovement m

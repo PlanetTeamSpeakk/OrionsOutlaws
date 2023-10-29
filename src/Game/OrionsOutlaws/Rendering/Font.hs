@@ -1,15 +1,15 @@
 -- | Utility module for loading fonts created with Sprite Font Builder (https://www.johnwordsworth.com/projects/sprite-font-builder/)
 module Game.OrionsOutlaws.Rendering.Font
-  ( Font (..)            -- | The main font type, contains the glyphs and some metadata.
-  , Glyph (..)           -- | A single glyph, contains necessary information for rendering.
-  , TextAlignment (..)   -- | The alignment of the text.
-  , loadFont             -- | Load a font from a spritesheet and metadata file.
-  , getGlyph             -- | Get the glyph for a given character.
-  , renderString         -- | Render a string into a picture.
-  , renderChar           -- | Render a single character into a picture.
-  , stringWidth          -- | Get the width of a string in pixels when rendered with the given font.
-  , charWidth            -- | Get the width of a character in pixels when rendered with the given font.
-  , renderStringCentered -- | Renders a string into a picture, centered around the center of the text.
+  ( Font (..)
+  , Glyph (..)
+  , TextAlignment (..)
+  , loadFont
+  , getGlyph
+  , renderString
+  , renderChar
+  , stringWidth
+  , charWidth
+  , renderStringCentered
   ) where
 
 import Data.Map (Map, fromList, (!), lookup, member)
@@ -20,12 +20,18 @@ import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, blank)
 import Graphics.Gloss (pictures, Rectangle (Rectangle))
 import Data.Bifunctor (first)
 
+-- | A font that can be used to render text.
+--
+--   Contains a spritesheet, glyphs and a line height.
 data Font = Font
   { fontSheet      :: BitmapData     -- ^ The spritesheet containing all glyphs.
   , fontGlyphs     :: Map Char Glyph -- ^ A map of characters to glyphs.
   , fontLineHeight :: Int            -- ^ The height of a line of text in pixels.
   } deriving (Eq, Show)
 
+-- | A single glyph of a font.
+--
+--   Pretty much just a rectangle in a spritesheet with some metadata regarding how to render it.
 data Glyph = Glyph
   { glyphWidth   :: Int        -- ^ The width of the glyph in the spritesheet in pixels.
   , glyphHeight  :: Int        -- ^ The height of the glyph in the spritesheet in pixels.
@@ -34,6 +40,10 @@ data Glyph = Glyph
   , glyphAdvance :: Int        -- ^ The width of the glyph when rendered in pixels. Determines the position of the next glyph.
   } deriving (Eq, Show)
 
+-- | The alignment of text when rendering.
+--
+--   Supports only left-to-right and right-to-left.
+--   For centered text, use 'renderStringCentered'.
 data TextAlignment = LeftToRight | RightToLeft deriving (Show, Eq)
 
 -- | Loads a font from metadata and a spritesheet.
