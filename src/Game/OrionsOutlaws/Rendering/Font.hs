@@ -16,8 +16,8 @@ import Data.Map (Map, fromList, (!), lookup, member)
 import Data.List (isPrefixOf, intercalate)
 import Graphics.Gloss.Data.Bitmap (BitmapData)
 import Data.List.Split (splitOn)
-import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, color, blank)
-import Graphics.Gloss (pictures, Rectangle (Rectangle), red)
+import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, blank)
+import Graphics.Gloss (pictures, Rectangle (Rectangle))
 import Data.Bifunctor (first)
 
 data Font = Font
@@ -30,6 +30,7 @@ data Glyph = Glyph
   { glyphWidth   :: Int        -- ^ The width of the glyph in the spritesheet in pixels.
   , glyphHeight  :: Int        -- ^ The height of the glyph in the spritesheet in pixels.
   , glyphPos     :: (Int, Int) -- ^ The position of the glyph in the spritesheet in pixels.
+  , glyphOffset  :: (Int, Int) -- ^ The offset of the glyph when rendered in pixels.
   , glyphAdvance :: Int        -- ^ The width of the glyph when rendered in pixels. Determines the position of the next glyph.
   } deriving (Eq, Show)
 
@@ -64,10 +65,11 @@ loadFont metadata spritesheet = uncurry (Font spritesheet) $ first ensureHasSpac
       -- The letter is encapsulated in double quotes, use init $ tail to remove em.
       (let l = init $ tail $ props ! "letter" in if l == "space" then ' ' else head l,
         Glyph
-          (intProp "width")          -- Glyph width
-          (intProp "height")         -- Glyph height
-          (intProp "x", intProp "y") -- Glyph position in sheet
-          (intProp "xadvance"))      -- Glyph "width" when rendering
+          (intProp "width")                      -- Glyph width
+          (intProp "height")                     -- Glyph height
+          (intProp "x", intProp "y")             -- Glyph position in sheet
+          (intProp "xoffset", intProp "yoffset") -- Glyph offset when rendering
+          (intProp "xadvance"))                  -- Glyph "width" when rendering
       where
         props = parseLine line
 
@@ -79,7 +81,7 @@ loadFont metadata spritesheet = uncurry (Font spritesheet) $ first ensureHasSpac
     parseLine line = fromList $ map parseProp $ filter (elem '=') $ words line
       where
         -- | Parse a property into a key-value pair.
-        --   Ensures that properties with an '=' in their value are not split.
+        --   Ensures that values with an '=' in them are not split.
         parseProp :: String -> (String, String)
         parseProp prop = let l = splitOn "=" prop in (head l, intercalate "=" $ tail l)
 
@@ -92,6 +94,11 @@ getGlyph font c = case Data.Map.lookup c $ fontGlyphs font of
 -- | Get the width of a string in pixels when rendered with the given font.
 stringWidth :: Font -> String -> Int
 stringWidth font str = sum $ map (glyphAdvance . getGlyph font) str
+
+-- | Get the height of a string in pixels when rendered with the given font.
+--   Not the same as 'fontLineHeight' as this is just the height of the tallest glyph.
+stringHeight :: Font -> String -> Int
+stringHeight font str = maximum $ map (glyphHeight . getGlyph font) str
 
 -- | Get the width of a character in pixels when rendered with the given font.
 charWidth :: Font -> Char -> Int
@@ -112,13 +119,30 @@ renderString RightToLeft f s = renderString' f (-1) s id
 --   outputs a picture representing the given text.
 renderString' :: Font -> Float -> String -> ([Glyph] -> [Glyph])  -> Picture
 renderString' _    _ "" _ = blank
-renderString' font m s f  = let glyphs = map (getGlyph font) s in -- Translate all chars to glyphs
-  pictures $ snd $ foldr renderGlyph' (0, []) $ f glyphs         -- Render all glyphs and combine them into one picture
+renderString' font m s  f = 
+  let glyphs    = map (getGlyph font) s -- Translate all chars to glyphs
+      fstGlyph  = head glyphs
+      fstOffset = glyphOffset fstGlyph
+  -- Render all glyphs and combine them into one picture
+  in translate 
+    -- We offset horizontally by the offset of the first glyph which effectively ignores the offset of the first glyph
+    (-fromIntegral (fst fstOffset))
+    (-halfHeight + (fromIntegral (stringHeight font s) / 2) + fromIntegral (snd fstOffset)) $ pictures $ snd $ foldr renderGlyph' 
+    (0, []) $ f glyphs 
   where
+    -- | Half the line height of the used font.
+    --   Needed cuz everything in Gloss is centered around the origin.
+    halfHeight = fromIntegral (fontLineHeight font) / 2
+
     -- | Renders a single glyph while keeping track of the horizontal offset.
+    --   Also offsets a glyph by half its width so that fonts do not break when rendering
+    --   characters that don't all have the same widths.
     renderGlyph' :: Glyph -> (Float, [Picture]) -> (Float, [Picture])
     renderGlyph' g (offset, ps) = (offset + (m * fromIntegral (glyphAdvance g)),
-      color red (translate offset 0 (renderGlyph (fontSheet font) g)) : ps)
+      translate
+        (offset + (0.5 * m * fromIntegral (glyphWidth g)) + fromIntegral (fst $ glyphOffset g))  -- Horizontal offset
+        (halfHeight - fromIntegral (snd $ glyphOffset g) - (0.5 * fromIntegral (glyphHeight g))) -- Vertical offset
+        (renderGlyph (fontSheet font) g) : ps)
 
 -- | Renders a single character into a picture.
 --   Converts the character to a Glyph and renders it with renderGlyph.
@@ -132,8 +156,5 @@ renderGlyph sheet Glyph { glyphWidth = gw, glyphHeight = gh, glyphPos = (gx, gy)
 
 -- | Renders a string into a picture, centered around the center of the text.
 renderStringCentered :: Font -> String -> Picture
--- Text is centered around the center of the first character, 
--- so we have to offset it by half the width of the text minus half the width of the first character.
-renderStringCentered _ ""      = blank
-renderStringCentered f s@(h:_) = translate ((-fromIntegral (stringWidth f s) + fromIntegral (charWidth f h)) / 2) 0 $
-  renderString LeftToRight f s
+renderStringCentered _ "" = blank
+renderStringCentered f s  = translate (-fromIntegral (stringWidth f s) / 2) 0 $ renderString LeftToRight f s
