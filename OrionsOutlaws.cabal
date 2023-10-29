@@ -32,6 +32,7 @@ library
       Game.OrionsOutlaws.Rendering.UI
       Game.OrionsOutlaws.Rendering.View
       Game.OrionsOutlaws.UI.PausedUI
+      Game.OrionsOutlaws.UI.ScoresUI
       Game.OrionsOutlaws.UI.SettingsUI
       Game.OrionsOutlaws.Util.Audio
       Game.OrionsOutlaws.Util.Data

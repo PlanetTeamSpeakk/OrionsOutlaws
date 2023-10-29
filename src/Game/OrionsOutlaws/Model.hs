@@ -12,6 +12,7 @@ import Graphics.Gloss.Data.Picture (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 import Game.OrionsOutlaws.Rendering.UI (UI)
 import Data.Maybe (isJust)
+import Data.Time (UTCTime)
 
 -- Some logging-related constants
 -- https://hackage.haskell.org/package/time-1.12.2/docs/Data-Time-Format.html
@@ -40,8 +41,8 @@ initialPlayer :: Player
 initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
-initialState :: Settings -> IO GameState
-initialState s = msTime >>= (\time -> return $ GameState 
+initialState :: Settings -> [Score] -> IO GameState
+initialState s ss = msTime >>= (\time -> return $ GameState 
   { player       = initialPlayer
   , enemies      = []
   , projectiles  = []
@@ -55,6 +56,7 @@ initialState s = msTime >>= (\time -> return $ GameState
   , steps        = 0
   , lastStep     = time
   , settings     = s
+  , scores       = ss
   , keyListeners = []
   })
 
@@ -95,6 +97,7 @@ data GameState = GameState
   , steps        :: Integer               -- | The number of steps that have been taken since the game started
   , lastStep     :: Integer               -- | The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
   , settings     :: Settings              -- | The game settings
+  , scores       :: [Score]               -- | The high scores
   , keyListeners :: [Key -> IO ()]        -- | A list of key listeners that will be called when a key is pressed
   }
 
@@ -266,8 +269,9 @@ defaultSettings = Settings
 -- | A score that someone achieved once.
 --   For use in saving and loading high scores.
 data Score = Score 
-  { name       :: String
+  { scoreName  :: String
   , scoreValue :: Int
+  , scoreDate  :: UTCTime
   } deriving (Show, Eq)
 
 instance Ord Score where
@@ -357,3 +361,10 @@ facing gstate m =
         if c > 0.3 && v == 0 -- If the player hasn't changed direction in the last 0.3 seconds and is not moving vertically
           then if h > 0 then FacingLeftLeft else if h < 0 then FacingRightRight else FacingNormal
           else if h > 0 then FacingLeft     else if h < 0 then FacingRight      else FacingNormal
+
+-- | Adds the given score to the given list of scores at the appropriate position.
+addScore :: [Score] -> Score -> [Score]
+addScore [] s = [s]
+addScore (s:ss) s' 
+  | scoreValue s' > scoreValue s = s' : s : ss
+  | otherwise                    = s : addScore ss s'

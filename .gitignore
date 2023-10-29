@@ -1,4 +1,5 @@
 .stack-work/
 *~
 settings.json
+scores.json
 dist-newstyle/

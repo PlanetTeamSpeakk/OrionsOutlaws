@@ -4,7 +4,7 @@ import Game.OrionsOutlaws.Controller        (input, step)
 import Game.OrionsOutlaws.Model             (GameState(mousePos, windowSize, steps), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume))
 import Game.OrionsOutlaws.Rendering.View    (view)
 import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume)
-import Game.OrionsOutlaws.Util.Data         (loadSettings)
+import Game.OrionsOutlaws.Util.Data         (loadSettings, loadScores)
 import Game.OrionsOutlaws.Util.Tasks        (runAndClearTasks)
 
 import Graphics.Gloss.Interface.IO.Game     (white, playIO, Display(InWindow))
@@ -44,7 +44,7 @@ main = do
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
   loopBgMusic
 
-  state <- initialState s
+  state <- loadScores >>= initialState s
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
       (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Game.OrionsOutlaws.Model.windowSize state

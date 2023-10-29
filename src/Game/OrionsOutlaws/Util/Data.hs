@@ -4,7 +4,7 @@
 module Game.OrionsOutlaws.Util.Data (loadSettings, writeSettings, loadScores, writeScores) where
 
 import Game.OrionsOutlaws.Model (Settings (..), defaultSettings, Score, defLog)
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON, ToJSON, Options (fieldLabelModifier))
 import Data.Aeson.TH (deriveJSON, defaultOptions)
 import Data.Aeson.Decoding (eitherDecodeStrict)
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -13,13 +13,16 @@ import Control.Exception (try)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as B
 import System.Log.Logger (warningM)
+import Data.List (sortBy)
+import Data.Functor ((<&>))
+import Data.Ord (comparing, Down (Down))
 
 -- Define JSON instances for the types used by Settings and Settings itself.
 $(deriveJSON defaultOptions ''SpecialKey)
 $(deriveJSON defaultOptions ''MouseButton)
 $(deriveJSON defaultOptions ''Key)
 $(deriveJSON defaultOptions ''Settings)
-$(deriveJSON defaultOptions ''Score)
+$(deriveJSON defaultOptions { fieldLabelModifier = drop 5 } ''Score)
 
 -- | Load the settings from the settings.json file.
 loadSettings :: IO Settings
@@ -31,7 +34,7 @@ writeSettings = writeJson "settings.json"
 
 -- | Load the scores from the scores.json file.
 loadScores :: IO [Score]
-loadScores = loadSafely "scores.json" []
+loadScores = loadSafely "scores.json" [] <&> sortBy (comparing Down)
 
 -- | Write the scores to the scores.json file.
 writeScores :: [Score] -> IO ()

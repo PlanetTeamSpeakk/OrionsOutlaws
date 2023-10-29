@@ -1,9 +1,8 @@
--- | This module defines how the state changes
---   in response to time and user input
+-- | This module defines how the state changes in response to time and user input
 module Game.OrionsOutlaws.Controller (module Game.OrionsOutlaws.Controller) where
 
 import Game.OrionsOutlaws.Model
-import Graphics.Gloss.Interface.IO.Game
+import Graphics.Gloss.Interface.IO.Game (KeyState(Down), Key(SpecialKey, MouseButton), MouseButton(LeftButton), SpecialKey(KeyEsc), Event(..))
 import System.Log.Logger (debugM)
 import Game.OrionsOutlaws.Rendering.View (onScreen, inBounds)
 import Game.OrionsOutlaws.Util.Util (msTime, randomElem)
@@ -12,10 +11,12 @@ import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
 import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
-import Game.OrionsOutlaws.Util.Audio
+import Game.OrionsOutlaws.Util.Audio (pauseAllSounds, playSound, resumeAllSounds)
 import Data.Maybe (isJust, fromJust)
 import Game.OrionsOutlaws.Rendering.UI (handleMouse, handleMotion)
 import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
+import Data.Time (getCurrentTime)
+import Game.OrionsOutlaws.Util.Data (writeScores)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -62,9 +63,7 @@ step elapsed gstate = do
           }
       else -- Collision! Exit game if the player has 1 health left, otherwise reset and subtract 1 health
         if health (player gstateN2) == 1
-          then do
-            _ <- exitSuccess
-            return gstateN2
+          then onGameOver gstateNew
           else do
             debugM debugLog $ "Collision! " ++ show cnfps
             return gstateN2 
@@ -147,11 +146,19 @@ step elapsed gstate = do
           let enemy = RegularEnemy (x, y) (x, y) (Movement True False False False R2L $ elapsedTime gstateNew) 0
 
           debugM debugLog $ "Spawning enemy " ++ show enemy
-          return $ gstateNew {
-            lastSpawn = elapsedTime gstateNew,
-            enemies = enemy : e
-          }
+          return $ gstateNew 
+            { lastSpawn = elapsedTime gstateNew
+            , enemies = enemy : e
+            }
         else return gstateNew
+    
+    onGameOver :: GameState -> IO GameState
+    onGameOver gstateNew = do
+      t <- getCurrentTime                                            -- Current time in UTCTime
+      let s' = Score "Player" (score gstateNew) t : scores gstateNew -- Add the current score to the list of scores
+      writeScores s'                                                 -- Write the scores to scores.json
+      exitSuccess                                                    -- Exit the game, temporary until we have a UI.
+      --return gstateNew { scores = s' }                               -- Return the new gamestate
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
@@ -273,11 +280,7 @@ movePlayer gstate modifier = if paused gstate then gstate else
   gstate { player = (player gstate) { playerMovement = (modifier $ playerMovement (player gstate)) { lastChange = elapsedTime gstate } } }
 
 playLaserSound :: IO ()
-playLaserSound = do
-  sound <- randomElem [laser1, laser2]
-  playSound sound
+playLaserSound = randomElem [laser1, laser2] >>= playSound
 
 playExplosionSound :: IO ()
-playExplosionSound = do
-  sound <- randomElem [explosion1, explosion2]
-  playSound sound
+playExplosionSound = randomElem [explosion1, explosion2] >>= playSound

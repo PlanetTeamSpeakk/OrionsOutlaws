@@ -13,3 +13,15 @@ randomElem :: [a] -> IO a
 randomElem xs = do
   i <- randomRIO (0, length xs - 1)
   return $ xs !! i
+
+enumerate :: [a] -> [(Int, a)]
+enumerate = enumerateFrom 0
+
+enumerateFrom :: Int -> [a] -> [(Int, a)]
+enumerateFrom i = zip [i..]
+
+rpad :: Int -> a -> [a] -> [a]
+rpad n x xs = take n $ xs ++ repeat x
+
+lpad :: Int -> a -> [a] -> [a]
+lpad n x xs = replicate (n - length xs) x ++ xs
