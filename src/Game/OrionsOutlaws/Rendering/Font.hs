@@ -98,11 +98,16 @@ stringWidth font str = sum $ map (glyphAdvance . getGlyph font) str
 -- | Get the height of a string in pixels when rendered with the given font.
 --   Not the same as 'fontLineHeight' as this is just the height of the tallest glyph.
 stringHeight :: Font -> String -> Int
-stringHeight font str = maximum $ map (glyphHeight . getGlyph font) str
+stringHeight font str = maximum $ map (charHeight font) str
 
 -- | Get the width of a character in pixels when rendered with the given font.
 charWidth :: Font -> Char -> Int
 charWidth font c = glyphAdvance $ getGlyph font c
+
+-- | Get the height of a character in pixels when rendered with the given font.
+--   Also includes the vertical offset of the glyph.
+charHeight :: Font -> Char -> Int
+charHeight f c = let g = getGlyph f c in glyphHeight g + snd (glyphOffset g)
 
 -- | Renders a string into a picture.
 --   The string can be rendered either from left to right or from right to left.
