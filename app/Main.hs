@@ -42,7 +42,7 @@ main = do
   createDirectoryIfMissing False appDir             -- Create directory if it doesn't exist
   setCurrentDirectory appDir                        -- Move to app directory
 
-  -- Extract freeglut.dll to the current directory
+  -- Extract freeglut.dll to the current directory if it doesn't exist
   B.writeFile "freeglut.dll" freeglutDll -- Write freeglut.dll to current directory
 
   -- Load settings
