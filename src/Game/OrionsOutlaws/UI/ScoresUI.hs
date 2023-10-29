@@ -10,7 +10,7 @@ import Data.Char (toUpper)
 import Game.OrionsOutlaws.Rendering.Font (Font(..))
 
 scoresUI :: [Score] -> UI
-scoresUI scores = ui $ text "HIGH SCORES" JustCentered pixeboyFont 1 (0, 200) : concatMap renderScore (enumerateFrom 1 $ rpad 5 Nothing $ map Just scores)
+scoresUI scores = ui $ text "High Scores" JustCentered pixeboyFont 1 (0, 200) : concatMap renderScore (enumerateFrom 1 $ rpad 5 Nothing $ map Just scores)
   where
     scoreScale :: Float
     scoreScale = 0.3

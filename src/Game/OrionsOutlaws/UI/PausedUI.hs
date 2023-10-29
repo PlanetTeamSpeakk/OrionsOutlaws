@@ -11,10 +11,10 @@ import System.Log.Logger (debugM)
 
 pausedUI :: UI
 pausedUI = ui
-  [ text "PAUSED" JustCentered pixeboyFont 1.5 (0, 200)
-  , text "PRESS ESC TO CONTINUE" JustCentered pixeboyFont 0.5 (0, -150)
-  , button "SETTINGS" pixeboyFont (565, 310) (100, 50) onSettingsBtn
-  , button "SCORES" pixeboyFont (-565, 310) (100, 50) onScoresBtn -- TODO - this is temporary until we have a proper menu
+  [ text "Paused" JustCentered pixeboyFont 1.5 (0, 200)
+  , text "Press ESC to continue" JustCentered pixeboyFont 0.5 (0, -150)
+  , button "Settings" pixeboyFont (565, 310) (100, 50) onSettingsBtn
+  , button "Scores" pixeboyFont (-565, 310) (100, 50) onScoresBtn -- TODO - this is temporary until we have a proper menu
   ]
 
 onSettingsBtn :: IO ()

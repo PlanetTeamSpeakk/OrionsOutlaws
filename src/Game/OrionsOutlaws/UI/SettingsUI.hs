@@ -15,26 +15,25 @@ import Game.OrionsOutlaws.Util.Audio (setVolume)
 -- | Creates a settings UI for the given settings.
 settingsUI :: Settings -> UI
 settingsUI s = ui
-  [ text "SETTINGS" JustCentered pixeboyFont 1 (0, 250)
-  , text "PRESS A BUTTON AND THEN A KEY TO CONFIGURE THE KEYBIND" JustCentered pixeboyFont 0.2 (0, 190)
-  , text "PRESS ESC TO CONTINUE" JustCentered pixeboyFont 0.3 (0, -220)
+  [ text "Settings" JustCentered pixeboyFont 1 (0, 250)
+  , text "Press ESC to continue" JustCentered pixeboyFont 0.3 (0, -220)
 
-  , text "FORWARD" JustLeft pixeboyFont 0.35 (-150, 150)
+  , text "Forward" JustLeft pixeboyFont 0.35 (-150, 150)
   , keyBtn "fwd" (75, 150) s forwardKey  (\s' k -> s' { forwardKey = k })
 
-  , text "BACKWARD" JustLeft pixeboyFont 0.35 (-150, 100)
+  , text "Backward" JustLeft pixeboyFont 0.35 (-150, 100)
   , keyBtn "bwd" (75, 100) s backwardKey (\s' k -> s' { backwardKey = k })
 
-  , text "LEFT" JustLeft pixeboyFont 0.35 (-150, 50)
+  , text "Left" JustLeft pixeboyFont 0.35 (-150, 50)
   , keyBtn "lft" (75, 50)  s leftKey     (\s' k -> s' { leftKey = k })
 
-  , text "RIGHT" JustLeft pixeboyFont 0.35 (-150, 0)
+  , text "Right" JustLeft pixeboyFont 0.35 (-150, 0)
   , keyBtn "rgt" (75, 0)   s rightKey    (\s' k -> s' { rightKey = k })
 
-  , text "FIRE" JustLeft pixeboyFont 0.35 (-150, -50)
+  , text "Fire" JustLeft pixeboyFont 0.35 (-150, -50)
   , keyBtn "fir" (75, -50) s fireKey     (\s' k -> s' { fireKey = k })
 
-  , text "VOLUME" JustLeft pixeboyFont 0.35 (-150, -100)
+  , text "Volume" JustLeft pixeboyFont 0.35 (-150, -100)
   , slider (75, -100) (180, 20) (volume s) onVolumeChange
   ]
 
@@ -52,7 +51,7 @@ onKeyBtn k setter = queueTask $ \gs -> do
     }
   where
     setBtnText :: UIElement -> UIElement
-    setBtnText e@ModifiableUIElement { element = b@(UIButton {})} = e { element = b { btnText = "PRESS A KEY" } }
+    setBtnText e@ModifiableUIElement { element = b@(UIButton {})} = e { element = b { btnText = "Press a key" } }
     setBtnText e = e
 
 -- | Sets the keybind to the given key.
@@ -68,17 +67,6 @@ onKeyChange setter k
       , activeUI = Just $ settingsUI settings'
       }
 
--- | Converts a key to a string.
-keyToString :: Key -> String
-keyToString (Char c)                           = [toUpper c]                   -- Char 'e'                         -> "E"
-keyToString (SpecialKey k)                     = map toUpper $ drop 3 $ show k -- SpecialKey KeySpace              -> "SPACE"
-keyToString (MouseButton (AdditionalButton n)) = "BUTTON " ++ show n           -- MouseButton (AdditionalButton 4) -> "BUTTON 4"
-keyToString (MouseButton LeftButton)           = "LMB"                         -- MouseButton LeftButton           -> "LMB"
-keyToString (MouseButton MiddleButton)         = "MMB"                         -- MouseButton MiddleButton         -> "MMB"
-keyToString (MouseButton RightButton)          = "RMB"                         -- MouseButton RightButton          -> "RMB"
-keyToString (MouseButton WheelUp)              = "WHEEL UP"                    -- MouseButton WheelUp              -> "WHEEL UP"
-keyToString (MouseButton WheelDown)            = "WHEEL DOWN"                  -- MouseButton WheelDown            -> "WHEEL DOWN"
-
 -- | Called when the volume slider is changed.
 onVolumeChange :: Float -> IO ()
 onVolumeChange v = queueTask $ \gs -> do
@@ -86,3 +74,14 @@ onVolumeChange v = queueTask $ \gs -> do
   writeSettings settings'
   setVolume v
   return gs { settings = settings' }
+
+-- | Converts a key to a string.
+keyToString :: Key -> String
+keyToString (Char c)                           = [toUpper c]                                          -- Char 'e'            -> "E"
+keyToString (SpecialKey k)                     = let s = drop 3 $ show k in toUpper (head s) : tail s -- SpecialKey KeySpace -> "Space"
+keyToString (MouseButton (AdditionalButton n)) = "Button " ++ show n           -- MouseButton (AdditionalButton 4) -> "Button 4"
+keyToString (MouseButton LeftButton)           = "LMB"                         -- MouseButton LeftButton           -> "LMB"
+keyToString (MouseButton MiddleButton)         = "MMB"                         -- MouseButton MiddleButton         -> "MMB"
+keyToString (MouseButton RightButton)          = "RMB"                         -- MouseButton RightButton          -> "RMB"
+keyToString (MouseButton WheelUp)              = "Wheel Up"                    -- MouseButton WheelUp              -> "Wheel Up"
+keyToString (MouseButton WheelDown)            = "Wheel Down"                  -- MouseButton WheelDown            -> "Wheel Down"
