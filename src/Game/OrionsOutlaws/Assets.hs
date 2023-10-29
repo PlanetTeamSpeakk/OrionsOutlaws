@@ -4,6 +4,7 @@
 -- | Assets are packed using file-embed
 module Game.OrionsOutlaws.Assets 
   ( assetScale
+  , freeglutDll
   , pixeboyFont
   , explosionAnimation
   , fromPlayerFacing
@@ -15,7 +16,7 @@ module Game.OrionsOutlaws.Assets
 
 import Graphics.Gloss
 import Data.ByteString (ByteString)
-import Data.FileEmbed -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
+import Data.FileEmbed (embedFile, embedStringFile) -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
 import Game.OrionsOutlaws.Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
@@ -43,6 +44,10 @@ extractBitmapData _              = error "extractBitmapData: Not a bitmap"
 -- | The value assets are scaled by when displayed in the game.
 assetScale :: Float
 assetScale = 4
+
+-- | The freeglut dll, required for the game to run.
+freeglutDll :: ByteString
+freeglutDll = $(embedFile "assets/freeglut.dll")
 
 -- Pixeboy font
 pixeboyFont :: Font

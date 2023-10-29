@@ -36,6 +36,7 @@ dependencies:
 - aeson-pretty
 - containers
 - split
+- directory
 
 ghc-options:
 - -Wall

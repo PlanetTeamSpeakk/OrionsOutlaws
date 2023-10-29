@@ -2,6 +2,7 @@ module Main (main) where
 
 import Game.OrionsOutlaws.Controller        (input, step)
 import Game.OrionsOutlaws.Model             (GameState(mousePos, windowSize, steps), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume))
+import Game.OrionsOutlaws.Assets            (freeglutDll)
 import Game.OrionsOutlaws.Rendering.View    (view)
 import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume)
 import Game.OrionsOutlaws.Util.Data         (loadSettings, loadScores)
@@ -18,6 +19,8 @@ import Graphics.UI.GLUT                     (($=), crossingCallback, Crossing (W
 import Control.Monad                        (when)
 import Data.IORef                           (IORef, newIORef, writeIORef, readIORef)
 import System.IO.Unsafe                     (unsafePerformIO)
+import System.Directory                     (setCurrentDirectory, getAppUserDataDirectory, createDirectoryIfMissing)
+import qualified Data.ByteString as B       (writeFile)
 
 main :: IO ()
 main = do
@@ -33,6 +36,14 @@ main = do
   -- Set up logging for the regular log.
   defHandler <- streamHandler stdout INFO >>= \lh -> return $ setFormatter lh $ logFormatter False
   updateGlobalLogger defLog $ addHandler defHandler
+
+  -- Get app directory and move there
+  appDir <- getAppUserDataDirectory "OrionsOutlaws" -- Get app directory
+  createDirectoryIfMissing False appDir             -- Create directory if it doesn't exist
+  setCurrentDirectory appDir                        -- Move to app directory
+
+  -- Extract freeglut.dll to the current directory
+  B.writeFile "freeglut.dll" freeglutDll -- Write freeglut.dll to current directory
 
   -- Load settings
   s <- loadSettings
