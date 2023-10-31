@@ -7,7 +7,7 @@ module Game.OrionsOutlaws.Assets
   -- * Images
     explosionAnimation
   , fromPlayerFacing
-  , missile1, missile2
+  , missile
 
   -- ** Background
   , shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar
@@ -67,6 +67,8 @@ pixeboyFont = case loadPNG $(embedFile "assets/fonts/pixeboy.png") of
 -- | Explosion animation
 --
 --   Spritesheets have to be bitmaps so that we can use bitmapSection.
+--
+--   Source: https://ansimuz.itch.io/spaceship-shooter-environment
 explosionSheet :: Maybe BitmapData
 explosionSheet = loadPNG $(embedFile "assets/images/spritesheets/explosion.png")
 
@@ -90,6 +92,8 @@ explosionAnimation = Animation 5 2 0 0 explosionFrame
 
 
 -- | Ship spritesheet (player)
+--
+--   Source: https://ansimuz.itch.io/spaceship-shooter-environment
 shipSheet :: BitmapData
 shipSheet = case loadPNG $(embedFile "assets/images/spritesheets/ship.png") of
   Just bdata -> bdata
@@ -118,15 +122,21 @@ missileSheet = case loadPNG $(embedFile "assets/images/spritesheets/missile.png"
   Just bdata -> bdata
   Nothing    -> error "missileSheet: Could not load spritesheet"
 
--- | First frame of the missile projectile.
-missile1 :: Picture
-missile1 = scale assetScale assetScale $ bitmapSection (Rectangle (0, 0) (72, 19)) missileSheet
+-- | A frame of the missile projectile.
+--
+--   Source: https://itch.io/queue/c/2713136/void?game_id=1667977
+missile :: Int -> Picture
+missile 0 = missile' 0
+missile 1 = missile' 1
+missile 2 = missile' 2
+missile n = missile' $ n `mod` 3
 
--- | Second frame of the missile projectile.
-missile2 :: Picture
-missile2 = scale assetScale assetScale $ bitmapSection (Rectangle (0, 19) (72, 19)) missileSheet
+missile' :: Int -> Picture
+missile' n = scale assetScale assetScale $ bitmapSection (Rectangle (5 * n, 0) (5, 18)) missileSheet
+
 
 -- Background
+-- Source: https://itch.io/queue/c/2713136/void?game_id=1668166
 shadows :: Picture
 shadows = case loadPNG $(embedFile "assets/images/background/shadows.png") of
   Just bdata -> bitmap bdata

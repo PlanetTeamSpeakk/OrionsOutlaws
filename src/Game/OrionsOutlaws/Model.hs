@@ -248,8 +248,8 @@ instance Collidable Enemy where
 instance Collidable Projectile where
   createBoxes (RegularProjectile { projPos = (x, y) } ) = [((x - 5, y - 5), (x + 5, y + 5))]
   createBoxes (MissileProjectile { projPos = (x, y), mslRotation = r } ) =
-    let (cx, cy) = rotatePointAround (x + 36, y) (x, y) $ degToRad r -- Center of the head of the missile
-    in [((cx - 5, cy - 5), (cx + 6, cy + 6))]
+    let (cx, cy) = rotatePointAround (x + (5 * assetScale), y) (x, y) $ degToRad r
+    in [((cx - 5, cy - 5), (cx + 5, cy + 5))]
 
 
 -- | An animation is a set of frames that are shown in order.

@@ -5,7 +5,7 @@ module Game.OrionsOutlaws.Rendering.View (module Game.OrionsOutlaws.Rendering.Vi
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile1, missile2)
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile)
 import Game.OrionsOutlaws.Util.Util (msTime)
 import Game.OrionsOutlaws.Rendering.UI (renderUI)
 import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
@@ -87,8 +87,8 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
         renderProjectile p@(RegularProjectile {}) = color (if isFriendly $ friendly p then cyan else red) $
           translateP (position sd p) $ circleSolid 5
         renderProjectile p@(MissileProjectile { mslRotation = r }) = 
-          let s = if getShipFrame == First then missile1 else missile2
-          in translateP (position sd p) $ rotate (-r) $ scale 0.3 0.3 s
+          let s = missile $ fromInteger $ steps gstate
+          in translateP (position sd p) $ rotate (-r + (if isFriendly $ friendly p then 90 else -90)) s
 
     -- | Renders the enemies, currently just orange circles
     renderEnemies :: [Enemy] -> Picture
