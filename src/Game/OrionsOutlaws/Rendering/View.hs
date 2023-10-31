@@ -1,9 +1,7 @@
-{-# OPTIONS_GHC -Wno-unused-local-binds #-}   -- We have some functions that are only used for debugging that we leave in.
--- | This module defines how to turn
---   the game state into a picture
+-- | This module defines how to turn the game state into a picture
 module Game.OrionsOutlaws.Rendering.View (module Game.OrionsOutlaws.Rendering.View) where
 
-import Graphics.Gloss
+import Graphics.Gloss (Picture, green, orange, red, blank, color, pictures, rectangleWire, rotate, scale, translate)
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile, fighter, bullet, enemyProjectile)
 import Game.OrionsOutlaws.Util.Util (msTime, lerp)
@@ -15,7 +13,7 @@ import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
 view :: GameState -> IO Picture
 view gstate = do
   time <- msTime
-  let sd = stepDelta (lastStep gstate) time
+  let sd = min 1 $ stepDelta (lastStep gstate) time
   return $ viewPure sd gstate
 
 -- | Renders the gamestate into a picture
@@ -31,7 +29,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     , ifDebug $ renderBoxesFor $ enemies gstate                           -- render enemy boxes (debugging only)
     , renderAnimations $ animations gstate                                -- render animations
     , renderScore (windowSize gstate) $ score gstate                      -- render score
-    , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI
+    , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI (if any)
     ]
   where
     -- | Returns the given picture if debug-mode is enabled, otherwise returns 'blank'.
@@ -41,15 +39,14 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     -- | Renders the background and all its components.
     renderBackground :: Picture
     renderBackground = pictures
-      [ renderBackgroundColor                                               -- render background color
-      , renderShadows                                                       -- render shadows
-      , renderAnimatedLayer stars                                           -- render animated stars
-      , renderAnimatedLayer bigStars                                        -- render animated big stars
-      , renderAnimatedLayer blueStar                                        -- render animated blue star
-      , renderAnimatedLayer redStar                                         -- render animated red star
-      , renderAnimatedLayer blackHole                                       -- render animated black hole
-      , renderAnimatedLayer smallRotaryStar                                 -- render animated small rotary star
-      , renderAnimatedLayer rotaryStar                                      -- render animated rotary star
+      [ renderShadows                       -- render shadows
+      , renderAnimatedLayer stars           -- render animated stars
+      , renderAnimatedLayer bigStars        -- render animated big stars
+      , renderAnimatedLayer blueStar        -- render animated blue star
+      , renderAnimatedLayer redStar         -- render animated red star
+      , renderAnimatedLayer blackHole       -- render animated black hole
+      , renderAnimatedLayer smallRotaryStar -- render animated small rotary star
+      , renderAnimatedLayer rotaryStar      -- render animated rotary star
       ]
 
     -- | Renders the background shadows.
@@ -62,10 +59,6 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderAnimatedLayer layer = scale factor factor $ layer f
       where factor = fromIntegral wh / 360
             f = fromIntegral $ steps gstate `mod` 16 `div` 2
-
-    -- | Renders the background color.
-    renderBackgroundColor :: Picture
-    renderBackgroundColor = color (makeColorI 46 34 47 255) $ rectangleSolid (fromIntegral ww) (fromIntegral wh)
 
     -- | Renders the player.
     renderPlayer :: Player -> Picture

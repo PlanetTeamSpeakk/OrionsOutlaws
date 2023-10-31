@@ -8,7 +8,7 @@ import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic
 import Game.OrionsOutlaws.Util.Data         (loadSettings, loadScores)
 import Game.OrionsOutlaws.Util.Tasks        (runAndClearTasks)
 
-import Graphics.Gloss.Interface.IO.Game     (white, playIO, Display(InWindow))
+import Graphics.Gloss.Interface.IO.Game     (playIO, Display(InWindow))
 import System.Log.Logger                    (Priority(INFO, DEBUG), addHandler, debugM, removeHandler, rootLoggerName, setLevel, updateGlobalLogger)
 import System.Log.Handler                   (setFormatter)
 import System.Log.Handler.Simple            (streamHandler)
@@ -22,6 +22,7 @@ import System.IO.Unsafe                     (unsafePerformIO)
 import System.Directory                     (setCurrentDirectory, getAppUserDataDirectory, createDirectoryIfMissing)
 import qualified Data.ByteString as B       (writeFile)
 import System.Environment                   (getArgs)
+import Graphics.Gloss.Data.Color (makeColorI)
 
 main :: IO ()
 main = do
@@ -70,12 +71,12 @@ main = do
   playIO (InWindow "Orion's Outlaws" (windowWidth * 2, windowHeight * 2)
       -- Ensure that the window is centered
       (screenWidth - windowWidth, screenHeight - windowHeight))
-    white           -- Background color
-    stepsPerSec     -- Steps (ticks) per second
-    state           -- Initial state
-    view            -- View function
-    input           -- Event function
-    runTasksAndStep -- Step function
+    (makeColorI 46 34 47 255) -- Background color
+    stepsPerSec               -- Steps (ticks) per second
+    state                     -- Initial state
+    view                      -- View function
+    input                     -- Event function
+    runTasksAndStep           -- Step function
 
   debugM debugLog "Exiting"
   finishAudio -- Shutdown audio system
