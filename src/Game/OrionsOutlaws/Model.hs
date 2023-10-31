@@ -37,7 +37,7 @@ debugLog = "Debug"
 -- CONSTANTS
 -- | The number of steps per second
 stepsPerSec :: Int
-stepsPerSec = 20
+stepsPerSec = 30
 
 -- | The length of a step in milliseconds
 stepLengthMs :: Int
