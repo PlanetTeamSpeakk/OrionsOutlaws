@@ -9,8 +9,20 @@ module Game.OrionsOutlaws.Assets
   , fromPlayerFacing
   , missile
 
+  -- ** Enemies
+  , fighter
+  , bomber
+  , enemyEngine
+
   -- ** Background
-  , shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar
+  , shadows
+  , stars
+  , bigStars
+  , blueStar
+  , redStar
+  , blackHole
+  , smallRotaryStar
+  , rotaryStar
 
   -- * Sounds
   , bgMusic
@@ -134,6 +146,40 @@ missile n = missile' $ n `mod` 3
 missile' :: Int -> Picture
 missile' n = scale assetScale assetScale $ bitmapSection (Rectangle (5 * n, 0) (5, 18)) missileSheet
 
+
+-- Enemy spritesheets
+-- Source: https://itch.io/queue/c/2713136/void?game_id=1668042
+
+-- | Fighter enemy
+fighter :: BitmapData
+fighter = case loadPNG $(embedFile "assets/images/spritesheets/enemies/fighter.png") of
+  Just bdata -> bdata
+  Nothing    -> error "fighterSheet: Could not load spritesheet"
+
+-- | Bomber enemy
+bomber :: BitmapData
+bomber = case loadPNG $(embedFile "assets/images/spritesheets/enemies/bomber.png") of
+  Just bdata -> bdata
+  Nothing    -> error "bomberSheet: Could not load spritesheet"
+
+-- | Spritesheet for the flames coming out of the engine of the enemies.
+--
+--   Used for both fighters and bombers.
+enemyEngineSheet :: BitmapData
+enemyEngineSheet = case loadPNG $(embedFile "assets/images/spritesheets/enemies/engine.png") of
+  Just bdata -> bdata
+  Nothing    -> error "enemyEngineSheet: Could not load spritesheet"
+
+enemyEngine :: Int -> Picture
+enemyEngine 0 = enemyEngine' 0
+enemyEngine 1 = enemyEngine' 1
+enemyEngine 2 = enemyEngine' 2
+enemyEngine 3 = enemyEngine' 3
+enemyEngine 4 = enemyEngine' 4
+enemyEngine n = enemyEngine $ n `mod` 5
+
+enemyEngine' :: Int -> Picture
+enemyEngine' n = scale assetScale assetScale $ bitmapSection (Rectangle (n * 6, 0) (6, 10)) enemyEngineSheet
 
 -- Background
 -- Source: https://itch.io/queue/c/2713136/void?game_id=1668166
