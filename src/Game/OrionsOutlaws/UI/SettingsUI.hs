@@ -35,6 +35,10 @@ settingsUI s = ui
 
   , text "Volume" JustLeft pixeboyFont 0.35 (-150, -100)
   , slider (75, -100) (180, 20) (volume s) onVolumeChange
+
+  , text "Spawn" JustLeft pixeboyFont 0.25 (-150, -140)
+  , text "Rate" JustLeft pixeboyFont 0.25 (-143, -160)
+  , slider (75, -150) (180, 20) (spawnRate s / 4) onSpawnRateChange
   ]
 
 -- | Creates a new keybind button for a keybind.
@@ -73,6 +77,12 @@ onVolumeChange v = queueTask $ \gs -> do
   let settings' = (settings gs) { volume = v }
   writeSettings settings'
   setVolume v
+  return gs { settings = settings' }
+
+onSpawnRateChange :: Float -> IO ()
+onSpawnRateChange v = queueTask $ \gs -> do
+  let settings' = (settings gs) { spawnRate = v * 4 }
+  writeSettings settings'
   return gs { settings = settings' }
 
 -- | Converts a key to a string.

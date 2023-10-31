@@ -157,20 +157,23 @@ step elapsed gstate = do
         then do
           let (x, y) = curPosition e
           let proj = createProjectile (x - (enemySize / 2) - 2.5, y) Hostile -- Create a new projectile
-          fps <- enemyFire es -- Attempt fire on rest of enemies
-          return $ bimap (e {enemyCooldown = 15} :) (proj :) fps -- Set cooldown to 15 steps (0.5 seconds)
+          fps <- enemyFire es                                                -- Attempt fire on rest of enemies
+          return $ bimap (e {enemyCooldown = 15} :) (proj :) fps             -- Set cooldown to 15 steps (0.5 seconds)
         else do
           (es', ps) <- enemyFire es
           return (e : es', ps)
 
     -- Will spawn an enemy if the last one was spawned long enough ago.
-    -- Has a 5% chance of spawning an enemy every step after 4 seconds.
+    -- Has an 2% chance of spawning an enemy every step after 2 seconds.
+    -- This means that on average, an enemy will spawn every
+    -- 2 + 1 / 0.02 / 30 = 2 + 1 / 0.6 = 2 + 1.67 = 3.67 seconds.
     trySpawnEnemy :: GameState -> IO GameState
     trySpawnEnemy gstateNew = do
-      let e = enemies gstateNew
+      let e  = enemies gstateNew
+      let sr = spawnRate $ settings gstateNew
 
       r <- randomIO :: IO Float -- Random value between 0 and 1
-      if elapsedTime gstateNew - lastSpawn gstate > 4 && (r < 0.05)
+      if elapsedTime gstateNew - lastSpawn gstate > (2 / sr) && (r < (0.02 * sr))
         then do
           let (wx, wy)    = windowSize gstate -- The window size
           let (hwx, hwy)  = (fromIntegral wx / 2, fromIntegral wy / 2)

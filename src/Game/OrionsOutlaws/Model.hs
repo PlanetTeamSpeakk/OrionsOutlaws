@@ -303,12 +303,13 @@ data ShipFrame = First | Second deriving (Show, Eq)
 
 -- | Game settings that stores anything the user can change.
 data Settings = Settings
-  { fireKey     :: Key
-  , forwardKey  :: Key
-  , backwardKey :: Key
-  , leftKey     :: Key
-  , rightKey    :: Key
-  , volume      :: Float
+  { fireKey     :: Key    -- ^ The key used to fire
+  , forwardKey  :: Key    -- ^ The key used to move forward
+  , backwardKey :: Key    -- ^ The key used to move backward
+  , leftKey     :: Key    -- ^ The key used to move left
+  , rightKey    :: Key    -- ^ The key used to move right
+  , volume      :: Float  -- ^ The volume of sounds played, between 0 and 1
+  , spawnRate   :: Float  -- ^ The rate at which enemies spawn, between 0 and 4
   } deriving (Show, Eq)
 
 -- | Default settings
@@ -320,6 +321,7 @@ defaultSettings = Settings
   , leftKey     = Char 'a'
   , rightKey    = Char 'd'
   , volume      = 1
+  , spawnRate   = 1
   }
 
 -- | A score that someone achieved once.
