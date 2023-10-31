@@ -35,6 +35,9 @@ module Game.OrionsOutlaws.Assets
   -- ** Explosion sounds
   , explosion1
   , explosion2
+  -- ** Missile sounds
+  , missile1
+  , missile2
 
   -- * Misc
   , freeglutDll
@@ -311,3 +314,17 @@ explosion1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/ex
 explosion2 :: Sample
 explosion2 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/explosion2.ogg") 1
 {-# NOINLINE explosion2 #-}
+
+-- | Missile sound 1
+--
+--   Voiced by Tygo
+missile1 :: Sample
+missile1 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/missile1.ogg") 1
+{-# NOINLINE missile1 #-}
+
+-- | Missile sound 2
+--
+--   Voiced by Tygo
+missile2 :: Sample
+missile2 = unsafePerformIO $ sampleFromMemoryOgg $(embedFile "assets/sounds/missile2.ogg") 1
+{-# NOINLINE missile2 #-}

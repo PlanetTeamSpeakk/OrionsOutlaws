@@ -4,7 +4,7 @@ module Game.OrionsOutlaws.Controller (module Game.OrionsOutlaws.Controller) wher
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Rendering.View  (onScreen, inBounds)
 import Game.OrionsOutlaws.Util.Util       (msTime, randomElem, distanceSq)
-import Game.OrionsOutlaws.Assets          (explosionAnimation, laser1, laser2, explosion1, explosion2)
+import Game.OrionsOutlaws.Assets          (explosionAnimation, laser1, laser2, explosion1, explosion2, missile1, missile2)
 import Game.OrionsOutlaws.Util.Audio      (pauseAllSounds, playSound, resumeAllSounds)
 import Game.OrionsOutlaws.Rendering.UI    (handleMouse, handleMotion)
 import Game.OrionsOutlaws.UI.PausedUI     (pausedUI)
@@ -115,11 +115,11 @@ step elapsed gstate = do
           let c  = getColliding p' es' -- Colliding enemies
               d  = distanceSq (mslStartPos p') (projPos p')   -- Distance between start and current position
               td = distanceSq (mslStartPos p') (mslTarget p') -- Distance between start and target
-          in if null c && d < td 
-            then Nothing -- No collision, but the missile hasn't reached its target yet
-            else         -- Either the missile collided or it has reached its target
+          in if d >= td || not (null c)
+            then         -- Either the missile collided or it has reached its target
               let b = growBox (head $ createBoxes p') 69 69 -- The missile's box, 80x80 centered around its head
               in Just $ filter (`collidesWithBox` b) es'    -- Enemies within a radius of 40 pixels around the missile's head
+            else Nothing -- No collision, but the missile hasn't reached its target yet
 
         getColliding :: Projectile -> [Enemy] -> [Enemy]
         getColliding p' = filter (collidesWith p')
@@ -148,7 +148,7 @@ step elapsed gstate = do
         stepEnemy e = (applyMovement (first (\w -> round $ fromIntegral w + (enemySize * 2)) $ windowSize gstate) e 10)
           { enemyCooldown = max 0 $ enemyCooldown e - 1 }
 
-    -- Attempts to fire a projectile from each enemy. If an enemy fires, it will have a cooldown of 10 steps (0.5 seconds)
+    -- Attempts to fire a projectile from each enemy. If an enemy fires, it will have a cooldown of 15 steps (0.5 seconds)
     enemyFire :: [Enemy] -> IO ([Enemy], [Projectile])
     enemyFire [] = return ([], [])
     enemyFire (e:es) = do
@@ -158,7 +158,7 @@ step elapsed gstate = do
           let (x, y) = curPosition e
           let proj = createProjectile (x - (enemySize / 2) - 2.5, y) Hostile -- Create a new projectile
           fps <- enemyFire es -- Attempt fire on rest of enemies
-          return $ bimap (e {enemyCooldown = 10} :) (proj :) fps -- Set cooldown to 10 steps (0.5 seconds)
+          return $ bimap (e {enemyCooldown = 15} :) (proj :) fps -- Set cooldown to 15 steps (0.5 seconds)
         else do
           (es', ps) <- enemyFire es
           return (e : es', ps)
@@ -314,7 +314,7 @@ fireMissile gstate target = do
     then do
       let (px, py) = playerPos $ player gstate
       let proj = createMissile (px + (24 * assetScale / 2) + (36 * 0.3), py) target Friendly
-      playLaserSound
+      playMissileSound
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) 
         { cooldown    = 8 
         , mslCooldown = 120 -- One missile every 4 seconds
@@ -346,6 +346,10 @@ movePlayer gstate modifier = if paused gstate then gstate else
 -- | Plays a random laser sound
 playLaserSound :: IO ()
 playLaserSound = randomElem [laser1, laser2] >>= playSound
+
+-- | Plays a random missile sound
+playMissileSound :: IO ()
+playMissileSound = randomElem [missile1, missile2] >>= playSound
 
 -- | Plays a random explosion sound
 playExplosionSound :: IO ()
