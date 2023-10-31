@@ -26,13 +26,13 @@ enumerate = enumerateFrom 0
 enumerateFrom :: Int -> [a] -> [(Int, a)]
 enumerateFrom i = zip [i..]
 
--- | Ensures the given list of at least the given length
+-- | Ensures the given list is of at least the given length
 --   by appending the given element @n - m@ times,
 --   where @n@ is the given length and @m@ is the current length.
 rpad :: Int -> a -> [a] -> [a]
 rpad n x xs = take n $ xs ++ repeat x
 
--- | Ensures the given list of at least the given length
+-- | Ensures the given list is of at least the given length
 --   by prepending it @n - m@ times with the given element,
 --   where @n@ is the given length and @m@ is the current length.
 lpad :: Int -> a -> [a] -> [a]
