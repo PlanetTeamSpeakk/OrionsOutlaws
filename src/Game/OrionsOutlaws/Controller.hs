@@ -5,18 +5,19 @@ import Game.OrionsOutlaws.Model
 import Graphics.Gloss.Interface.IO.Game (KeyState(Down), Key(SpecialKey, MouseButton), MouseButton(LeftButton), SpecialKey(KeyEsc), Event(..))
 import System.Log.Logger (debugM)
 import Game.OrionsOutlaws.Rendering.View (onScreen, inBounds)
-import Game.OrionsOutlaws.Util.Util (msTime, randomElem)
+import Game.OrionsOutlaws.Util.Util (msTime, randomElem, distanceSq)
 import System.Random (randomIO)
 import Data.Bifunctor (first, bimap)
 import Data.List ((\\)) -- List difference
 import System.Exit (exitSuccess)
-import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2, assetScale)
+import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2)
 import Game.OrionsOutlaws.Util.Audio (pauseAllSounds, playSound, resumeAllSounds)
 import Data.Maybe (isJust, fromJust)
 import Game.OrionsOutlaws.Rendering.UI (handleMouse, handleMotion)
 import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
 import Data.Time (getCurrentTime)
 import Game.OrionsOutlaws.Util.Data (writeScores)
+import Graphics.Gloss.Geometry.Angle (degToRad)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -29,36 +30,33 @@ step elapsed gstate = do
     -- Try to spawn an enemy
     gstateN2 <- trySpawnEnemy gstateNew
 
-    -- Step projectiles
-    let p = stepProjectiles $ projectiles gstateN2
-
     -- Step animations
     let as = stepAnimations $ animations gstateN2
 
     -- Handle projectile collision with enemies. Filters projectiles and enemies.
-    (fps, es, nas) <- handleProjectileCollision (filter friendly p) $ enemies gstateN2
+    (fps, es, nas) <- handleProjectileCollision (filter (isFriendly . friendly) $ projectiles gstate) $ enemies gstateN2
     let hit = length $ enemies gstateN2 \\ es -- Number of enemies that were hit
 
     -- Filter out projectiles that collide with the player
-    let nfps  = filter (not . friendly) p                   -- Non-friendly projectiles
-    let cnfps = filter (collidesWith (player gstate)) nfps  -- Colliding non-friendly projectiles
+    let nfps  = filter (not . isFriendly . friendly) $ projectiles gstate -- Non-friendly projectiles
+    let cnfps = filter (collidesWith (player gstate)) nfps                -- Colliding non-friendly projectiles
 
     -- Check if any enemies collide with the player
     let eCollision = any (collidesWith (player gstate)) es
 
     if null cnfps && not eCollision
       then do -- No collision, return new gamestate
-        ep <- enemyFire es
+        (es', eps) <- enemyFire es
 
         time <- msTime
-        return gstateN2 
-          { player      = stepPlayer $ player gstateN2 
-          , enemies     = stepEnemies $ fst ep -- Step left-over enemies
-          -- Friendly projectiles, non-friendly projectiles that didn't collide with the player, and new enemy projectiles
-          , projectiles = fps ++ (nfps \\ cnfps) ++ snd ep
+        return gstateN2
+          { player      = stepPlayer $ player gstateN2
+          , enemies     = stepEnemies es' -- Step left-over enemies
+          -- Friendly projectiles, hostile projectiles that didn't collide with the player, and new hostile projectiles
+          , projectiles = stepProjectiles $ fps ++ (nfps \\ cnfps) ++ eps -- Step projectiles
           , animations  = as ++ nas
           , score       = score gstateN2 + hit
-          , lastStep    = time
+          , lastStep    = time -- To lerp positions when rendering
           , steps       = steps gstateN2 + 1
           }
       else -- Collision! Exit game if the player has 1 health left, otherwise reset and subtract 1 health
@@ -66,32 +64,65 @@ step elapsed gstate = do
           then onGameOver gstateNew
           else do
             debugM debugLog $ "Collision! " ++ show cnfps
-            return gstateN2 
+            return gstateN2
               { player      = initialPlayer { health = health (player gstateN2) - 1 }
-              , enemies     = [] 
+              , enemies     = []
               , projectiles = []
               , animations  = []
               }
   where
     -- Moves all projectiles forward
     stepProjectiles :: [Projectile] -> [Projectile]
-    stepProjectiles = filter (onScreen gstate . curPosition) . map stepProjectile
+    stepProjectiles = map stepProjectile . filter (onScreen gstate . curPosition)
       where
-        stepProjectile p = applyMovement (windowSize gstate) p $ speed p * projectileSpeed
+        stepProjectile p@(RegularProjectile {}) = applyMovement (windowSize gstate) p $ speed p * projectileSpeed
+        stepProjectile p@(MissileProjectile { projPos = (x, y), mslRotation = r }) =
+          let dr     = degToRad r
+              (h, v) = normalizeMotion (sin dr, cos dr)
+              m      = speed p * projectileSpeed
+          in p
+            { projPos = (x + v * m , y + h * m)
+            , prevProjPos = projPos p
+            }
 
     -- Handles projectile collision. For each projectile, check if it collides with any enemy.
     -- If it does, remove the projectile and the enemy it collided with.
     handleProjectileCollision :: [Projectile] -> [Enemy] -> IO ([Projectile], [Enemy], [PositionedAnimation])
-    handleProjectileCollision ps [] = return (ps, [], []) -- No enemies, no collision
-    handleProjectileCollision [] es = return ([], es, []) -- No projectiles, no collision
+    handleProjectileCollision [] es     = return ([], es, []) -- No projectiles, no collisions
     handleProjectileCollision (p:ps) es = do
       (ps', es', as) <- handleProjectileCollision ps es
-      case filter (collidesWith p) es' of
-        []   -> return (p:ps', es', as) -- No collision, keep projectile and all enemies
-        -- Collision, remove projectile and all enemies that collided. Add an explosion animation for each collided enemy
-        es'' -> do
+      case getCollisions p es' of
+        Nothing   -> return (p:ps', es', as) -- No collision, keep projectile and all enemies
+        -- Collision, remove projectile and all enemies that collided. Add an explosion animation for each collided enemy.
+        -- It is also possible es'' is empty. I.e. a missile has reached its target, but didn't hit anything.
+        Just es'' -> do
           playExplosionSound
-          return (ps', es' \\ es'', map (PositionedAnimation explosionAnimation . curPosition) es'')
+
+          let nas = case es'' of
+                [] -> [PositionedAnimation explosionAnimation (projPos p)] -- No enemies, add an explosion at the projectile's position
+                _  -> map (PositionedAnimation explosionAnimation . curPosition) es'' -- Add an explosion at each enemy's position
+          return (ps', es' \\ es'', nas ++ as)
+      where
+        getCollisions :: Projectile -> [Enemy] -> Maybe [Enemy]
+        -- For regular projectiles, check if the projectile collides with any enemy
+        getCollisions p'@(RegularProjectile {}) es' = case getColliding p' es' of
+          []   -> Nothing   -- No collision
+          es'' -> Just es'' -- Collision
+
+        -- For missiles, if the missile hit anything, it explodes and damages enemies within a radius of 40 pixels.
+        -- If it doesn't hit anything, it will explode once it reaches its target.
+        getCollisions p'@(MissileProjectile {}) es' =
+          let c  = getColliding p' es' -- Colliding enemies
+              d  = distanceSq (mslStartPos p') (projPos p')   -- Distance between start and current position
+              td = distanceSq (mslStartPos p') (mslTarget p') -- Distance between start and target
+          in if null c && d < td 
+            then Nothing -- No collision, but the missile hasn't reached its target yet
+            else         -- Either the missile collided or it has reached its target
+              let b = growBox (head $ createBoxes p') 69 69 -- The missile's box, 80x80 centered around its head
+              in Just $ filter (`collidesWithBox` b) es'    -- Enemies within a radius of 40 pixels around the missile's head
+
+        getColliding :: Projectile -> [Enemy] -> [Enemy]
+        getColliding p' = filter (collidesWith p')
 
     -- Decreases the player's cooldown and applies movement
     stepPlayer :: Player -> Player
@@ -122,7 +153,7 @@ step elapsed gstate = do
       if r < 0.01 && enemyCooldown e == 0
         then do
           let (x, y) = curPosition e
-          let proj = createProjectile (x - (enemySize / 2) - 2.5, y) False -- Create a new projectile
+          let proj = createProjectile (x - (enemySize / 2) - 2.5, y) Hostile -- Create a new projectile
           fps <- enemyFire es -- Attempt fire on rest of enemies
           return $ bimap (e {enemyCooldown = 10} :) (proj :) fps -- Set cooldown to 10 steps (0.5 seconds)
         else do
@@ -146,12 +177,12 @@ step elapsed gstate = do
           let enemy = RegularEnemy (x, y) (x, y) (Movement True False False False R2L $ elapsedTime gstateNew) 0
 
           debugM debugLog $ "Spawning enemy " ++ show enemy
-          return $ gstateNew 
+          return $ gstateNew
             { lastSpawn = elapsedTime gstateNew
             , enemies = enemy : e
             }
         else return gstateNew
-    
+
     onGameOver :: GameState -> IO GameState
     onGameOver gstateNew = do
       t <- getCurrentTime                                            -- Current time in UTCTime
@@ -212,9 +243,13 @@ inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
   let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
   if btn == LeftButton && isJust (activeUI gstate)
     then do
-      ui' <- handleMouse (fromJust $ activeUI gstate) state (x, y) s
+      (_, ui') <- handleMouse (fromJust $ activeUI gstate) state (x, y) s
       return gstate { activeUI = Just ui' }
-    else return gstate
+    else do
+      -- No UI active, fire missile
+      if cooldown (player gstate) == 0
+        then fireMissile gstate (x, y)
+        else return gstate
 inputMouse _ gstate = return gstate
 
 -- | Handle mouse motion. Propagates to UI if there's an active UI.
@@ -222,14 +257,14 @@ inputMouseMove :: Event -> GameState -> IO GameState
 inputMouseMove (EventMotion mPos) gstate = do
   let (ww, wh) = windowSize gstate
   let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
-  
+
   -- Handle UI motion if there's an active UI
   ui' <- case activeUI gstate of
     Just ui -> Just <$> handleMotion ui mPos s
     Nothing -> return Nothing
 
-  return $ gstate 
-    { mousePos = Just mPos 
+  return $ gstate
+    { mousePos = Just mPos
     , activeUI = ui'
     }
 inputMouseMove _ gstate = return gstate
@@ -263,7 +298,19 @@ fireProjectile gstate = do
   if cooldown (player gstate) == 0 && not (paused gstate)
     then do
       let (px, py) = playerPos $ player gstate
-      let proj = createProjectile (px + (24 * assetScale / 2) + 2.5, py) True
+      let proj = createProjectile (px + (24 * assetScale / 2) + 2.5, py) Friendly
+      playLaserSound
+      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
+    else do
+      return gstate
+
+-- | Fires a missile projectile if the player is not on cooldown.
+fireMissile :: GameState -> Position -> IO GameState
+fireMissile gstate target = do
+  if cooldown (player gstate) == 0 && not (paused gstate)
+    then do
+      let (px, py) = playerPos $ player gstate
+      let proj = createMissile (px + (24 * assetScale / 2) + (36 * 0.3), py) target Friendly
       playLaserSound
       return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
     else do

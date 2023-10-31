@@ -7,6 +7,7 @@ module Game.OrionsOutlaws.Assets
   -- * Images
     explosionAnimation
   , fromPlayerFacing
+  , missile1, missile2
 
   -- ** Background
   , shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar
@@ -19,7 +20,6 @@ module Game.OrionsOutlaws.Assets
   , explosion1, explosion2
 
   -- * Misc
-  , assetScale
   , freeglutDll
   , pixeboyFont
   ) where
@@ -27,7 +27,7 @@ module Game.OrionsOutlaws.Assets
 import Graphics.Gloss
 import Data.ByteString (ByteString)
 import Data.FileEmbed (embedFile, embedStringFile) -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
-import Game.OrionsOutlaws.Model (Animation(Animation), PlayerFacing(..), ShipFrame(..))
+import Game.OrionsOutlaws.Model (Animation(Animation), PlayerFacing(..), ShipFrame(..), assetScale)
 import Codec.Picture.Png (decodePng)
 import Graphics.Gloss.Juicy (fromDynamicImage)
 import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
@@ -50,10 +50,6 @@ loadPNG bstr = case decodePng bstr of
 extractBitmapData :: Picture -> BitmapData
 extractBitmapData (Bitmap bdata) = bdata
 extractBitmapData _              = error "extractBitmapData: Not a bitmap"
-
--- | The value assets are scaled by when displayed in the game.
-assetScale :: Float
-assetScale = 4
 
 -- | The freeglut dll, required for the game to run.
 freeglutDll :: ByteString
@@ -115,6 +111,20 @@ fromPlayerFacing FacingRight       First  = ship 3 0
 fromPlayerFacing FacingRight       Second = ship 3 1
 fromPlayerFacing FacingRightRight  First  = ship 4 0
 fromPlayerFacing FacingRightRight  Second = ship 4 1
+
+-- | Missile spritesheet. Contains two sprites.
+missileSheet :: BitmapData
+missileSheet = case loadPNG $(embedFile "assets/images/spritesheets/missile.png") of
+  Just bdata -> bdata
+  Nothing    -> error "missileSheet: Could not load spritesheet"
+
+-- | First frame of the missile projectile.
+missile1 :: Picture
+missile1 = scale assetScale assetScale $ bitmapSection (Rectangle (0, 0) (72, 19)) missileSheet
+
+-- | Second frame of the missile projectile.
+missile2 :: Picture
+missile2 = scale assetScale assetScale $ bitmapSection (Rectangle (0, 19) (72, 19)) missileSheet
 
 -- Background
 shadows :: Picture

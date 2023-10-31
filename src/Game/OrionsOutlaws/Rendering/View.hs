@@ -5,7 +5,7 @@ module Game.OrionsOutlaws.Rendering.View (module Game.OrionsOutlaws.Rendering.Vi
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar)
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile1, missile2)
 import Game.OrionsOutlaws.Util.Util (msTime)
 import Game.OrionsOutlaws.Rendering.UI (renderUI)
 import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
@@ -22,13 +22,14 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in
   pictures
-    [ renderBackground                                                       -- render background                                                    
-    , renderPlayer $ player gstate                                           -- render player
-    -- , renderPlayerBoxes $ player gstate                                   -- render player boxes (debugging only)
-    , renderProjectiles $ projectiles gstate                                 -- render projectiles
-    , renderEnemies $ enemies gstate                                         -- render enemies
-    , renderAnimations $ animations gstate                                   -- render animations
-    , renderScore (windowSize gstate) $ score gstate                         -- render score
+    [ renderBackground                                                    -- render background                                                    
+    , renderPlayer $ player gstate                                        -- render player
+    -- , renderPlayerBoxes $ player gstate                                  -- render player boxes (debugging only)
+    , renderProjectiles $ projectiles gstate                              -- render projectiles
+    -- , pictures $ map (renderBoxes . createBoxes) $ projectiles gstate     -- render projectile boxes (debugging only)
+    , renderEnemies $ enemies gstate                                      -- render enemies
+    , renderAnimations $ animations gstate                                -- render animations
+    , renderScore (windowSize gstate) $ score gstate                      -- render score
     , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI
     ]
   where
@@ -69,20 +70,25 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderPlayerBoxes :: Player -> Picture
     renderPlayerBoxes = renderBoxes . createBoxes
 
-    -- | Renders a list of boxes into rectangles.
+    -- | Renders a list of boxes into rectangles picture.
     --   Used for debugging purposes.
     renderBoxes :: [Box] -> Picture
     renderBoxes bs = pictures $ map renderBox bs
-      where
-        renderBox ((minX, minY), (maxX, maxY)) = color red $ translateP ((minX + maxX) / 2, (minY + maxY) / 2) $
-          rectangleWire (maxX - minX) (maxY - minY)
+    
+    -- | Renders a single box into a rectangle picture.
+    renderBox :: Box -> Picture
+    renderBox ((minX, minY), (maxX, maxY)) = color red $ translateP ((minX + maxX) / 2, (minY + maxY) / 2) $
+      rectangleWire (maxX - minX) (maxY - minY)
 
     -- | Renders the projectiles, currently just red/cyan circles
     renderProjectiles :: [Projectile] -> Picture
     renderProjectiles = pictures . map renderProjectile
       where
-        renderProjectile p = color (if friendly p then cyan else red) $
+        renderProjectile p@(RegularProjectile {}) = color (if isFriendly $ friendly p then cyan else red) $
           translateP (position sd p) $ circleSolid 5
+        renderProjectile p@(MissileProjectile { mslRotation = r }) = 
+          let s = if getShipFrame == First then missile1 else missile2
+          in translateP (position sd p) $ rotate (-r) $ scale 0.3 0.3 s
 
     -- | Renders the enemies, currently just orange circles
     renderEnemies :: [Enemy] -> Picture

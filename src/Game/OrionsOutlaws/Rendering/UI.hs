@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Game.OrionsOutlaws.Rendering.UI
-  ( 
+  (
   -- * Types
     UI (..)
   , UIElement (..)
@@ -44,7 +44,7 @@ import Game.OrionsOutlaws.Rendering.Font (renderString, TextAlignment (LeftToRig
 
 import Graphics.Gloss.Data.Color (black, white, withAlpha)
 import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)
-import Control.Monad (when)
+import Control.Monad (foldM)
 import Graphics.Gloss.Interface.IO.Game (KeyState (..))
 import Data.Ord (clamp)
 import qualified Data.Map as Map
@@ -199,35 +199,46 @@ transformSP s (x, y) = translate x y . Pic.scale s s
 -- | Handles a click on a UI.
 --   Checks if the click is on a button or slider and if so, performs the button's action/activates the slider.
 --   Does nothing if the click is not on a button or a slider.
-handleMouse :: UI -> KeyState -> MousePosition -> AxialScale -> IO UI
+handleMouse :: UI -> KeyState -> MousePosition -> AxialScale -> IO (Bool, UI)
 handleMouse ui' state mousePos s = do
-  es <- mapM handleMouse' $ elements ui'
-  return $ ui' { elements = es }
+  (c, es) <- foldM (foldElems handleMouse') (False, []) $ elements ui'
+  return (c, ui' { elements = buildMap $ concat es })
   where
-    handleMouse' :: [UIElement] -> IO [UIElement]
-    handleMouse' = mapM handleMouse''
+    -- | Folding function that calls either handleMouse'' on each list of elements.
+    foldElems :: (a -> IO (Bool, a)) -> (Bool, [a]) -> a -> IO (Bool, [a])
+    foldElems _ (True, es) e = return (True, e:es) -- Event consumed, do not propagate
+    foldElems f (False, es) e = do
+      (c, e') <- f e
+      return (c, e':es)
 
-    handleMouse'' :: UIElement -> IO UIElement
+    -- | Folds over a list of elements, calling handleMouse'' on each element.
+    handleMouse' :: [UIElement] -> IO (Bool, [UIElement])
+    handleMouse' = foldM (foldElems handleMouse'') (False, [])
+
+    -- | Does the actual event handling.
+    --   Returns whether the event was consumed and the new element.
+    handleMouse'' :: UIElement -> IO (Bool, UIElement)
     -- For buttons, click them if KeyState is Down.
     handleMouse'' b@(UIButton _ _ (x, y) (w, h) a) | state == Down = do
-      when (isInBounds (Just mousePos) (x, y) (w, h) 5 s) a
-      return b
+      if isInBounds (Just mousePos) (x, y) (w, h) 5 s
+        then a >> return (True, b)
+        else return (False, b)
 
     -- For sliders, toggle the active state.
     handleMouse'' sl@(UISlider (x, y) (w, h) v _ _)
       -- Release slider if mouse is released
       | state == Up = do
           sldrAction sl v
-          return sl { sldrActive = False }
+          return (True, sl { sldrActive = False })
       -- If mouse is pressed and mouse is in bounds, activate slider
-      | isInBounds (Just mousePos) (x + ((v - 0.5) * w), y) (0.67 * h, h) 3 s = return sl { sldrActive = True }
+      | isInBounds (Just mousePos) (x + ((v - 0.5) * w), y) (0.67 * h, h) 3 s = return (True, sl { sldrActive = True })
       -- Do nothing if mouse is not in bounds
-      | otherwise  = return sl
+      | otherwise  = return (False, sl)
     -- For modifiable elements, propagate the event.
     handleMouse'' (ModifiableUIElement _ e) = handleMouse'' e
 
     -- For anything else, do nothing.
-    handleMouse'' e                         = return e
+    handleMouse'' e                         = return (False, e)
 
 -- | Handles a mouse motion event on a UI.
 handleMotion :: UI -> MousePosition -> AxialScale -> IO UI
