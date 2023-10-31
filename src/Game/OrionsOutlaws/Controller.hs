@@ -2,22 +2,22 @@
 module Game.OrionsOutlaws.Controller (module Game.OrionsOutlaws.Controller) where
 
 import Game.OrionsOutlaws.Model
-import Graphics.Gloss.Interface.IO.Game (KeyState(Down), Key(SpecialKey, MouseButton), MouseButton(LeftButton), SpecialKey(KeyEsc), Event(..))
-import System.Log.Logger (debugM)
-import Game.OrionsOutlaws.Rendering.View (onScreen, inBounds)
-import Game.OrionsOutlaws.Util.Util (msTime, randomElem, distanceSq)
-import System.Random (randomIO)
-import Data.Bifunctor (first, bimap)
-import Data.List ((\\)) -- List difference
-import System.Exit (exitSuccess)
-import Game.OrionsOutlaws.Assets (explosionAnimation, laser1, laser2, explosion1, explosion2)
-import Game.OrionsOutlaws.Util.Audio (pauseAllSounds, playSound, resumeAllSounds)
-import Data.Maybe (isJust, fromJust)
-import Game.OrionsOutlaws.Rendering.UI (handleMouse, handleMotion)
-import Game.OrionsOutlaws.UI.PausedUI (pausedUI)
-import Data.Time (getCurrentTime)
-import Game.OrionsOutlaws.Util.Data (writeScores)
-import Graphics.Gloss.Geometry.Angle (degToRad)
+import Game.OrionsOutlaws.Rendering.View  (onScreen, inBounds)
+import Game.OrionsOutlaws.Util.Util       (msTime, randomElem, distanceSq)
+import Game.OrionsOutlaws.Assets          (explosionAnimation, laser1, laser2, explosion1, explosion2)
+import Game.OrionsOutlaws.Util.Audio      (pauseAllSounds, playSound, resumeAllSounds)
+import Game.OrionsOutlaws.Rendering.UI    (handleMouse, handleMotion)
+import Game.OrionsOutlaws.UI.PausedUI     (pausedUI)
+import Game.OrionsOutlaws.Util.Data       (writeScores)
+import Graphics.Gloss.Interface.IO.Game   (KeyState(Down), Key(SpecialKey, MouseButton), MouseButton(LeftButton), SpecialKey(KeyEsc), Event(..))
+import Graphics.Gloss.Geometry.Angle      (degToRad)
+import System.Log.Logger                  (debugM)
+import System.Random                      (randomIO)
+import System.Exit                        (exitSuccess)
+import Data.Bifunctor                     (first, bimap)
+import Data.List                          ((\\)) -- List difference
+import Data.Maybe                         (isJust, fromJust)
+import Data.Time                          (getCurrentTime)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState

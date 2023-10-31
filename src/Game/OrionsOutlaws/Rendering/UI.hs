@@ -40,13 +40,13 @@ module Game.OrionsOutlaws.Rendering.UI
   , defaultBackground
   ) where
 
-import Game.OrionsOutlaws.Rendering.Font (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
+import Game.OrionsOutlaws.Rendering.Font  (renderString, TextAlignment (LeftToRight, RightToLeft), renderStringCentered, Font (..), stringWidth)
 
-import Graphics.Gloss.Data.Color (black, white, withAlpha)
+import Graphics.Gloss.Data.Color          (black, white, withAlpha)
 import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, translate, scale, pictures, blank)
-import Control.Monad (foldM)
-import Graphics.Gloss.Interface.IO.Game (KeyState (..))
-import Data.Ord (clamp)
+import Graphics.Gloss.Interface.IO.Game   (KeyState (..))
+import Control.Monad                      (foldM)
+import Data.Ord                           (clamp)
 import qualified Data.Map as Map
 
 -- | A User Interface.

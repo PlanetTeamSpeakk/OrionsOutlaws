@@ -1,13 +1,13 @@
 module Game.OrionsOutlaws.UI.PausedUI
   ( pausedUI
   ) where
-import Game.OrionsOutlaws.Rendering.UI (Justification (..), ui, UI, text, button)
-import Game.OrionsOutlaws.Assets (pixeboyFont)
-import Game.OrionsOutlaws.Model (GameState (activeUI, settings, scores), debugLog)
-import Game.OrionsOutlaws.Util.Tasks (queueTask)
+import Game.OrionsOutlaws.Rendering.UI  (Justification (..), ui, UI, text, button)
+import Game.OrionsOutlaws.Assets        (pixeboyFont)
+import Game.OrionsOutlaws.Model         (GameState (activeUI, settings, scores), debugLog)
+import Game.OrionsOutlaws.Util.Tasks    (queueTask)
 import Game.OrionsOutlaws.UI.SettingsUI (settingsUI)
-import Game.OrionsOutlaws.UI.ScoresUI (scoresUI)
-import System.Log.Logger (debugM)
+import Game.OrionsOutlaws.UI.ScoresUI   (scoresUI)
+import System.Log.Logger                (debugM)
 
 -- | The paused UI. Doesn't ever change and doesn't do much on its own.
 pausedUI :: UI

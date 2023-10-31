@@ -7,8 +7,8 @@ module Game.OrionsOutlaws.Util.Tasks
   ) where
 
 import Game.OrionsOutlaws.Model (GameState)
-import GHC.IO (unsafePerformIO)
-import Data.IORef (newIORef, IORef, readIORef, writeIORef)
+import Data.IORef               (newIORef, IORef, readIORef, writeIORef)
+import System.IO.Unsafe         (unsafePerformIO)
 
 -- | A reference to the list of queued tasks.
 --   Internal use only.

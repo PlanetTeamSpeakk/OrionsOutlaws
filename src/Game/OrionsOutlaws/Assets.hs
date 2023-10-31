@@ -41,15 +41,15 @@ module Game.OrionsOutlaws.Assets
   , pixeboyFont
   ) where
 
-import Graphics.Gloss
-import Data.ByteString (ByteString)
-import Data.FileEmbed (embedFile, embedStringFile) -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
-import Game.OrionsOutlaws.Model (Animation(Animation), PlayerFacing(..), ShipFrame(..), assetScale)
-import Codec.Picture.Png (decodePng)
-import Graphics.Gloss.Juicy (fromDynamicImage)
-import Sound.ProteaAudio (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
-import System.IO.Unsafe (unsafePerformIO)
-import Game.OrionsOutlaws.Rendering.Font (Font, loadFont)
+import Game.OrionsOutlaws.Rendering.Font  (Font, loadFont)
+import Graphics.Gloss                     (Picture(Bitmap), BitmapData, Rectangle(Rectangle), bitmap, bitmapSection, blank, rotate, scale)
+import Graphics.Gloss.Juicy               (fromDynamicImage)
+import Data.ByteString                    (ByteString)
+import Data.FileEmbed                     (embedFile, embedStringFile) -- Uses the magic of TemplateHaskell to turn files into bytestrings at compile time
+import Game.OrionsOutlaws.Model           (Animation(Animation), PlayerFacing(..), ShipFrame(..), assetScale)
+import Codec.Picture.Png                  (decodePng)
+import Sound.ProteaAudio                  (Sample, sampleFromMemoryOgg, sampleFromMemoryMp3)
+import System.IO.Unsafe                   (unsafePerformIO)
 
 -- | Attempts to load a ByteString representing a PNG into a BitmapData.
 --   If the bytestring is not a valid PNG, returns Nothing.

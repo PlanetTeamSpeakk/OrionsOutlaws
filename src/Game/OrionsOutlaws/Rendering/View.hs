@@ -1,12 +1,12 @@
 -- | This module defines how to turn the game state into a picture
 module Game.OrionsOutlaws.Rendering.View (module Game.OrionsOutlaws.Rendering.View) where
 
-import Graphics.Gloss (Picture, green, orange, red, blank, color, pictures, rectangleWire, rotate, scale, translate)
+import Graphics.Gloss                     (Picture, green, orange, red, blank, color, pictures, rectangleWire, rotate, scale, translate)
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile, fighter, bullet, enemyProjectile)
-import Game.OrionsOutlaws.Util.Util (msTime, lerp)
-import Game.OrionsOutlaws.Rendering.UI (renderUI)
-import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
+import Game.OrionsOutlaws.Assets          (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile, fighter, bullet, enemyProjectile)
+import Game.OrionsOutlaws.Util.Util       (msTime, lerp)
+import Game.OrionsOutlaws.Rendering.UI    (renderUI)
+import Game.OrionsOutlaws.Rendering.Font  (TextAlignment (..), renderString)
 
 -- | Renders the gamestate into a picture
 --   Simply calls viewPure with the current stepdelta and the given gamestate

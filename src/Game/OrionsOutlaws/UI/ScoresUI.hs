@@ -2,12 +2,12 @@ module Game.OrionsOutlaws.UI.ScoresUI
   ( scoresUI
   ) where
 
-import Game.OrionsOutlaws.Rendering.UI (UI, ui, text, Justification (JustCentered), UIElement)
-import Game.OrionsOutlaws.Model (Score (..))
-import Game.OrionsOutlaws.Assets (pixeboyFont)
-import Game.OrionsOutlaws.Util.Util (enumerateFrom, rpad)
-import Data.Char (toUpper)
-import Game.OrionsOutlaws.Rendering.Font (Font(..))
+import Game.OrionsOutlaws.Rendering.UI    (UI, ui, text, Justification (JustCentered), UIElement)
+import Game.OrionsOutlaws.Model           (Score (..))
+import Game.OrionsOutlaws.Assets          (pixeboyFont)
+import Game.OrionsOutlaws.Util.Util       (enumerateFrom, rpad)
+import Game.OrionsOutlaws.Rendering.Font  (Font(..))
+import Data.Char                          (toUpper)
 
 scoresUI :: [Score] -> UI
 scoresUI scores = ui $ text "High Scores" JustCentered pixeboyFont 1 (0, 200) : concatMap renderScore (enumerateFrom 1 $ rpad 5 Nothing $ map Just scores)

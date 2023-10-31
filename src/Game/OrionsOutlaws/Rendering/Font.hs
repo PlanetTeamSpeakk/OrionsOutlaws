@@ -12,13 +12,13 @@ module Game.OrionsOutlaws.Rendering.Font
   , renderStringCentered
   ) where
 
-import Data.Map (Map, fromList, (!), lookup, member)
-import Data.List (isPrefixOf, intercalate)
-import Graphics.Gloss.Data.Bitmap (BitmapData)
-import Data.List.Split (splitOn)
-import Graphics.Gloss.Data.Picture (Picture, translate, bitmapSection, blank)
-import Graphics.Gloss (pictures, Rectangle (Rectangle))
-import Data.Bifunctor (first)
+import Graphics.Gloss.Data.Picture  (Picture, translate, bitmapSection, blank)
+import Graphics.Gloss               (pictures, Rectangle (Rectangle))
+import Graphics.Gloss.Data.Bitmap   (BitmapData)
+import Data.Map                     (Map, fromList, (!), lookup, member)
+import Data.List                    (isPrefixOf, intercalate)
+import Data.List.Split              (splitOn)
+import Data.Bifunctor               (first)
 
 -- | A font that can be used to render text.
 --

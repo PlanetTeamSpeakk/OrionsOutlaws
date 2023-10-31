@@ -13,11 +13,11 @@ module Game.OrionsOutlaws.Util.Audio
   , loopBgMusic
   ) where
 
-import Sound.ProteaAudio (Sound, Sample, finishAudio, initAudio, soundActive, soundLoop, soundPlay, soundStop, soundUpdate, volume)
-import Game.OrionsOutlaws.Assets (bgMusic)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import GHC.IO (unsafePerformIO)
-import Control.Monad (filterM)
+import Sound.ProteaAudio          (Sound, Sample, finishAudio, initAudio, soundActive, soundLoop, soundPlay, soundStop, soundUpdate, volume)
+import Game.OrionsOutlaws.Assets  (bgMusic)
+import Data.IORef                 (IORef, newIORef, readIORef, writeIORef)
+import Control.Monad              (filterM)
+import System.IO.Unsafe           (unsafePerformIO)
 
 -- | Initializes the audio system.
 --
@@ -37,17 +37,17 @@ setVolume v = volume v v
 -- | Adds the given sound to the playing sounds list. Internal use only.
 addSound :: Sound -> IO ()
 addSound sound = do
-    sounds <- readIORef playing
-    writeIORef playing $ sound : sounds
+  sounds <- readIORef playing
+  writeIORef playing $ sound : sounds
 
 -- | Returns all sounds that are still playing.
 --   Also removes any sounds that are no longer playing from the list.
 getPlaying :: IO [Sound]
 getPlaying = do
-    sounds <- readIORef playing
-    stillActive <- filterM soundActive sounds
-    writeIORef playing stillActive
-    return stillActive
+  sounds <- readIORef playing
+  stillActive <- filterM soundActive sounds
+  writeIORef playing stillActive
+  return stillActive
 
 -- | Stops all currently playing sounds.
 stopAllSounds :: IO ()
@@ -60,8 +60,8 @@ pauseAllSounds = getPlaying >>= mapM_ pauseSound
 -- | Pauses the given sound.
 pauseSound :: Sound -> IO ()
 pauseSound sound = do
-    _ <- soundUpdate sound True 1 1 0 1
-    return ()
+  _ <- soundUpdate sound True 1 1 0 1
+  return ()
 
 -- | Resumes all paused, but active sounds.
 resumeAllSounds :: IO ()
@@ -70,8 +70,8 @@ resumeAllSounds = getPlaying >>= mapM_ resumeSound
 -- | Resumes the given sound.
 resumeSound :: Sound -> IO ()
 resumeSound sound = do
-    _ <- soundUpdate sound False 1 1 0 1
-    return ()
+  _ <- soundUpdate sound False 1 1 0 1
+  return ()
 
 -- | Plays the given sound once.
 playSound :: Sample -> IO ()

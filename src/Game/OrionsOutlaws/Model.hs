@@ -4,17 +4,17 @@
 --   which represent the state of the game
 module Game.OrionsOutlaws.Model (module Game.OrionsOutlaws.Model) where
 
-import System.Log.Formatter (tfLogFormatter, LogFormatter)
-import System.Log.Logger (rootLoggerName)
-import Game.OrionsOutlaws.Util.Util (msTime, lerp, rotatePointAround, pointAngle)
-import Data.Ord (clamp)
-import Data.Bifunctor (bimap)
-import Graphics.Gloss.Data.Picture (Picture)
+import System.Log.Formatter             (tfLogFormatter, LogFormatter)
+import System.Log.Logger                (rootLoggerName)
+import Game.OrionsOutlaws.Util.Util     (msTime, lerp, rotatePointAround, pointAngle)
+import Game.OrionsOutlaws.Rendering.UI  (UI)
+import Data.Ord                         (clamp)
+import Data.Bifunctor                   (bimap)
+import Data.Maybe                       (isJust)
+import Data.Time                        (UTCTime)
+import Graphics.Gloss.Data.Picture      (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
-import Game.OrionsOutlaws.Rendering.UI (UI)
-import Data.Maybe (isJust)
-import Data.Time (UTCTime)
-import Graphics.Gloss.Geometry.Angle (radToDeg, degToRad)
+import Graphics.Gloss.Geometry.Angle    (radToDeg, degToRad)
 
 -- | Some logging-related constants
 --

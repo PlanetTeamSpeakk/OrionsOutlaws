@@ -1,9 +1,9 @@
 -- | A module containing miscellaneous utility functions.
 module Game.OrionsOutlaws.Util.Util (module Game.OrionsOutlaws.Util.Util) where
 
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import System.Random (randomRIO)
-import Data.Functor ((<&>))
+import Data.Time.Clock.POSIX  (getPOSIXTime)
+import System.Random          (randomRIO)
+import Data.Functor           ((<&>))
 
 -- | Linearly interpolates between the given values.
 lerp :: Num a => a -> a -> a -> a

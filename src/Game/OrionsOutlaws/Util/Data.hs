@@ -3,19 +3,19 @@
 -- | Handles loading and writing of settings, scores and any other data.
 module Game.OrionsOutlaws.Util.Data (loadSettings, writeSettings, loadScores, writeScores) where
 
-import Game.OrionsOutlaws.Model (Settings (..), defaultSettings, Score, defLog)
-import Data.Aeson (FromJSON, ToJSON, Options (fieldLabelModifier))
-import Data.Aeson.TH (deriveJSON, defaultOptions)
-import Data.Aeson.Decoding (eitherDecodeStrict)
-import Data.Aeson.Encode.Pretty (encodePretty)
+import Game.OrionsOutlaws.Model         (Settings (..), defaultSettings, Score, defLog)
 import Graphics.Gloss.Interface.IO.Game (Key, MouseButton, SpecialKey)
-import Control.Exception (try)
+import Data.Aeson                       (FromJSON, ToJSON, Options (fieldLabelModifier))
+import Data.Aeson.TH                    (deriveJSON, defaultOptions)
+import Data.Aeson.Decoding              (eitherDecodeStrict)
+import Data.Aeson.Encode.Pretty         (encodePretty)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as B
-import System.Log.Logger (warningM)
-import Data.List (sortBy)
-import Data.Functor ((<&>))
-import Data.Ord (comparing, Down (Down))
+import Data.List                        (sortBy)
+import Data.Functor                     ((<&>))
+import Data.Ord                         (comparing, Down (Down))
+import Control.Exception                (try)
+import System.Log.Logger                (warningM)
 
 -- Define JSON instances for the types used by Settings and Settings itself.
 $(deriveJSON defaultOptions ''SpecialKey)
