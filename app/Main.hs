@@ -26,6 +26,7 @@ import Graphics.Gloss.Data.Color (makeColorI)
 
 main :: IO ()
 main = do
+  -- Run with 'stack run -- --debug' to enable debug mode
   args <- getArgs
   let debug = "--debug" `elem` args
 
