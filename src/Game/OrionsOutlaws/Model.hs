@@ -48,8 +48,8 @@ initialPlayer :: Player
 initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
 
 -- | The initial game state
-initialState :: Settings -> [Score] -> IO GameState
-initialState s ss = msTime >>= (\time -> return $ GameState
+initialState :: Settings -> [Score] -> Bool -> IO GameState
+initialState s ss d = msTime >>= (\time -> return $ GameState
   { player       = initialPlayer
   , enemies      = []
   , projectiles  = []
@@ -65,6 +65,7 @@ initialState s ss = msTime >>= (\time -> return $ GameState
   , settings     = s
   , scores       = ss
   , keyListeners = []
+  , debug        = d
   })
 
 -- | The size of enemies in pixels
@@ -110,6 +111,7 @@ data GameState = GameState
   , settings     :: Settings              -- ^ The game settings
   , scores       :: [Score]               -- ^ The high scores
   , keyListeners :: [Key -> IO ()]        -- ^ A list of key listeners that will be called when a key is pressed
+  , debug        :: Bool                  -- ^ Whether debug mode is enabled
   }
 
 instance Show GameState where
@@ -227,6 +229,9 @@ class Collidable a where
   -- | Creates a list of boxes that wrap this object.
   createBoxes :: a -> [Box]
 
+  -- | Creates a list of boxes that wrap this object at the given position.
+  createBoxesAt :: Position -> a -> [Box]
+
   -- | Checks whether the given collidable collides with the given box.
   collidesWithBox :: a -> Box -> Bool
   collidesWithBox a b = intersects b `any` createBoxes a
@@ -236,18 +241,30 @@ class Collidable a where
   collidesWith a b = collidesWithBox a `any` createBoxes b
 
 instance Collidable Player where
-  createBoxes p = let (x, y) = playerPos p in
+  createBoxes p = createBoxesAt (curPosition p) p
+  createBoxesAt (x, y) _ =
     [ ((x - 12, y - 32), (x + 28, y + 32)) -- Body
     , ((x + 28, y - 24), (x + 40, y + 24)) -- Head
     , ((x + 40, y - 16), (x + 48, y + 16)) -- Tip
     ]
 
 instance Collidable Enemy where
-  createBoxes (RegularEnemy { enemyPos = (x, y) }) = [((x - 20, y - 20), (x + 20, y + 20))]
+  createBoxes e          = createBoxesAt (curPosition e) e
+  createBoxesAt (x, y) _ = 
+    [ ((x - 24, y - 16), (x + 24, y + 16)) -- Main body
+    , ((x - 40, y - 12), (x - 24, y + 12)) -- 'Cockpit'
+    , ((x + 24, y - 24), (x + 40, y + 24)) -- Engine
+    , ((x - 36, y + 32), (x + 28, y + 48)) -- Right wing
+    , ((x - 12, y + 16), (x +  8, y + 32)) -- Right bridge
+    , ((x - 36, y - 48), (x + 28, y - 32)) -- Left wing
+    , ((x - 12, y - 32), (x +  8, y - 16)) -- Left bridge
+    ]
 
 instance Collidable Projectile where
-  createBoxes (RegularProjectile { projPos = (x, y) } ) = [((x - 5, y - 5), (x + 5, y + 5))]
-  createBoxes (MissileProjectile { projPos = (x, y), mslRotation = r } ) =
+  createBoxes p = createBoxesAt (curPosition p) p
+  createBoxesAt (x, y) (RegularProjectile { friendly = Friendly } ) = [((x - 5,  y - 5), (x + 8, y + 5))]
+  createBoxesAt (x, y) (RegularProjectile { friendly = Hostile  } ) = [((x - 12, y - 4), (x + 5, y + 4))]
+  createBoxesAt (x, y) (MissileProjectile { mslRotation = r } )     =
     let (cx, cy) = rotatePointAround (x + (5 * assetScale), y) (x, y) $ degToRad r
     in [((cx - 5, cy - 5), (cx + 5, cy + 5))]
 

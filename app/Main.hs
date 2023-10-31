@@ -21,9 +21,13 @@ import Data.IORef                           (IORef, newIORef, writeIORef, readIO
 import System.IO.Unsafe                     (unsafePerformIO)
 import System.Directory                     (setCurrentDirectory, getAppUserDataDirectory, createDirectoryIfMissing)
 import qualified Data.ByteString as B       (writeFile)
+import System.Environment                   (getArgs)
 
 main :: IO ()
 main = do
+  args <- getArgs
+  let debug = "--debug" `elem` args
+
   -- Get rid of default, lame logging
   updateGlobalLogger rootLoggerName removeHandler
   updateGlobalLogger debugLog $ setLevel DEBUG
@@ -31,7 +35,9 @@ main = do
 
   -- Set up logging for the DEBUG log.
   debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh $ logFormatter True
-  updateGlobalLogger debugLog $ addHandler debugHandler
+  when debug $ updateGlobalLogger debugLog $ addHandler debugHandler
+
+  debugM debugLog "Debug mode enabled" -- Won't show if it's disabled
 
   -- Set up logging for the regular log.
   defHandler <- streamHandler stdout INFO >>= \lh -> return $ setFormatter lh $ logFormatter False
@@ -55,7 +61,7 @@ main = do
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
   loopBgMusic
 
-  state <- loadScores >>= initialState s
+  state <- loadScores >>= \sc -> initialState s sc debug
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
       (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Game.OrionsOutlaws.Model.windowSize state

@@ -5,8 +5,8 @@ module Game.OrionsOutlaws.Rendering.View (module Game.OrionsOutlaws.Rendering.Vi
 
 import Graphics.Gloss
 import Game.OrionsOutlaws.Model
-import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile)
-import Game.OrionsOutlaws.Util.Util (msTime)
+import Game.OrionsOutlaws.Assets (fromPlayerFacing, pixeboyFont, shadows, stars, bigStars, blueStar, redStar, blackHole, smallRotaryStar, rotaryStar, missile, fighter, bullet, enemyProjectile)
+import Game.OrionsOutlaws.Util.Util (msTime, lerp)
 import Game.OrionsOutlaws.Rendering.UI (renderUI)
 import Game.OrionsOutlaws.Rendering.Font (TextAlignment (..), renderString)
 
@@ -24,15 +24,20 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
   pictures
     [ renderBackground                                                    -- render background                                                    
     , renderPlayer $ player gstate                                        -- render player
-    -- , renderPlayerBoxes $ player gstate                                  -- render player boxes (debugging only)
+    , ifDebug $ renderBoxesFor [player gstate]                            -- render player boxes (debugging only)
     , renderProjectiles $ projectiles gstate                              -- render projectiles
-    -- , pictures $ map (renderBoxes . createBoxes) $ projectiles gstate     -- render projectile boxes (debugging only)
+    , ifDebug $ renderBoxesFor $ projectiles gstate                       -- render projectile boxes (debugging only)
     , renderEnemies $ enemies gstate                                      -- render enemies
+    , ifDebug $ renderBoxesFor $ enemies gstate                           -- render enemy boxes (debugging only)
     , renderAnimations $ animations gstate                                -- render animations
     , renderScore (windowSize gstate) $ score gstate                      -- render score
     , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI
     ]
   where
+    -- | Returns the given picture if debug-mode is enabled, otherwise returns 'blank'.
+    ifDebug :: Picture -> Picture
+    ifDebug p = if debug gstate then p else blank
+
     -- | Renders the background and all its components.
     renderBackground :: Picture
     renderBackground = pictures
@@ -45,7 +50,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
       , renderAnimatedLayer blackHole                                       -- render animated black hole
       , renderAnimatedLayer smallRotaryStar                                 -- render animated small rotary star
       , renderAnimatedLayer rotaryStar                                      -- render animated rotary star
-      ] 
+      ]
 
     -- | Renders the background shadows.
     renderShadows :: Picture
@@ -66,35 +71,42 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderPlayer :: Player -> Picture
     renderPlayer p = color green $ translateP (position sd p) $ fromPlayerFacing (facing gstate (movement $ player gstate)) getShipFrame
 
-    -- | Renders the player's boxes, used for debugging purposes.
-    renderPlayerBoxes :: Player -> Picture
-    renderPlayerBoxes = renderBoxes . createBoxes
+    -- | Renders the boxes for the given collidables.
+    renderBoxesFor :: (Collidable a, Positionable a) => [a] -> Picture
+    renderBoxesFor cs = pictures $ map (\c -> renderBoxes (createBoxes c) (createBoxesAt (prevPosition c) c)) cs
 
     -- | Renders a list of boxes into rectangles picture.
     --   Used for debugging purposes.
-    renderBoxes :: [Box] -> Picture
-    renderBoxes bs = pictures $ map renderBox bs
-    
+    renderBoxes :: [Box] -> [Box] -> Picture
+    renderBoxes bs obs = pictures $ zipWith renderBox bs obs
+
     -- | Renders a single box into a rectangle picture.
-    renderBox :: Box -> Picture
-    renderBox ((minX, minY), (maxX, maxY)) = color red $ translateP ((minX + maxX) / 2, (minY + maxY) / 2) $
-      rectangleWire (maxX - minX) (maxY - minY)
+    renderBox :: Box -> Box -> Picture
+    renderBox ((minXN, minYN), (maxXN, maxYN)) ((minXO, minYO), (maxXO, maxYO)) = 
+      let minX = lerp minXO minXN sd
+          minY = lerp minYO minYN sd
+          maxX = lerp maxXO maxXN sd
+          maxY = lerp maxYO maxYN sd
+      in color red $ translateP ((minX + maxX) / 2, (minY + maxY) / 2) $ rectangleWire (maxX - minX) (maxY - minY)
 
     -- | Renders the projectiles, currently just red/cyan circles
     renderProjectiles :: [Projectile] -> Picture
     renderProjectiles = pictures . map renderProjectile
       where
-        renderProjectile p@(RegularProjectile {}) = color (if isFriendly $ friendly p then cyan else red) $
-          translateP (position sd p) $ circleSolid 5
-        renderProjectile p@(MissileProjectile { mslRotation = r }) = 
-          let s = missile $ fromInteger $ steps gstate
-          in translateP (position sd p) $ rotate (-r + (if isFriendly $ friendly p then 90 else -90)) s
+        renderProjectile p@(RegularProjectile {}) =
+          let s = if isFriendly $ friendly p then bullet else enemyProjectile
+              r = if isFriendly $ friendly p then 90 else -90
+          in translateP (position sd p) $ rotate r $ s $ fromInteger $ steps gstate
+        renderProjectile p@(MissileProjectile { mslRotation = r }) =
+          let s  = missile $ fromInteger $ steps gstate
+              dr = if isFriendly $ friendly p then 90 else -90
+          in translateP (position sd p) $ rotate (-r + dr) s
 
-    -- | Renders the enemies, currently just orange circles
+    -- | Renders the enemies
     renderEnemies :: [Enemy] -> Picture
     renderEnemies = pictures . map renderEnemy
       where
-        renderEnemy e = color orange $ translateP (position sd e) $ circleSolid (enemySize / 2)
+        renderEnemy e@(RegularEnemy {}) = translateP (position sd e) $ rotate (-90) fighter
 
     -- | Renders all animations currently playing.
     renderAnimations :: [PositionedAnimation] -> Picture

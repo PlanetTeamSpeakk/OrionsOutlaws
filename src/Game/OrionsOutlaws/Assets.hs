@@ -1,18 +1,20 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | This module contains all the assets used in the game.
--- | Assets are packed using file-embed
+--   Assets are packed using file-embed
 module Game.OrionsOutlaws.Assets
   ( 
   -- * Images
     explosionAnimation
   , fromPlayerFacing
   , missile
+  , bullet
 
   -- ** Enemies
   , fighter
   , bomber
   , enemyEngine
+  , enemyProjectile
 
   -- ** Background
   , shadows
@@ -27,9 +29,12 @@ module Game.OrionsOutlaws.Assets
   -- * Sounds
   , bgMusic
   -- ** Laser sounds
-  , laserOld, laser1, laser2
+  , laserOld
+  , laser1
+  , laser2
   -- ** Explosion sounds
-  , explosion1, explosion2
+  , explosion1
+  , explosion2
 
   -- * Misc
   , freeglutDll
@@ -146,21 +151,38 @@ missile n = missile' $ n `mod` 3
 missile' :: Int -> Picture
 missile' n = scale assetScale assetScale $ bitmapSection (Rectangle (5 * n, 0) (5, 18)) missileSheet
 
+bulletSheet :: BitmapData
+bulletSheet = case loadPNG $(embedFile "assets/images/spritesheets/bullet.png") of
+  Just bdata -> bdata
+  Nothing    -> error "bulletSheet: Could not load spritesheet"
+
+-- | A frame of the regular projectile.
+--
+--   Source: https://itch.io/queue/c/2713136/void?game_id=1667977
+bullet :: Int -> Picture
+bullet 0 = bullet' 0
+bullet 1 = bullet' 1
+bullet 2 = bullet' 2
+bullet 3 = bullet' 3
+bullet n = bullet' $ n `mod` 4
+
+bullet' :: Int -> Picture
+bullet' n = let s = assetScale / 2 in scale s s $ bitmapSection (Rectangle (n * 10, 0) (10, 17)) bulletSheet
 
 -- Enemy spritesheets
 -- Source: https://itch.io/queue/c/2713136/void?game_id=1668042
 
 -- | Fighter enemy
-fighter :: BitmapData
+fighter :: Picture
 fighter = case loadPNG $(embedFile "assets/images/spritesheets/enemies/fighter.png") of
-  Just bdata -> bdata
-  Nothing    -> error "fighterSheet: Could not load spritesheet"
+  Just bdata -> scale assetScale assetScale $ Bitmap bdata
+  Nothing    -> error "fighter: Could not load sprite"
 
 -- | Bomber enemy
-bomber :: BitmapData
+bomber :: Picture
 bomber = case loadPNG $(embedFile "assets/images/spritesheets/enemies/bomber.png") of
-  Just bdata -> bdata
-  Nothing    -> error "bomberSheet: Could not load spritesheet"
+  Just bdata -> scale assetScale assetScale $ Bitmap bdata
+  Nothing    -> error "bomber: Could not load sprite"
 
 -- | Spritesheet for the flames coming out of the engine of the enemies.
 --
@@ -170,6 +192,7 @@ enemyEngineSheet = case loadPNG $(embedFile "assets/images/spritesheets/enemies/
   Just bdata -> bdata
   Nothing    -> error "enemyEngineSheet: Could not load spritesheet"
 
+-- | A frame of the enemy engine. Used for both fighters and bombers.
 enemyEngine :: Int -> Picture
 enemyEngine 0 = enemyEngine' 0
 enemyEngine 1 = enemyEngine' 1
@@ -180,6 +203,26 @@ enemyEngine n = enemyEngine $ n `mod` 5
 
 enemyEngine' :: Int -> Picture
 enemyEngine' n = scale assetScale assetScale $ bitmapSection (Rectangle (n * 6, 0) (6, 10)) enemyEngineSheet
+
+-- | Projectile spritesheet. Contains four sprites.
+--
+--  Source: https://itch.io/queue/c/2713136/void?game_id=1668042
+enemyProjectileSheet :: BitmapData
+enemyProjectileSheet = case loadPNG $(embedFile "assets/images/spritesheets/enemies/projectile.png") of
+  Just bdata -> bdata
+  Nothing    -> error "enemyProjectileSheet: Could not load spritesheet"
+
+-- | A frame of a regular hostile projectile.
+enemyProjectile :: Int -> Picture
+enemyProjectile 0 = enemyProjectile' 0
+enemyProjectile 1 = enemyProjectile' 1
+enemyProjectile 2 = enemyProjectile' 2
+enemyProjectile 3 = enemyProjectile' 3
+enemyProjectile n = enemyProjectile $ n `mod` 4
+
+enemyProjectile' :: Int -> Picture
+enemyProjectile' n =  let s = assetScale / 2 in scale s s $ bitmapSection (Rectangle (n * 2, 0) (2, 12)) enemyProjectileSheet
+
 
 -- Background
 -- Source: https://itch.io/queue/c/2713136/void?game_id=1668166
