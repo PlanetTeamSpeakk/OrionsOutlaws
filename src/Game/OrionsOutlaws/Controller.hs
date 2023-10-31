@@ -126,7 +126,10 @@ step elapsed gstate = do
 
     -- Decreases the player's cooldown and applies movement
     stepPlayer :: Player -> Player
-    stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) { cooldown = max 0 $ cooldown p - 1 }
+    stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) 
+      { cooldown    = max 0 $ cooldown p - 1 
+      , mslCooldown = max 0 $ mslCooldown p - 1
+      }
 
     stepAnimations :: [PositionedAnimation] -> [PositionedAnimation]
     stepAnimations = filter isOnGoing . map stepAnimation
@@ -300,19 +303,22 @@ fireProjectile gstate = do
       let (px, py) = playerPos $ player gstate
       let proj = createProjectile (px + (24 * assetScale / 2) + 2.5, py) Friendly
       playLaserSound
-      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
+      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 8 } }
     else do
       return gstate
 
 -- | Fires a missile projectile if the player is not on cooldown.
 fireMissile :: GameState -> Position -> IO GameState
 fireMissile gstate target = do
-  if cooldown (player gstate) == 0 && not (paused gstate)
+  if cooldown (player gstate) == 0 && mslCooldown (player gstate) == 0 && not (paused gstate)
     then do
       let (px, py) = playerPos $ player gstate
       let proj = createMissile (px + (24 * assetScale / 2) + (36 * 0.3), py) target Friendly
       playLaserSound
-      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) { cooldown = 5 } }
+      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) 
+        { cooldown    = 8 
+        , mslCooldown = 120 -- One missile every 4 seconds
+        } }
     else do
       return gstate
 

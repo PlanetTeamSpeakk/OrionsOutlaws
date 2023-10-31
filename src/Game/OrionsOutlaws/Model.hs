@@ -45,7 +45,7 @@ stepLengthMs = 1000 `div` stepsPerSec
 
 -- | The initial state of the player
 initialPlayer :: Player
-initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0
+initialPlayer = Player (-540, 0) (-540, 0) (emptyMovement L2R) 3 0 0
 
 -- | The initial game state
 initialState :: Settings -> [Score] -> Bool -> IO GameState
@@ -134,6 +134,7 @@ data Player = Player
   , playerMovement  :: Movement -- ^ Player's movement
   , health          :: Int      -- ^ Player's health. Between 0 and 3
   , cooldown        :: Int      -- ^ How many steps until the player can shoot again.
+  , mslCooldown     :: Int      -- ^ How many steps until the player can shoot a missile again.
   } deriving (Show, Eq)
 
 -- | What directions an object is moving in.
