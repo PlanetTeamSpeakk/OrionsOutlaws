@@ -6,7 +6,7 @@ import Game.OrionsOutlaws.Rendering.View  (onScreen, inBounds)
 import Game.OrionsOutlaws.Util.Util       (msTime, randomElem, distanceSq)
 import Game.OrionsOutlaws.Assets          (explosionAnimation, laser1, laser2, explosion1, explosion2, missile1, missile2)
 import Game.OrionsOutlaws.Util.Audio      (pauseAllSounds, playSound, resumeAllSounds)
-import Game.OrionsOutlaws.Rendering.UI    (handleMouse, handleMotion)
+import Game.OrionsOutlaws.Rendering.UI    (handleMouse, handleMotion, UI (parent))
 import Game.OrionsOutlaws.UI.PausedUI     (pausedUI)
 import Game.OrionsOutlaws.Util.Data       (writeScores)
 import Graphics.Gloss.Interface.IO.Game   (KeyState(Down), Key(SpecialKey, MouseButton), MouseButton(LeftButton), SpecialKey(KeyEsc), Event(..))
@@ -18,6 +18,7 @@ import Data.Bifunctor                     (first, bimap)
 import Data.List                          ((\\)) -- List difference
 import Data.Maybe                         (isJust, fromJust)
 import Data.Time                          (getCurrentTime)
+import Control.Monad                      (unless)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -280,18 +281,22 @@ inputMouseMove _ gstate = return gstate
 inputPause :: Event -> GameState -> IO (Bool, GameState) -- ^ (Consumed, new GameState)
 -- Escape key, pauses the game.
 inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
-  debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
+  -- The new UI to set active.
+  let ui' = if paused gstate then parent $ fromJust $ activeUI gstate else Just pausedUI
 
-  -- Pause/resume all sounds
-  if paused gstate
-    then resumeAllSounds
-    else pauseAllSounds
+  -- Whether the paused state has remained the same.
+  let stateSame = isJust ui' && isJust (activeUI gstate)
+  unless stateSame $ do
+    debugM debugLog $ if paused gstate then "Unpausing" else "Pausing"
 
-  let paused' = paused gstate
+    -- Pause/resume all sounds
+    if paused gstate
+      then resumeAllSounds
+      else pauseAllSounds
+
   return (True, gstate
-    { activeUI = if paused' then Nothing else Just pausedUI
-    , player = if paused' then player gstate else
-        (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
+    { activeUI = ui'
+    , player = (player gstate) { playerMovement = emptyMovement L2R } -- Clear movement
     , keyListeners = [] -- Clear key listeners
     })
 -- Fallback

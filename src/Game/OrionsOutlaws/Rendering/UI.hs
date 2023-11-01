@@ -7,9 +7,6 @@ module Game.OrionsOutlaws.Rendering.UI
   (
   -- * Types
     UI
-  , elements
-  , keyedElements
-  , background
   , UIElement (..)
   , Justification (..)
   , ElementKey
@@ -19,6 +16,13 @@ module Game.OrionsOutlaws.Rendering.UI
   , BorderWidth
   , TextSize
   , SliderValue
+  , ParentUI
+
+  -- * Fields
+  , elements
+  , keyedElements
+  , background
+  , parent
 
   -- * Utility constructor functions
   , ui
@@ -31,6 +35,8 @@ module Game.OrionsOutlaws.Rendering.UI
   , slider
   , enk
   , ek
+  , withParent
+  , withElements
 
   -- * Utility functions
   , modifyElement
@@ -65,7 +71,8 @@ import qualified Data.Map as Map
 data UI = UI
   { elements      :: [UIElement]                  -- ^ Regular elements
   , keyedElements :: Map.Map ElementKey UIElement -- ^ Modifiable elements
-  , background :: Picture -- ^ The UI's background, will get scaled to the window size and is expected to be 1280x720.
+  , background    :: Picture                      -- ^ The UI's background, will get scaled to the window size and is expected to be 1280x720.
+  , parent        :: Maybe UI                     -- ^ The parent UI, if any.
   } deriving (Show, Eq)
 
 -- | An element of a User Interface.
@@ -123,7 +130,7 @@ modifyElement ui' k m = case Map.lookup k $ keyedElements ui' of
 
 -- | Converts a UI to a picture.
 renderUI :: Maybe MousePosition -> AxialScale -> UI -> Picture
-renderUI mousePos s@(hs, vs) (UI es kes bg) = let s' = min hs vs in pictures
+renderUI mousePos s@(hs, vs) (UI es kes bg _) = let s' = min hs vs in pictures
   [ Pic.scale hs vs bg -- Scaled background
   , Pic.scale s' s' $ pictures $ map (renderUIElement mousePos s) $ es ++ Map.elems kes -- Elements
   ]
@@ -199,7 +206,7 @@ transformSP s (x, y) = translate x y . Pic.scale s s
 handleMouse :: UI -> KeyState -> MousePosition -> AxialScale -> IO (Bool, UI)
 handleMouse ui' state mousePos s = do
   (c, es) <- foldM (foldElems handleMouse') (False, []) $ allElements ui'
-  return (c, uikbg es $ background ui')
+  return (c, withElements ui' es)
   where
     -- | Folding function that calls either handleMouse'' on each list of elements.
     foldElems :: (a -> IO (Bool, a)) -> (Bool, [a]) -> a -> IO (Bool, [a])
@@ -233,13 +240,13 @@ handleMouse ui' state mousePos s = do
       | otherwise  = return (False, sl)
 
     -- For anything else, do nothing.
-    handleMouse'' e                         = return (False, e)
+    handleMouse'' e = return (False, e)
 
 -- | Handles a mouse motion event on a UI.
 handleMotion :: UI -> MousePosition -> AxialScale -> IO UI
 handleMotion ui' mousePos (hs, vs) = do
   es <- mapM handleMotion' $ allElements ui'
-  return $ uikbg es $ background ui'
+  return $ withElements ui' es
   where
     s = min hs vs -- Scale to use
     handleMotion' :: (Maybe ElementKey, UIElement) -> IO (Maybe ElementKey, UIElement)
@@ -266,7 +273,7 @@ ui es = uiWithBg es defaultBackground
 
 -- | Constructs a UI from a list of UI elements and a background.
 uiWithBg :: [UIElement] -> Picture -> UI
-uiWithBg es = UI es Map.empty
+uiWithBg es bg = UI es Map.empty bg Nothing
 
 -- | Constructs a UI from a list of UI elements with an optional key.
 --
@@ -278,7 +285,11 @@ uik es = uikbg es defaultBackground
 uikbg :: [(Maybe ElementKey, UIElement)] -> Picture -> UI
 uikbg es bg = let es' = map snd $ filter (isNothing . fst) es           -- Unkeyed elements
                   kes = map (first fromJust) $ filter (isJust . fst) es -- Keyed elements
-              in UI es' (Map.fromList kes) bg
+              in UI es' (Map.fromList kes) bg Nothing
+
+-- | Sets the parent of the given UI.
+withParent :: Maybe ParentUI -> UI -> UI
+withParent p ui' = ui' { parent = p }
 
 -- | Constructs a text UI element.
 text :: String -> Justification -> Font -> TextSize -> Position -> UIElement
@@ -310,6 +321,13 @@ addKeyedElement ui' k e = ui' { keyedElements = Map.insert k e $ keyedElements u
 allElements :: UI -> [(Maybe ElementKey, UIElement)]
 allElements ui' = map (Nothing, ) (elements ui') ++ map (first Just) (Map.toList (keyedElements ui'))
 
+-- | Creates a version of the given UI with its elements replaced by the given list of elements.
+withElements :: UI -> [(Maybe ElementKey, UIElement)] -> UI
+withElements ui' es = ui' 
+  { elements      = map snd $ filter (isNothing . fst) es
+  , keyedElements = Map.fromList $ map (first fromJust) $ filter (isJust . fst) es
+  }
+
 -- | Creates a keyed pair with no key from the given UI element.
 enk :: UIElement -> (Maybe ElementKey, UIElement)
 enk e = (Nothing, e)
@@ -335,3 +353,4 @@ type TextSize      = Float
 type SliderValue   = Float
 -- | A key for a UI element.
 type ElementKey    = String
+type ParentUI      = UI 

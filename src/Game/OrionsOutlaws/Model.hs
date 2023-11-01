@@ -7,7 +7,7 @@ module Game.OrionsOutlaws.Model (module Game.OrionsOutlaws.Model) where
 import System.Log.Formatter             (tfLogFormatter, LogFormatter)
 import System.Log.Logger                (rootLoggerName)
 import Game.OrionsOutlaws.Util.Util     (msTime, lerp, rotatePointAround, pointAngle)
-import Game.OrionsOutlaws.Rendering.UI  (UI)
+import Game.OrionsOutlaws.Rendering.UI  (UI, withParent)
 import Data.Ord                         (clamp)
 import Data.Bifunctor                   (bimap)
 import Data.Maybe                       (isJust)
@@ -460,3 +460,7 @@ createBox (x, y) w h = ((x - w / 2, y - h / 2), (x + w / 2, y + h / 2))
 -- | Grows a box by the given width and height.
 growBox :: Box -> Float -> Float -> Box
 growBox ((x1, y1), (x2, y2)) w h = ((x1 - w / 2, y1 - h / 2), (x2 + w / 2, y2 + h / 2))
+
+-- | Opens a UI while keeping track of the parent.
+openUI :: UI -> GameState -> GameState
+openUI ui gstate = gstate { activeUI = Just $ withParent (activeUI gstate) ui }

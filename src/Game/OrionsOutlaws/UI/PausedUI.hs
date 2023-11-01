@@ -1,9 +1,9 @@
 module Game.OrionsOutlaws.UI.PausedUI
   ( pausedUI
   ) where
-import Game.OrionsOutlaws.Rendering.UI  (Justification (..), ui, UI, text, button)
+import Game.OrionsOutlaws.Rendering.UI  (Justification (..), ui, text, button, UI,)
 import Game.OrionsOutlaws.Assets        (pixeboyFont)
-import Game.OrionsOutlaws.Model         (GameState (activeUI, settings, scores), debugLog)
+import Game.OrionsOutlaws.Model         (GameState (settings, scores), debugLog, openUI)
 import Game.OrionsOutlaws.Util.Tasks    (queueTask)
 import Game.OrionsOutlaws.UI.SettingsUI (settingsUI)
 import Game.OrionsOutlaws.UI.ScoresUI   (scoresUI)
@@ -20,10 +20,10 @@ pausedUI = ui
 
 -- | Called when the settings button is pressed.
 onSettingsBtn :: IO ()
-onSettingsBtn = queueTask $ \gs -> return gs { activeUI = Just $ settingsUI $ settings gs }
+onSettingsBtn = queueTask $ \gs -> return $ openUI (settingsUI $ settings gs) gs
 
 -- | Called when the scores button is pressed.
 onScoresBtn :: IO ()
 onScoresBtn = queueTask $ \gs -> do
   debugM debugLog $ "Scores: " ++ show (scores gs)
-  return gs { activeUI = Just $ scoresUI $ scores gs }
+  return $ openUI (scoresUI $ scores gs) gs
