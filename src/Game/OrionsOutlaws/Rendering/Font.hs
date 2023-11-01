@@ -27,7 +27,10 @@ data Font = Font
   { fontSheet      :: BitmapData     -- ^ The spritesheet containing all glyphs.
   , fontGlyphs     :: Map Char Glyph -- ^ A map of characters to glyphs.
   , fontLineHeight :: Int            -- ^ The height of a line of text in pixels.
-  } deriving (Eq, Show)
+  } deriving Eq
+
+instance Show Font where
+  show f = "Font { fontSheet = " ++ show (fontSheet f) ++ ", fontGlyphs = [" ++ show (length $ fontGlyphs f) ++ "], fontLineHeight = " ++ show (fontLineHeight f) ++ " }"
 
 -- | A single glyph of a font.
 --

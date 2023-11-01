@@ -57,9 +57,9 @@ import Graphics.Gloss.Data.Picture as Pic (Picture, rectangleSolid, color, trans
 import Graphics.Gloss.Interface.IO.Game   (KeyState (..))
 import Control.Monad                      (foldM)
 import Data.Ord                           (clamp)
+import Data.Bifunctor                     (first)
+import Data.Maybe                         (isNothing, isJust, fromJust)
 import qualified Data.Map as Map
-import Data.Bifunctor (first)
-import Data.Maybe (isNothing, isJust, fromJust)
 
 -- | A User Interface.
 data UI = UI
@@ -208,10 +208,9 @@ handleMouse ui' state mousePos s = do
       (c, e') <- f e
       return (c, e':es)
 
+    -- | Simply calls 'handleMouse''' on the given element while keeping the key the same.
     handleMouse' :: (Maybe ElementKey, UIElement) -> IO (Bool, (Maybe ElementKey, UIElement))
-    handleMouse' (k, e) = do
-      (c, e') <- handleMouse'' e
-      return (c, (k, e'))
+    handleMouse' (k, e) = handleMouse'' e >>= \(c, e') -> return (c, (k, e'))
 
     -- | Does the actual event handling.
     --   Returns whether the event was consumed and the new element.
@@ -223,9 +222,9 @@ handleMouse ui' state mousePos s = do
         else return (False, b)
 
     -- For sliders, toggle the active state.
-    handleMouse'' sl@(UISlider (x, y) (w, h) v _ _)
+    handleMouse'' sl@(UISlider (x, y) (w, h) v _ a)
       -- Release slider if mouse is released
-      | state == Up = do
+      | state == Up && a = do
           sldrAction sl v
           return (True, sl { sldrActive = False })
       -- If mouse is pressed and mouse is in bounds, activate slider
