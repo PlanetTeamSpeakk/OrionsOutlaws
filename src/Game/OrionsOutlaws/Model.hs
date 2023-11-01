@@ -15,6 +15,7 @@ import Data.Time                        (UTCTime)
 import Graphics.Gloss.Data.Picture      (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 import Graphics.Gloss.Geometry.Angle    (radToDeg, degToRad)
+import Data.Functor                     ((<&>))
 
 -- | Some logging-related constants
 --
@@ -251,7 +252,7 @@ instance Collidable Player where
 
 instance Collidable Enemy where
   createBoxes e          = createBoxesAt (curPosition e) e
-  createBoxesAt (x, y) _ = 
+  createBoxesAt (x, y) _ =
     [ ((x - 24, y - 16), (x + 24, y + 16)) -- Main body
     , ((x - 40, y - 12), (x - 24, y + 12)) -- 'Cockpit'
     , ((x + 24, y - 24), (x + 40, y + 24)) -- Engine
@@ -462,5 +463,5 @@ growBox :: Box -> Float -> Float -> Box
 growBox ((x1, y1), (x2, y2)) w h = ((x1 - w / 2, y1 - h / 2), (x2 + w / 2, y2 + h / 2))
 
 -- | Opens a UI while keeping track of the parent.
-openUI :: UI -> GameState -> GameState
-openUI ui gstate = gstate { activeUI = Just $ withParent (activeUI gstate) ui }
+openUI :: GameState -> Maybe UI -> GameState
+openUI gstate ui = gstate { activeUI = ui <&> withParent (activeUI gstate) }
