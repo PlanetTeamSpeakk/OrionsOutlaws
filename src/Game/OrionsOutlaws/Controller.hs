@@ -24,48 +24,47 @@ step :: Float -> GameState -> IO GameState
 step elapsed gstate = do
   if paused gstate then return gstate -- Do nothing if paused
   else do
-    -- Add elapsed time to the gamestate
-    let gstateNew = gstate { elapsedTime = elapsedTime gstate + elapsed}
-
-    -- Try to spawn an enemy
-    gstateN2 <- trySpawnEnemy gstateNew
+    -- Try to spawn an enemy and add elapsed time to the gamestate
+    gstateNew <- trySpawnEnemy $ gstate { elapsedTime = elapsedTime gstate + elapsed}
 
     -- Step animations
-    let as = stepAnimations $ animations gstateN2
+    let as = stepAnimations $ animations gstateNew
 
     -- Handle projectile collision with enemies. Filters projectiles and enemies.
-    (fps, es, nas) <- handleProjectileCollision (filter (isFriendly . friendly) $ projectiles gstate) $ enemies gstateN2
-    let hit = length $ enemies gstateN2 \\ es -- Number of enemies that were hit
+    (fps, es, nas) <- handleProjectileCollision 
+                        (filter (isFriendly . friendly) $ projectiles gstate) 
+                        $ enemies gstateNew
+    let hit = length $ enemies gstateNew \\ es -- Number of enemies that were hit
 
     -- Filter out projectiles that collide with the player
     let nfps  = filter (not . isFriendly . friendly) $ projectiles gstate -- Non-friendly projectiles
     let cnfps = filter (collidesWith (player gstate)) nfps                -- Colliding non-friendly projectiles
 
     -- Check if any enemies collide with the player
-    let eCollision = any (collidesWith (player gstate)) es
+    let ec = any (collidesWith (player gstate)) es
 
-    if null cnfps && not eCollision
+    if null cnfps && not ec
       then do -- No collision, return new gamestate
         (es', eps) <- enemyFire es
 
         time <- msTime
-        return gstateN2
-          { player      = stepPlayer $ player gstateN2
+        return gstateNew
+          { player      = stepPlayer $ player gstateNew
           , enemies     = stepEnemies es' -- Step left-over enemies
           -- Friendly projectiles, hostile projectiles that didn't collide with the player, and new hostile projectiles
           , projectiles = stepProjectiles $ fps ++ (nfps \\ cnfps) ++ eps -- Step projectiles
           , animations  = as ++ nas
-          , score       = score gstateN2 + hit
+          , score       = score gstateNew + hit
           , lastStep    = time -- To lerp positions when rendering
-          , steps       = steps gstateN2 + 1
+          , steps       = steps gstateNew + 1
           }
       else -- Collision! Exit game if the player has 1 health left, otherwise reset and subtract 1 health
-        if health (player gstateN2) == 1
+        if health (player gstateNew) == 1
           then onGameOver gstateNew
           else do
             debugM debugLog $ "Collision! " ++ show cnfps
-            return gstateN2
-              { player      = initialPlayer { health = health (player gstateN2) - 1 }
+            return gstateNew
+              { player      = initialPlayer { health = health (player gstateNew) - 1 }
               , enemies     = []
               , projectiles = []
               , animations  = []
@@ -134,9 +133,9 @@ step elapsed gstate = do
     stepAnimations :: [PositionedAnimation] -> [PositionedAnimation]
     stepAnimations = filter isOnGoing . map stepAnimation
       where
-        stepAnimation (PositionedAnimation a p) = PositionedAnimation (a {
-            animationStep = animationStep a + 1,
-            curFrame = curFrame a + (if animationStep a `mod` frameDuration a == 0 && (animationStep a /= 0) then 1 else 0)
+        stepAnimation (PositionedAnimation a p) = PositionedAnimation (a 
+          { animationStep = animationStep a + 1
+          , curFrame = curFrame a + (if animationStep a `mod` frameDuration a == 0 && (animationStep a /= 0) then 1 else 0)
           }) p
         isOnGoing (PositionedAnimation a _) = animationStep a < (frameDuration a * frameCount a)
 

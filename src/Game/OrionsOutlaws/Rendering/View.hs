@@ -111,7 +111,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderScore :: Bounds ->  Int -> Picture
     renderScore (w, h) s = let x = fromIntegral $ w `div` (-2) + 120
                                y = fromIntegral $ h `div` (-2) + 45
-                               in translate x y $ scale 0.75 0.75 $ renderString RightToLeft pixeboyFont $ show s
+                               in translate x y $ scale 0.4 0.4 $ renderString RightToLeft pixeboyFont $ show s
 
     -- | Returns the ship frame to use based on the current step
     getShipFrame :: ShipFrame

@@ -2,7 +2,7 @@ module Game.OrionsOutlaws.UI.SettingsUI
   ( settingsUI
   ) where
 
-import Game.OrionsOutlaws.Rendering.UI  (UIElement (..), Justification (..), modifyElement, ElementKey, ui, UI, text, slider, modifiable)
+import Game.OrionsOutlaws.Rendering.UI  (UIElement (..), Justification (..), modifyElement, ElementKey, UI, text, slider, uik, enk)
 import Game.OrionsOutlaws.Assets        (pixeboyFont)
 import Game.OrionsOutlaws.Util.Tasks    (queueTask)
 import Game.OrionsOutlaws.Model         (GameState (keyListeners, settings, activeUI), Settings (..), Position)
@@ -14,36 +14,36 @@ import Data.Maybe                       (fromJust)
 
 -- | Creates a settings UI for the given settings.
 settingsUI :: Settings -> UI
-settingsUI s = ui
-  [ text "Settings" JustCentered pixeboyFont 1 (0, 250)
-  , text "Press ESC to continue" JustCentered pixeboyFont 0.3 (0, -220)
+settingsUI s = uik
+  [ enk $ text "Settings" JustCentered pixeboyFont 1 (0, 250)
+  , enk $ text "Press ESC to continue" JustCentered pixeboyFont 0.3 (0, -220)
 
-  , text "Forward" JustLeft pixeboyFont 0.35 (-150, 150)
+  , enk $ text "Forward" JustLeft pixeboyFont 0.35 (-150, 150)
   , keyBtn "fwd" (75, 150) s forwardKey  (\s' k -> s' { forwardKey = k })
 
-  , text "Backward" JustLeft pixeboyFont 0.35 (-150, 100)
+  , enk $ text "Backward" JustLeft pixeboyFont 0.35 (-150, 100)
   , keyBtn "bwd" (75, 100) s backwardKey (\s' k -> s' { backwardKey = k })
 
-  , text "Left" JustLeft pixeboyFont 0.35 (-150, 50)
+  , enk $ text "Left" JustLeft pixeboyFont 0.35 (-150, 50)
   , keyBtn "lft" (75, 50)  s leftKey     (\s' k -> s' { leftKey = k })
 
-  , text "Right" JustLeft pixeboyFont 0.35 (-150, 0)
+  , enk $ text "Right" JustLeft pixeboyFont 0.35 (-150, 0)
   , keyBtn "rgt" (75, 0)   s rightKey    (\s' k -> s' { rightKey = k })
 
-  , text "Fire" JustLeft pixeboyFont 0.35 (-150, -50)
+  , enk $ text "Fire" JustLeft pixeboyFont 0.35 (-150, -50)
   , keyBtn "fir" (75, -50) s fireKey     (\s' k -> s' { fireKey = k })
 
-  , text "Volume" JustLeft pixeboyFont 0.35 (-150, -100)
-  , slider (75, -100) (180, 20) (volume s) onVolumeChange
+  , enk $ text "Volume" JustLeft pixeboyFont 0.35 (-150, -100)
+  , enk $ slider (75, -100) (180, 20) (volume s) onVolumeChange
 
-  , text "Spawn" JustLeft pixeboyFont 0.25 (-150, -140)
-  , text "Rate" JustLeft pixeboyFont 0.25 (-143, -160)
-  , slider (75, -150) (180, 20) (spawnRate s / 4) onSpawnRateChange
+  , enk $ text "Spawn" JustLeft pixeboyFont 0.25 (-150, -140)
+  , enk $ text "Rate" JustLeft pixeboyFont 0.25 (-143, -160)
+  , enk $ slider (75, -150) (180, 20) (spawnRate s / 4) onSpawnRateChange
   ]
 
 -- | Creates a new keybind button for a keybind.
-keyBtn :: ElementKey -> Position -> Settings -> (Settings -> Key) -> (Settings -> Key -> Settings) -> UIElement
-keyBtn k p s getter setter = modifiable k $ UIButton (keyToString $ getter s) pixeboyFont p (75, 35) $ onKeyBtn k setter
+keyBtn :: ElementKey -> Position -> Settings -> (Settings -> Key) -> (Settings -> Key -> Settings) -> (Maybe ElementKey, UIElement)
+keyBtn k p s getter setter = (Just k, UIButton (keyToString $ getter s) pixeboyFont p (75, 35) $ onKeyBtn k setter)
 
 -- | Queues a key change task.
 --   Called when a keybind button is pressed.
@@ -55,7 +55,7 @@ onKeyBtn k setter = queueTask $ \gs -> do
     }
   where
     setBtnText :: UIElement -> UIElement
-    setBtnText e@ModifiableUIElement { element = b@(UIButton {})} = e { element = b { btnText = "Press a key" } }
+    setBtnText e@(UIButton {}) = e { btnText = "Press a key" }
     setBtnText e = e
 
 -- | Sets the keybind to the given key.
