@@ -1,0 +1,23 @@
+{
+    "backwardKey": {
+        "contents": "s",
+        "tag": "Char"
+    },
+    "fireKey": {
+        "contents": "KeySpace",
+        "tag": "SpecialKey"
+    },
+    "forwardKey": {
+        "contents": "w",
+        "tag": "Char"
+    },
+    "leftKey": {
+        "contents": "a",
+        "tag": "Char"
+    },
+    "rightKey": {
+        "contents": "d",
+        "tag": "Char"
+    },
+    "volume": 1
+}

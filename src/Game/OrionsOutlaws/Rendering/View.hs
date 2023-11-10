@@ -39,26 +39,28 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     -- | Renders the background and all its components.
     renderBackground :: Picture
     renderBackground = pictures
-      [ renderShadows                       -- render shadows
-      , renderAnimatedLayer stars           -- render animated stars
-      , renderAnimatedLayer bigStars        -- render animated big stars
-      , renderAnimatedLayer blueStar        -- render animated blue star
-      , renderAnimatedLayer redStar         -- render animated red star
-      , renderAnimatedLayer blackHole       -- render animated black hole
-      , renderAnimatedLayer smallRotaryStar -- render animated small rotary star
-      , renderAnimatedLayer rotaryStar      -- render animated rotary star
+      [ renderShadows                                   -- render shadows
+      , renderAnimatedLayer stars 3 0                   -- render animated stars
+      , renderAnimatedLayer bigStars 3 0                -- render animated big stars
+      , renderAnimatedLayer blueStar 4 0                -- render animated blue star
+      , renderAnimatedLayer redStar 4 0                 -- render animated red star
+      , renderAnimatedLayer blackHole 4 0               -- render animated black hole
+      , renderAnimatedLayer smallRotaryStar 3 60        -- render animated small rotary star
+      , renderAnimatedLayer rotaryStar 2 100            -- render animated rotary star
       ]
 
     -- | Renders the background shadows.
     renderShadows :: Picture
     renderShadows = translateP (-fromInteger (steps gstate `mod` 256) * 10, 0) $ scale factor factor shadows
-      where factor = fromIntegral wh / 360
+      where factor = if wh * 2 >= ww then fromIntegral wh / 360 else fromIntegral ww / 720
 
     -- | Renders an animated layer of the background.
-    renderAnimatedLayer :: (Int -> Picture) -> Picture
-    renderAnimatedLayer layer = scale factor factor $ layer f
-      where factor = fromIntegral wh / 360
-            f = fromIntegral $ steps gstate `mod` 16 `div` 2
+    renderAnimatedLayer :: (Int -> Picture) -> Integer -> Integer -> Picture
+    renderAnimatedLayer layer animationSpeed delay = scale factor factor $ layer f
+      where factor = if wh * 2 >= ww then fromIntegral wh / 360 else fromIntegral ww / 720
+            f = fromIntegral $ if stepsInCycle > stepsPerPlay then 0 else stepsInCycle `div` animationSpeed
+            stepsInCycle = steps gstate `mod` (stepsPerPlay + delay)
+            stepsPerPlay = animationSpeed * 8
 
     -- | Renders the player.
     renderPlayer :: Player -> Picture
@@ -75,7 +77,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
 
     -- | Renders a single box into a rectangle picture.
     renderBox :: Box -> Box -> Picture
-    renderBox ((minXN, minYN), (maxXN, maxYN)) ((minXO, minYO), (maxXO, maxYO)) = 
+    renderBox ((minXN, minYN), (maxXN, maxYN)) ((minXO, minYO), (maxXO, maxYO)) =
       let minX = lerp minXO minXN sd
           minY = lerp minYO minYN sd
           maxX = lerp maxXO maxXN sd
