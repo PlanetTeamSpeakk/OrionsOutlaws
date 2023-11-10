@@ -23,10 +23,6 @@ import Data.Functor                     ((<&>))
 logFormatter :: Bool -> LogFormatter a
 logFormatter includeName = tfLogFormatter "%X" $ "[$time : " ++ (if includeName then "$loggername : " else "") ++ "$prio] $msg"
 
--- | The value assets are scaled by when displayed in the game.
-assetScale :: Float
-assetScale = 4
-
 -- | The default log name, rarely used.
 defLog :: String
 defLog = rootLoggerName
@@ -36,6 +32,10 @@ debugLog :: String
 debugLog = "Debug"
 
 -- CONSTANTS
+-- | The value assets are scaled by when displayed in the game.
+assetScale :: Float
+assetScale = 4
+
 -- | The number of steps per second
 stepsPerSec :: Int
 stepsPerSec = 30
@@ -333,11 +333,11 @@ data Score = Score
   , scoreDate  :: UTCTime -- ^ The date at which the score was achieved
   } deriving (Show, Eq)
 
--- | Whether something is friendly or hostile.
-data Friendliness = Friendly | Hostile deriving (Show, Eq)
-
 instance Ord Score where
   compare s1 s2 = compare (scoreValue s1) (scoreValue s2)
+
+-- | Whether something is friendly or hostile.
+data Friendliness = Friendly | Hostile deriving (Show, Eq)
 
 -- Types and helper functions
 -- | The Position type, a tuple of two ints representing the x and y coordinates of a point.
