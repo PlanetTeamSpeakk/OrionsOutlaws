@@ -29,6 +29,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     , ifDebug $ renderBoxesFor $ enemies gstate                           -- render enemy boxes (debugging only)
     , renderAnimations $ animations gstate                                -- render animations
     , renderScore (windowSize gstate) $ score gstate                      -- render score
+    , renderHealth (windowSize gstate) $ health (player gstate)           -- render health
     , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI (if any)
     ]
   where
@@ -114,6 +115,12 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderScore (w, h) s = let x = fromIntegral $ w `div` (-2) + 120
                                y = fromIntegral $ h `div` (-2) + 45
                                in translate x y $ scale 0.4 0.4 $ renderString RightToLeft pixeboyFont $ show s
+
+    -- | Renders the player's score.
+    renderHealth :: Bounds ->  Int -> Picture
+    renderHealth (w, h) s = let x = fromIntegral $ w `div` 2 - 80
+                                y = fromIntegral $ h `div` (-2) + 45
+                                in translate x y $ scale 0.4 0.4 $ renderString RightToLeft pixeboyFont $ show s ++ " HP"
 
     -- | Returns the ship frame to use based on the current step
     getShipFrame :: ShipFrame
