@@ -52,7 +52,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
 
     -- | Renders the background shadows.
     renderShadows :: Picture
-    renderShadows = translateP (-fromInteger (steps gstate `mod` 256) * 10, 0) $ scale factor factor shadows
+    renderShadows = translateP (-fromInteger (steps gstate `mod` 380) * 10, 0) $ scale factor factor shadows
       where factor = if wh * 2 >= ww then fromIntegral wh / 360 else fromIntegral ww / 720
 
     -- | Renders an animated layer of the background.
