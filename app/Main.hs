@@ -23,6 +23,8 @@ import Data.Bifunctor                       (Bifunctor(bimap))
 import Data.IORef                           (IORef, newIORef, writeIORef, readIORef)
 import qualified Data.ByteString as B       (writeFile)
 import Control.Monad                        (when)
+import Game.OrionsOutlaws.UI.MenuUI         (menuUI)
+import Game.OrionsOutlaws.Util.Registry     (RegistryEntry(RegistryEntry))
 
 main :: IO ()
 main = do
@@ -67,7 +69,9 @@ main = do
   savedState <- loadGameState
   debugM debugLog $ "Loaded gamestate: " ++ show savedState
 
-  state <- loadScores >>= \sc -> initialState s sc debugMode
+  -- Create initial gamestate
+  state <- loadScores >>= \sc -> initialState s sc debugMode >>=
+    \gs -> return gs { activeUI = Just $ RegistryEntry "menu" $ menuUI ((\gs' -> gs' { windowSize = windowSize gs }) <$> savedState) }
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
       (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Game.OrionsOutlaws.Model.windowSize state
@@ -94,14 +98,15 @@ runTasksAndStep sd gstate = do
   c <- readIORef crossingState
   let gstate' = gstate { mousePos = if c == WindowEntered then mousePos gstate else Nothing }
 
-  gstate''  <- runAndClearTasks gstate' -- Run tasks
-  gstate''' <- step sd gstate''         -- Execute step
+  -- Run tasks and execute step
+  gstate'' <- runAndClearTasks gstate' >>= step sd
 
-  writeIORef gameStateRef gstate'''     -- Update the global gamestate
+  -- Update the global gamestate
+  writeIORef gameStateRef gstate''
 
   -- Ensure that we have at least one step.
   -- So that we don't register the callbacks every step.
-  return gstate''' { steps = max 1 $ steps gstate''' }
+  return gstate'' { steps = max 1 $ steps gstate'' }
 
 -- | The current GameState. Used in some event handlers.
 gameStateRef :: IORef GameState

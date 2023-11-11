@@ -22,7 +22,7 @@ animationsRegistry = mkRegistry "animations"
 -- | A registry of UIs.
 uiRegistry :: Registry (GameState -> UI)
 uiRegistry = mkRegistry "ui"
-  [ ("menu", const menuUI)
+  [ ("menu", menuUI . Just) -- Not really correct, but this isn't really used anyway.
   , ("paused", const pausedUI)
   , ("settings", settingsUI . settings)
   , ("gameOver", gameOverUI)

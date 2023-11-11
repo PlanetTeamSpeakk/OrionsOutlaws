@@ -255,7 +255,7 @@ inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
       return gstate { activeUI = Just $ ui { entryValue = ui' } }
     else do
       -- No UI active, fire missile
-      if cooldown (player gstate) == 0
+      if state == Down && cooldown (player gstate) == 0
         then fireMissile gstate (x, y)
         else return gstate
 inputMouse _ gstate = return gstate

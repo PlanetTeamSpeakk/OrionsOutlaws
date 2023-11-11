@@ -17,7 +17,6 @@ import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 import Graphics.Gloss.Geometry.Angle    (radToDeg, degToRad)
 import Data.Functor                     ((<&>))
 import Game.OrionsOutlaws.Util.Registry (RegistryEntry (..))
-import {-# SOURCE #-} Game.OrionsOutlaws.UI.MenuUI (menuUI)
 
 -- | Some logging-related constants
 --
@@ -57,7 +56,7 @@ initialState s ss d = msTime >>= (\time -> return $ GameState
   , enemies      = []
   , projectiles  = []
   , animations   = []
-  , activeUI     = Just $ RegistryEntry "menu" menuUI -- This is cheating, but we don't have a gamestate here yet.
+  , activeUI     = Nothing
   , score        = 0
   , lastSpawn    = 0
   , elapsedTime  = 0
