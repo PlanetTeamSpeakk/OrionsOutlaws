@@ -11,10 +11,10 @@ import Game.OrionsOutlaws.UI.ScoresUI   (scoresUI)
 -- | The paused UI. Doesn't ever change and doesn't do much on its own.
 menuUI :: UI
 menuUI = ui
-  [ text "Orion's Outlaws" JustCentered pixeboyFont 1.5 (0, 200)
-  , text "Press ESC to continue" JustCentered pixeboyFont 0.5 (0, -150)
-  , button "Settings" pixeboyFont (565, 310) (100, 50) onSettingsBtn
-  , button "Scores" pixeboyFont (-565, 310) (100, 50) onScoresBtn -- TODO - this is temporary until we have a proper menu
+  [ text "Orion's Outlaws" JustCentered pixeboyFont 1.3 (0, 200)
+  , button "Start game" pixeboyFont (0, 70) (300, 100) onPlayBtn
+  , button "Settings" pixeboyFont (0, -50) (200, 100) onSettingsBtn
+  , button "Scores" pixeboyFont (0, -170) (180, 100) onScoresBtn -- TODO - this is temporary until we have a proper menu
   ]
 
 -- | Called when the settings button is pressed.
@@ -24,3 +24,6 @@ onSettingsBtn = queueTask $ \gs -> return $ openUI gs $ Just $ settingsUI $ sett
 -- | Called when the scores button is pressed.
 onScoresBtn :: IO ()
 onScoresBtn = queueTask $ \gs -> return $ openUI gs $ Just $ scoresUI $ scores gs
+
+onPlayBtn :: IO ()
+onPlayBtn = queueTask $ \gs -> return $ openUI gs Nothing
