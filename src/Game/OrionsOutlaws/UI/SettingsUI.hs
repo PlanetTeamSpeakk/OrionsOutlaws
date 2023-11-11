@@ -2,7 +2,7 @@ module Game.OrionsOutlaws.UI.SettingsUI
   ( settingsUI
   ) where
 
-import Game.OrionsOutlaws.Rendering.UI  (UIElement (..), Justification (..), modifyElement, ElementKey, UI, text, slider, uik, enk)
+import Game.OrionsOutlaws.Rendering.UI  (UIElement (..), Justification (..), modifyElement, ElementKey, UI, text, slider, uik, enk, button)
 import Game.OrionsOutlaws.Assets        (pixeboyFont)
 import Game.OrionsOutlaws.Util.Tasks    (queueTask)
 import Game.OrionsOutlaws.Model         (GameState (keyListeners, settings, activeUI), Settings (..), Position)
@@ -43,7 +43,7 @@ settingsUI s = uik
 
 -- | Creates a new keybind button for a keybind.
 keyBtn :: ElementKey -> Position -> Settings -> (Settings -> Key) -> (Settings -> Key -> Settings) -> (Maybe ElementKey, UIElement)
-keyBtn k p s getter setter = (Just k, UIButton (keyToString $ getter s) pixeboyFont p (75, 35) $ onKeyBtn k setter)
+keyBtn k p s getter setter = (Just k, button (keyToString $ getter s) pixeboyFont p (75, 35) $ onKeyBtn k setter)
 
 -- | Queues a key change task.
 --   Called when a keybind button is pressed.

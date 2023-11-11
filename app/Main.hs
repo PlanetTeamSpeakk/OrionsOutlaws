@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Game.OrionsOutlaws.Controller        (input, step)
-import Game.OrionsOutlaws.Model             (GameState(..), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume))
+import Game.OrionsOutlaws.Model             (GameState(..), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume), Player (..))
 import Game.OrionsOutlaws.Assets            (freeglutDll)
 import Game.OrionsOutlaws.Rendering.View    (view)
 import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume)
@@ -71,12 +71,19 @@ main = do
 
   -- Create initial gamestate
   state <- loadScores >>= \sc -> initialState s sc debugMode >>=
-    \gs -> return gs { activeUI = Just $ RegistryEntry "menu" $ menuUI ((\gs' -> gs' { windowSize = windowSize gs }) <$> savedState) }
+    \gs -> return gs { activeUI = Just $ RegistryEntry "menu" $ menuUI 
+      -- If the player is dead, we don't want to restore the gamestate.
+      (savedState >>= (\gs' -> if health (player gs') <= 0 then Nothing else Just gs') . 
+        (\gs' -> gs' -- These values should not be restored.
+          { windowSize = windowSize gs
+          , settings   = settings gs
+          , scores     = scores gs
+          })) }
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
       (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Game.OrionsOutlaws.Model.windowSize state
 
-  -- Center screen
+  -- Create screen and start game
   playIO (InWindow "Orion's Outlaws" (windowWidth * 2, windowHeight * 2)
       -- Ensure that the window is centered
       (screenWidth - windowWidth, screenHeight - windowHeight))

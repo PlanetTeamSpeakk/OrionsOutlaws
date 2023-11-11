@@ -99,6 +99,7 @@ data UIElement =
     , btnFont    :: Font           -- ^ The font to render the text with
     , elemPos    :: Position
     , btnSize    :: Size           -- ^ The width and height of the button
+    , btnEnabled :: Bool           -- ^ Whether the button is enabled. If disabled, the button will not respond to clicks and will be rendered grayed out.
     , btnAction  :: IO ()          -- ^ The action to perform when the button is clicked
     } |
   UISlider
@@ -118,10 +119,10 @@ instance Show (IO ()) where show _ = "IO ()"
 instance Show (Float -> IO ()) where show _ = "Float -> IO ()"
 
 instance Eq UIElement where
-  UIText   t1 j1 f1 s1 p1 == UIText   t2 j2 f2 s2 p2 = t1 == t2 && j1 == j2 && f1 == f2 && s1 == s2 && p1 == p2
-  UIImage  i1 s1 p1       == UIImage  i2 s2 p2       = i1 == i2 && s1 == s2 && p1 == p2
-  UIButton t1 f1 p1 s1 _  == UIButton t2 f2 p2 s2 _  = t1 == t2 && f1 == f2 && p1 == p2 && s1 == s2
-  UISlider p1 s1 v1 _  a1 == UISlider p2 s2 v2 _  a2 = p1 == p2 && s1 == s2 && v1 == v2 && a1 == a2
+  UIText   t1 j1 f1 s1 p1   == UIText   t2 j2 f2 s2 p2   = t1 == t2 && j1 == j2 && f1 == f2 && s1 == s2 && p1 == p2
+  UIImage  i1 s1 p1         == UIImage  i2 s2 p2         = i1 == i2 && s1 == s2 && p1 == p2
+  UIButton t1 f1 p1 s1 e1 _ == UIButton t2 f2 p2 s2 e2 _ = t1 == t2 && f1 == f2 && p1 == p2 && s1 == s2 && e1 == e2
+  UISlider p1 s1 v1 _  a1   == UISlider p2 s2 v2 _  a2   = p1 == p2 && s1 == s2 && v1 == v2 && a1 == a2
   _ == _ = False
 
 -- | Modifies the element with the given key, if one exists.
@@ -151,16 +152,16 @@ renderUIElement _ _ (UIText txt jst fnt sze p)
 renderUIElement _ _ (UIImage i s p) = transformSP s p i
 
 -- Render UI Button
-renderUIElement mousePos s (UIButton t f p (w, h) _) =
+renderUIElement mousePos s (UIButton t f p (w, h) e _) =
   let textHeight  = fontLineHeight f -- The height of a line of text in the font
       textWidth   = stringWidth f t  -- The width of the text in the font
       ts          = if null t then 0 else min ((w * 0.9) / fromIntegral textWidth) (h / fromIntegral textHeight) -- The scale of the text
-  in renderButton mousePos s 5 (w, h) p p False $ Pic.scale ts ts $ renderStringCentered f t
+  in renderButton mousePos s 5 (w, h) p p False e $ Pic.scale ts ts $ renderStringCentered f t
 
 -- Render UI Slider
 renderUIElement mousePos s (UISlider (x, y) (w, h) v _ a) = translate x y $ pictures
-  [ color (withAlpha 0.8 white) $ rectangleSolid w 10                                           -- Line to slide over
-  , renderButton mousePos s 3 (0.67 * h, h) ((v - 0.5) * w, 0) (x + ((v - 0.5) * w), y) a blank -- Slider
+  [ color (withAlpha 0.8 white) $ rectangleSolid w 10                                                -- Line to slide over
+  , renderButton mousePos s 3 (0.67 * h, h) ((v - 0.5) * w, 0) (x + ((v - 0.5) * w), y) a True blank -- Slider
   ]
 
 -- | Renders a button
@@ -171,19 +172,20 @@ renderButton :: Maybe MousePosition ->  -- ^ Mouse position
                 Position ->             -- ^ Position of the button
                 Position ->             -- ^ Absolute position of the button (including any post-transformation, used for hover detection)
                 Bool ->                 -- ^ Whether to overwrite the hover detection
+                Bool ->                 -- ^ Whether the button is enabled
                 Picture ->              -- ^ Content of the button (may be blank)
                 Picture                 -- ^ The rendered button
-renderButton mousePos s borderWidth (w, h) (x, y) (bx, by) ho p =
+renderButton mousePos s borderWidth (w, h) (x, y) (bx, by) ho e p =
   let borderColor = withAlpha 0.8 white
   in translate x y $ pictures
     [ translate 0 ( (h + borderWidth) / 2) $ color borderColor $ rectangleSolid (w + 2 * borderWidth) borderWidth -- Top border
     , translate 0 (-(h + borderWidth) / 2) $ color borderColor $ rectangleSolid (w + 2 * borderWidth) borderWidth -- Bottom border
     , translate (-(w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid borderWidth h -- Left border
     , translate ( (w + borderWidth) / 2) 0 $ color borderColor $ rectangleSolid borderWidth h -- Right border
-    , color (withAlpha 0.8 black) $ rectangleSolid w h           -- Background
-    , p                                                          -- Content (either blank or some text)
-    , if ho || isInBounds mousePos (bx, by) (w, h) borderWidth s -- Hover highlight
-      then color (withAlpha 0.35 black) $ rectangleSolid (w + 2 * borderWidth) (h + 2 * borderWidth)
+    , color (withAlpha 0.8 black) $ rectangleSolid w h                -- Background
+    , p                                                               -- Content (either blank or some text)
+    , if not e || ho || isInBounds mousePos (bx, by) (w, h) borderWidth s -- Hover highlight/disabled overlay
+      then color (withAlpha (if e then 0.35 else 0.75) black) $ rectangleSolid (w + 2 * borderWidth) (h + 2 * borderWidth)
       else blank
     ]
 
@@ -225,7 +227,7 @@ handleMouse ui' state mousePos s = do
     --   Returns whether the event was consumed and the new element.
     handleMouse'' :: UIElement -> IO (Bool, UIElement)
     -- For buttons, click them if KeyState is Down.
-    handleMouse'' b@(UIButton _ _ (x, y) (w, h) a) | state == Down = do
+    handleMouse'' b@(UIButton _ _ (x, y) (w, h) e a) | state == Down && e = do
       if isInBounds (Just mousePos) (x, y) (w, h) 5 s
         then a >> return (True, b)
         else return (False, b)
@@ -303,7 +305,7 @@ image = UIImage
 
 -- | Constructs a button UI element.
 button :: String -> Font -> Position -> Size -> IO () -> UIElement
-button = UIButton
+button txt font pos size = UIButton txt font pos size True -- always enabled by default
 
 -- | Constructs a slider UI element.
 slider :: Position -> Size -> SliderValue -> (SliderValue -> IO ()) -> UIElement
@@ -325,7 +327,7 @@ allElements ui' = map (Nothing, ) (elements ui') ++ map (first Just) (Map.toList
 
 -- | Creates a version of the given UI with its elements replaced by the given list of elements.
 withElements :: UI -> [(Maybe ElementKey, UIElement)] -> UI
-withElements ui' es = ui' 
+withElements ui' es = ui'
   { elements      = map snd $ filter (isNothing . fst) es
   , keyedElements = Map.fromList $ map (first fromJust) $ filter (isJust . fst) es
   }
@@ -355,4 +357,4 @@ type TextSize      = Float
 type SliderValue   = Float
 -- | A key for a UI element.
 type ElementKey    = String
-type ParentUI      = RegistryEntry UI 
+type ParentUI      = RegistryEntry UI
