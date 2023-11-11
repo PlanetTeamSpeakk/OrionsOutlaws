@@ -21,15 +21,16 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in
   pictures
-    [ renderBackground                               -- render background                                                    
-    , renderPlayer $ player gstate                   -- render player
-    , ifDebug $ renderBoxesFor [player gstate]       -- render player boxes (debugging only)
-    , renderProjectiles $ projectiles gstate         -- render projectiles
-    , ifDebug $ renderBoxesFor $ projectiles gstate  -- render projectile boxes (debugging only)
-    , renderEnemies $ enemies gstate                 -- render enemies
-    , ifDebug $ renderBoxesFor $ enemies gstate      -- render enemy boxes (debugging only)
-    , renderAnimations $ animations gstate           -- render animations
-    , renderScore (windowSize gstate) $ score gstate -- render score
+    [ renderBackground                                          -- render background                                                    
+    , renderPlayer $ player gstate                              -- render player
+    , ifDebug $ renderBoxesFor [player gstate]                  -- render player boxes (debugging only)
+    , renderProjectiles $ projectiles gstate                    -- render projectiles
+    , ifDebug $ renderBoxesFor $ projectiles gstate             -- render projectile boxes (debugging only)
+    , renderEnemies $ enemies gstate                            -- render enemies
+    , ifDebug $ renderBoxesFor $ enemies gstate                 -- render enemy boxes (debugging only)
+    , renderAnimations $ animations gstate                      -- render animations
+    , renderScore (windowSize gstate) $ score gstate            -- render score
+    , renderHealth (windowSize gstate) $ health (player gstate) -- render health
     , maybe blank (renderUI (mousePos gstate) (hs, vs) . entryValue) $ activeUI gstate -- render active UI (if any)
     ]
   where
@@ -52,7 +53,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
 
     -- | Renders the background shadows.
     renderShadows :: Picture
-    renderShadows = translateP (-fromInteger (steps gstate `mod` 256) * 10, 0) $ scale factor factor shadows
+    renderShadows = translateP (-fromInteger (steps gstate `mod` 380) * 10, 0) $ scale factor factor shadows
       where factor = if wh * 2 >= ww then fromIntegral wh / 360 else fromIntegral ww / 720
 
     -- | Renders an animated layer of the background.
@@ -115,6 +116,12 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderScore (w, h) s = let x = fromIntegral $ w `div` (-2) + 120
                                y = fromIntegral $ h `div` (-2) + 45
                                in translate x y $ scale 0.4 0.4 $ renderString RightToLeft pixeboyFont $ show s
+
+    -- | Renders the player's score.
+    renderHealth :: Bounds ->  Int -> Picture
+    renderHealth (w, h) s = let x = fromIntegral $ w `div` 2 - 80
+                                y = fromIntegral $ h `div` (-2) + 45
+                                in translate x y $ scale 0.4 0.4 $ renderString RightToLeft pixeboyFont $ show s ++ " HP"
 
     -- | Returns the ship frame to use based on the current step
     getShipFrame :: ShipFrame

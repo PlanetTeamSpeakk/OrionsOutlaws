@@ -12,7 +12,7 @@ import Graphics.Gloss.Interface.IO.Game   (KeyState(Down), Key(SpecialKey, Mouse
 import Graphics.Gloss.Geometry.Angle      (degToRad)
 import System.Log.Logger                  (debugM)
 import System.Random                      (randomIO)
-import System.Exit                        (exitSuccess)
+--import System.Exit                        (exitSuccess)
 import Data.Bifunctor                     (first, bimap)
 import Data.List                          ((\\)) -- List difference
 import Data.Maybe                         (isJust, fromJust)
@@ -20,6 +20,7 @@ import Data.Time                          (getCurrentTime)
 import Control.Monad                      (unless)
 import Game.OrionsOutlaws.Util.Registry   (RegistryEntry(..), getEntry)
 import Game.OrionsOutlaws.Util.Registries (getUI, animationsRegistry)
+import Game.OrionsOutlaws.UI.GameOverUI   (gameOverUI)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -197,7 +198,8 @@ step elapsed gstate = do
       t <- getCurrentTime                                            -- Current time in UTCTime
       let s' = Score "Player" (score gstateNew) t : scores gstateNew -- Add the current score to the list of scores
       writeScores s'                                                 -- Write the scores to scores.json
-      exitSuccess                                                    -- Exit the game, temporary until we have a UI.
+      --exitSuccess                                                    -- Exit the game, temporary until we have a UI.
+      return gstateNew { activeUI = Just $ gameOverUI $ score gstateNew }                               -- Return the new gamestate
       --return gstateNew { scores = s' }                               -- Return the new gamestate
 
 -- | Handle user input
