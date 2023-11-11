@@ -57,7 +57,7 @@ initialState s ss d = msTime >>= (\time -> return $ GameState
   , enemies      = []
   , projectiles  = []
   , animations   = []
-  , activeUI     = Just menuUI 
+  , activeUI     = Just $ RegistryEntry "menu" menuUI -- This is cheating, but we don't have a gamestate here yet.
   , score        = 0
   , lastSpawn    = 0
   , elapsedTime  = 0

@@ -99,7 +99,9 @@ runTasksAndStep sd gstate = do
 
   writeIORef gameStateRef gstate'''     -- Update the global gamestate
 
-  return gstate'''
+  -- Ensure that we have at least one step.
+  -- So that we don't register the callbacks every step.
+  return gstate''' { steps = max 1 $ steps gstate''' }
 
 -- | The current GameState. Used in some event handlers.
 gameStateRef :: IORef GameState
