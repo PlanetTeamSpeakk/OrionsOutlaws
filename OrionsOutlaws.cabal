@@ -36,6 +36,8 @@ library
       Game.OrionsOutlaws.UI.SettingsUI
       Game.OrionsOutlaws.Util.Audio
       Game.OrionsOutlaws.Util.Data
+      Game.OrionsOutlaws.Util.Registries
+      Game.OrionsOutlaws.Util.Registry
       Game.OrionsOutlaws.Util.Tasks
       Game.OrionsOutlaws.Util.Util
   other-modules:

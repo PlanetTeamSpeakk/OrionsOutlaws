@@ -10,7 +10,7 @@ import Game.OrionsOutlaws.Util.Data     (writeSettings)
 import Game.OrionsOutlaws.Util.Audio    (setVolume)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeyEsc), MouseButton (..))
 import Data.Char                        (toUpper)
-import Data.Maybe                       (fromJust)
+import {-# SOURCE #-} Game.OrionsOutlaws.Util.Registries (getUI)
 
 -- | Creates a settings UI for the given settings.
 settingsUI :: Settings -> UI
@@ -51,7 +51,7 @@ onKeyBtn :: ElementKey -> (Settings -> Key -> Settings) -> IO ()
 onKeyBtn k setter = queueTask $ \gs -> do
   return gs
     { keyListeners = onKeyChange setter : keyListeners gs
-    , activeUI = Just $ modifyElement (fromJust $ activeUI gs) k setBtnText
+    , activeUI = (\e -> (\ui -> modifyElement ui k setBtnText) <$> e) <$> activeUI gs
     }
   where
     setBtnText :: UIElement -> UIElement
@@ -68,7 +68,7 @@ onKeyChange setter k
     writeSettings settings'
     return gs
       { settings = settings'
-      , activeUI = Just $ settingsUI settings'
+      , activeUI = getUI gs "settings"
       }
 
 -- | Called when the volume slider is changed.

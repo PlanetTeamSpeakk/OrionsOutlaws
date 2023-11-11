@@ -16,7 +16,7 @@ module Game.OrionsOutlaws.Model
   , stepDelta
 
     -- * Types
-  , GameState
+  , GameState(..)
   , Player
   , Movement
   , MovementDirection
@@ -65,6 +65,8 @@ module Game.OrionsOutlaws.Model
 import Graphics.Gloss.Data.Picture (Picture)
 import {-# SOURCE #-} Game.OrionsOutlaws.Rendering.UI (UI)
 import System.Log.Formatter (LogFormatter)
+import Graphics.Gloss.Interface.IO.Game (Key)
+import Game.OrionsOutlaws.Util.Registry (RegistryEntry)
 
 logFormatter    :: Bool -> LogFormatter a
 defLog          :: String
@@ -80,7 +82,24 @@ margin          :: (Int, Int)
 halfRt2         :: Float
 stepDelta       :: Integer -> Integer -> Float
 
-data GameState
+data GameState = GameState
+  { player       :: Player
+  , enemies      :: [Enemy]
+  , projectiles  :: [Projectile]
+  , animations   :: [PositionedAnimation]
+  , activeUI     :: Maybe (RegistryEntry UI)
+  , score        :: Int
+  , lastSpawn    :: Float
+  , elapsedTime  :: Float
+  , windowSize   :: Bounds
+  , mousePos     :: Maybe Position
+  , steps        :: Integer
+  , lastStep     :: Integer
+  , settings     :: Settings
+  , scores       :: [Score]
+  , keyListeners :: [Key -> IO ()]
+  , debug        :: Bool
+  }
 instance Show GameState
 instance Eq GameState
 
@@ -160,12 +179,12 @@ multiplyMovement :: (Float, Float) -> Float -> (Float, Float)
 applyPositionMovement :: Bounds -> Position -> Movement -> Float -> Position
 applyMovement :: (Positionable a) => Bounds -> a -> Float -> a
 subtractMargin :: Bounds -> Bounds
-frame :: Animation -> Picture
-positionAnimation :: Animation -> Position -> PositionedAnimation
+frame :: PositionedAnimation -> Picture
+positionAnimation :: RegistryEntry Animation -> Position -> PositionedAnimation
 facing :: GameState -> Movement -> PlayerFacing
 addScore :: [Score] -> Score -> [Score]
 normalizeMotion :: (Float, Float) -> (Float, Float)
 isFriendly :: Friendliness -> Bool
 createBox :: Position -> Float -> Float -> Box
 growBox :: Box -> Float -> Float -> Box
-openUI :: GameState -> Maybe UI -> GameState
+openUI :: GameState -> Maybe (RegistryEntry UI) -> GameState

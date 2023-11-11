@@ -1,17 +1,17 @@
 module Main (main) where
 
 import Game.OrionsOutlaws.Controller        (input, step)
-import Game.OrionsOutlaws.Model             (GameState(mousePos, windowSize, steps), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume))
+import Game.OrionsOutlaws.Model             (GameState(..), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume))
 import Game.OrionsOutlaws.Assets            (freeglutDll)
 import Game.OrionsOutlaws.Rendering.View    (view)
 import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume)
-import Game.OrionsOutlaws.Util.Data         (loadSettings, loadScores)
+import Game.OrionsOutlaws.Util.Data         (loadSettings, loadScores, writeScores, writeGameState, loadGameState)
 import Game.OrionsOutlaws.Util.Tasks        (runAndClearTasks)
 
 import Graphics.Gloss.Interface.IO.Game     (playIO, Display(InWindow))
 import Graphics.Gloss.Data.Color            (makeColorI)
 import Graphics.Gloss.Interface.Environment (getScreenSize)
-import Graphics.UI.GLUT                     (($=), crossingCallback, Crossing (WindowEntered))
+import Graphics.UI.GLUT                     (($=), crossingCallback, Crossing (WindowEntered), closeCallback)
 import System.Log.Logger                    (Priority(INFO, DEBUG), addHandler, debugM, removeHandler, rootLoggerName, setLevel, updateGlobalLogger)
 import System.Log.Handler                   (setFormatter)
 import System.Log.Handler.Simple            (streamHandler)
@@ -28,7 +28,7 @@ main :: IO ()
 main = do
   -- Run with 'stack run -- --debug' to enable debug mode
   args <- getArgs
-  let debug = "--debug" `elem` args
+  let debugMode = "--debug" `elem` args
 
   -- Get rid of default, lame logging
   updateGlobalLogger rootLoggerName removeHandler
@@ -37,7 +37,7 @@ main = do
 
   -- Set up logging for the DEBUG log.
   debugHandler <- streamHandler stdout DEBUG >>= \lh -> return $ setFormatter lh $ logFormatter True
-  when debug $ updateGlobalLogger debugLog $ addHandler debugHandler
+  when debugMode $ updateGlobalLogger debugLog $ addHandler debugHandler
 
   debugM debugLog "Debug mode enabled" -- Won't show if it's disabled
 
@@ -63,7 +63,11 @@ main = do
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
   loopBgMusic
 
-  state <- loadScores >>= \sc -> initialState s sc debug
+  -- Load gamestate (if one is available)
+  savedState <- loadGameState
+  debugM debugLog $ "Loaded gamestate: " ++ show savedState
+
+  state <- loadScores >>= \sc -> initialState s sc debugMode
   size <- getScreenSize
   let (screenWidth, screenHeight) = bimap (`div` 2) (`div` 2) size
       (windowWidth, windowHeight) = bimap (`div` 2) (`div` 2) $ Game.OrionsOutlaws.Model.windowSize state
@@ -79,20 +83,28 @@ main = do
     input                     -- Event function
     runTasksAndStep           -- Step function
 
-  debugM debugLog "Exiting"
-  finishAudio -- Shutdown audio system
-
 runTasksAndStep :: Float -> GameState -> IO GameState
 runTasksAndStep sd gstate = do
   -- First step, has to be called after playIO to ensure that a window is made.
-  when (steps gstate == 0) registerCrossingCallback
+  when (steps gstate == 0) $ do
+    registerCrossingCallback
+    registerCloseCallback
 
   -- If the mouse is no longer inside the window, we reset the mouse position to Nothing.
   c <- readIORef crossingState
   let gstate' = gstate { mousePos = if c == WindowEntered then mousePos gstate else Nothing }
 
-  gstate'' <- runAndClearTasks gstate' -- Run tasks
-  step sd gstate''                     -- Execute step
+  gstate''  <- runAndClearTasks gstate' -- Run tasks
+  gstate''' <- step sd gstate''         -- Execute step
+
+  writeIORef gameStateRef gstate'''     -- Update the global gamestate
+
+  return gstate'''
+
+-- | The current GameState. Used in some event handlers.
+gameStateRef :: IORef GameState
+gameStateRef = unsafePerformIO $ newIORef undefined
+{-# NOINLINE gameStateRef #-}
 
 -- | The current crossing state of the mouse.
 --   Gloss does not have an event for this, so we make our own using GLUT.
@@ -105,3 +117,21 @@ registerCrossingCallback :: IO ()
 registerCrossingCallback = do
   debugM debugLog "Registering crossing callback"
   crossingCallback $= Just (writeIORef crossingState)
+
+-- | Registers a callback that's fired when the window is closed.
+registerCloseCallback :: IO ()
+registerCloseCallback = do
+  debugM debugLog "Registering close callback"
+  closeCallback $= Just onClose
+
+-- | Ensures the GameState is saved when the window is closed
+--   and that we cleanup the audio system.
+onClose :: IO ()
+onClose = do
+  debugM debugLog "Exiting"
+  finishAudio -- Shutdown audio system
+
+  -- Save the scores and gamestate
+  gstate <- readIORef gameStateRef
+  writeScores $ scores gstate
+  writeGameState gstate

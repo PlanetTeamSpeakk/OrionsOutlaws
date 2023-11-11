@@ -108,7 +108,7 @@ explosionFrame' :: Int -> Picture
 explosionFrame' n = maybe blank (scale assetScale assetScale . bitmapSection (Rectangle (n * 16, 0) (16, 16))) explosionSheet
 
 explosionAnimation :: Animation
-explosionAnimation = Animation 5 2 0 0 explosionFrame
+explosionAnimation = Animation 5 2 explosionFrame
 
 
 -- | Ship spritesheet (player)

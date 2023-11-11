@@ -7,6 +7,7 @@ import Game.OrionsOutlaws.Assets          (fromPlayerFacing, pixeboyFont, shadow
 import Game.OrionsOutlaws.Util.Util       (msTime, lerp)
 import Game.OrionsOutlaws.Rendering.UI    (renderUI)
 import Game.OrionsOutlaws.Rendering.Font  (TextAlignment (..), renderString)
+import Game.OrionsOutlaws.Util.Registry   (RegistryEntry(..))
 
 -- | Renders the gamestate into a picture
 --   Simply calls viewPure with the current stepdelta and the given gamestate
@@ -20,16 +21,16 @@ view gstate = do
 viewPure :: Float -> GameState -> Picture
 viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromIntegral ww / 1280, fromIntegral wh / 720) in
   pictures
-    [ renderBackground                                                    -- render background                                                    
-    , renderPlayer $ player gstate                                        -- render player
-    , ifDebug $ renderBoxesFor [player gstate]                            -- render player boxes (debugging only)
-    , renderProjectiles $ projectiles gstate                              -- render projectiles
-    , ifDebug $ renderBoxesFor $ projectiles gstate                       -- render projectile boxes (debugging only)
-    , renderEnemies $ enemies gstate                                      -- render enemies
-    , ifDebug $ renderBoxesFor $ enemies gstate                           -- render enemy boxes (debugging only)
-    , renderAnimations $ animations gstate                                -- render animations
-    , renderScore (windowSize gstate) $ score gstate                      -- render score
-    , maybe blank (renderUI (mousePos gstate) (hs, vs)) $ activeUI gstate -- render active UI (if any)
+    [ renderBackground                               -- render background                                                    
+    , renderPlayer $ player gstate                   -- render player
+    , ifDebug $ renderBoxesFor [player gstate]       -- render player boxes (debugging only)
+    , renderProjectiles $ projectiles gstate         -- render projectiles
+    , ifDebug $ renderBoxesFor $ projectiles gstate  -- render projectile boxes (debugging only)
+    , renderEnemies $ enemies gstate                 -- render enemies
+    , ifDebug $ renderBoxesFor $ enemies gstate      -- render enemy boxes (debugging only)
+    , renderAnimations $ animations gstate           -- render animations
+    , renderScore (windowSize gstate) $ score gstate -- render score
+    , maybe blank (renderUI (mousePos gstate) (hs, vs) . entryValue) $ activeUI gstate -- render active UI (if any)
     ]
   where
     -- | Returns the given picture if debug-mode is enabled, otherwise returns 'blank'.
@@ -107,7 +108,7 @@ viewPure sd gstate@GameState { windowSize = (ww, wh) } = let (hs, vs) = (fromInt
     renderAnimations :: [PositionedAnimation] -> Picture
     renderAnimations = pictures . map renderAnimation
       where
-        renderAnimation a = color orange $ translateP (animationPos a) $ frame $ animation a
+        renderAnimation a = color orange $ translateP (animationPos a) $ frame a
 
     -- | Renders the player's score.
     renderScore :: Bounds ->  Int -> Picture

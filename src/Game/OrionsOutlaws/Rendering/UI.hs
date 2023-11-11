@@ -65,6 +65,7 @@ import Control.Monad                      (foldM)
 import Data.Ord                           (clamp)
 import Data.Bifunctor                     (first)
 import Data.Maybe                         (isNothing, isJust, fromJust)
+import Game.OrionsOutlaws.Util.Registry   (RegistryEntry)
 import qualified Data.Map as Map
 
 -- | A User Interface.
@@ -72,7 +73,7 @@ data UI = UI
   { elements      :: [UIElement]                  -- ^ Regular elements
   , keyedElements :: Map.Map ElementKey UIElement -- ^ Modifiable elements
   , background    :: Picture                      -- ^ The UI's background, will get scaled to the window size and is expected to be 1280x720.
-  , parent        :: Maybe UI                     -- ^ The parent UI, if any.
+  , parent        :: Maybe (RegistryEntry UI)     -- ^ The parent UI, if any.
   } deriving (Show, Eq)
 
 -- | An element of a User Interface.
@@ -92,6 +93,7 @@ data UIElement =
   -- We cannot make button actions a GameState -> IO GameState function
   -- as that would create a circular dependency between the UI and Model modules.
   -- Hence, you should enqueue tasks in the button action if you wish to use/modify the gamestate.
+  -- (Even with a boot file.)
   UIButton
     { btnText    :: String         -- ^ The text on the button
     , btnFont    :: Font           -- ^ The font to render the text with
@@ -116,10 +118,10 @@ instance Show (IO ()) where show _ = "IO ()"
 instance Show (Float -> IO ()) where show _ = "Float -> IO ()"
 
 instance Eq UIElement where
-  UIText t1 j1 f1 s1 p1 == UIText t2 j2 f2 s2 p2 = t1 == t2 && j1 == j2 && f1 == f2 && s1 == s2 && p1 == p2
-  UIImage i1 s1 p1 == UIImage i2 s2 p2 = i1 == i2 && s1 == s2 && p1 == p2
-  UIButton t1 f1 p1 s1 _ == UIButton t2 f2 p2 s2 _ = t1 == t2 && f1 == f2 && p1 == p2 && s1 == s2
-  UISlider p1 s1 v1 _ a1 == UISlider p2 s2 v2 _ a2 = p1 == p2 && s1 == s2 && v1 == v2 && a1 == a2
+  UIText   t1 j1 f1 s1 p1 == UIText   t2 j2 f2 s2 p2 = t1 == t2 && j1 == j2 && f1 == f2 && s1 == s2 && p1 == p2
+  UIImage  i1 s1 p1       == UIImage  i2 s2 p2       = i1 == i2 && s1 == s2 && p1 == p2
+  UIButton t1 f1 p1 s1 _  == UIButton t2 f2 p2 s2 _  = t1 == t2 && f1 == f2 && p1 == p2 && s1 == s2
+  UISlider p1 s1 v1 _  a1 == UISlider p2 s2 v2 _  a2 = p1 == p2 && s1 == s2 && v1 == v2 && a1 == a2
   _ == _ = False
 
 -- | Modifies the element with the given key, if one exists.
@@ -139,11 +141,11 @@ renderUI mousePos s@(hs, vs) (UI es kes bg _) = let s' = min hs vs in pictures
 renderUIElement :: Maybe MousePosition -> AxialScale -> UIElement -> Picture
 -- Render UI Text
 renderUIElement _ _ (UIText txt jst fnt sze p)
-  | jst == JustLeft  = textToPic $ renderString LeftToRight
-  | jst == JustRight = textToPic $ renderString RightToLeft
-  | otherwise        = textToPic renderStringCentered
+  | jst == JustLeft  = renderText $ renderString LeftToRight
+  | jst == JustRight = renderText $ renderString RightToLeft
+  | otherwise        = renderText renderStringCentered
   where
-    textToPic f = transformSP sze p $ f fnt txt
+    renderText f = transformSP sze p $ f fnt txt
 
 -- Render UI Image
 renderUIElement _ _ (UIImage i s p) = transformSP s p i
@@ -353,4 +355,4 @@ type TextSize      = Float
 type SliderValue   = Float
 -- | A key for a UI element.
 type ElementKey    = String
-type ParentUI      = UI 
+type ParentUI      = RegistryEntry UI 

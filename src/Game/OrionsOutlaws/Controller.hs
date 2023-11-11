@@ -4,10 +4,9 @@ module Game.OrionsOutlaws.Controller (module Game.OrionsOutlaws.Controller) wher
 import Game.OrionsOutlaws.Model
 import Game.OrionsOutlaws.Rendering.View  (onScreen, inBounds)
 import Game.OrionsOutlaws.Util.Util       (msTime, randomElem, distanceSq)
-import Game.OrionsOutlaws.Assets          (explosionAnimation, laser1, laser2, explosion1, explosion2, missile1, missile2)
+import Game.OrionsOutlaws.Assets          (laser1, laser2, explosion1, explosion2, missile1, missile2)
 import Game.OrionsOutlaws.Util.Audio      (pauseAllSounds, playSound, resumeAllSounds)
 import Game.OrionsOutlaws.Rendering.UI    (handleMouse, handleMotion, UI (parent))
-import Game.OrionsOutlaws.UI.PausedUI     (pausedUI)
 import Game.OrionsOutlaws.Util.Data       (writeScores)
 import Graphics.Gloss.Interface.IO.Game   (KeyState(Down), Key(SpecialKey, MouseButton), MouseButton(LeftButton), SpecialKey(KeyEsc), Event(..))
 import Graphics.Gloss.Geometry.Angle      (degToRad)
@@ -19,6 +18,8 @@ import Data.List                          ((\\)) -- List difference
 import Data.Maybe                         (isJust, fromJust)
 import Data.Time                          (getCurrentTime)
 import Control.Monad                      (unless)
+import Game.OrionsOutlaws.Util.Registry   (RegistryEntry(..), getEntry)
+import Game.OrionsOutlaws.Util.Registries (getUI, animationsRegistry)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -32,8 +33,8 @@ step elapsed gstate = do
     let as = stepAnimations $ animations gstateNew
 
     -- Handle projectile collision with enemies. Filters projectiles and enemies.
-    (fps, es, nas) <- handleProjectileCollision 
-                        (filter (isFriendly . friendly) $ projectiles gstate) 
+    (fps, es, nas) <- handleProjectileCollision
+                        (filter (isFriendly . friendly) $ projectiles gstate)
                         $ enemies gstateNew
     let hit = length $ enemies gstateNew \\ es -- Number of enemies that were hit
 
@@ -98,9 +99,10 @@ step elapsed gstate = do
         Just es'' -> do
           playExplosionSound
 
+          let explosionAnim = fromJust $ getEntry animationsRegistry "explosion"
           let nas = case es'' of
-                [] -> [PositionedAnimation explosionAnimation (projPos p)] -- No enemies, add an explosion at the projectile's position
-                _  -> map (PositionedAnimation explosionAnimation . curPosition) es'' -- Add an explosion at each enemy's position
+                [] -> [positionAnimation explosionAnim (projPos p)] -- No enemies, add an explosion at the projectile's position
+                _  -> map (positionAnimation explosionAnim . curPosition) es'' -- Add an explosion at each enemy's position
           return (ps', es' \\ es'', nas ++ as)
       where
         getCollisions :: Projectile -> [Enemy] -> Maybe [Enemy]
@@ -126,19 +128,20 @@ step elapsed gstate = do
 
     -- Decreases the player's cooldown and applies movement
     stepPlayer :: Player -> Player
-    stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10) 
-      { cooldown    = max 0 $ cooldown p - 1 
+    stepPlayer p = (applyMovement (subtractMargin $ windowSize gstate) p 10)
+      { cooldown    = max 0 $ cooldown p - 1
       , mslCooldown = max 0 $ mslCooldown p - 1
       }
 
     stepAnimations :: [PositionedAnimation] -> [PositionedAnimation]
     stepAnimations = filter isOnGoing . map stepAnimation
       where
-        stepAnimation (PositionedAnimation a p) = PositionedAnimation (a 
-          { animationStep = animationStep a + 1
-          , curFrame = curFrame a + (if animationStep a `mod` frameDuration a == 0 && (animationStep a /= 0) then 1 else 0)
-          }) p
-        isOnGoing (PositionedAnimation a _) = animationStep a < (frameDuration a * frameCount a)
+        stepAnimation :: PositionedAnimation -> PositionedAnimation
+        stepAnimation pa@(PositionedAnimation (RegistryEntry _ a) _ s _) = pa 
+          { animationStep = s + 1
+          , curFrame = curFrame pa + (if s `mod` frameDuration a == 0 && (s /= 0) then 1 else 0)
+          }
+        isOnGoing (PositionedAnimation (RegistryEntry _ a) _ s _) = s < (frameDuration a * frameCount a)
 
     -- Moves all enemies forward
     stepEnemies :: [Enemy] -> [Enemy]
@@ -249,8 +252,9 @@ inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
   let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
   if btn == LeftButton && isJust (activeUI gstate)
     then do
-      (_, ui') <- handleMouse (fromJust $ activeUI gstate) state (x, y) s
-      return gstate { activeUI = Just ui' }
+      let ui = fromJust $ activeUI gstate
+      (_, ui') <- handleMouse (entryValue ui) state (x, y) s
+      return gstate { activeUI = Just $ ui { entryValue = ui' } }
     else do
       -- No UI active, fire missile
       if cooldown (player gstate) == 0
@@ -266,12 +270,12 @@ inputMouseMove (EventMotion mPos) gstate = do
 
   -- Handle UI motion if there's an active UI
   ui' <- case activeUI gstate of
-    Just ui -> Just <$> handleMotion ui mPos s
+    Just ui -> Just <$> handleMotion (entryValue ui) mPos s
     Nothing -> return Nothing
 
   return $ gstate
     { mousePos = Just mPos
-    , activeUI = ui'
+    , activeUI = activeUI gstate >>= (\ui -> Just $ ui { entryValue = fromJust ui' })
     }
 inputMouseMove _ gstate = return gstate
 
@@ -282,7 +286,11 @@ inputPause :: Event -> GameState -> IO (Bool, GameState) -- ^ (Consumed, new Gam
 -- Escape key, pauses the game.
 inputPause (EventKey (SpecialKey KeyEsc) Down _ _) gstate = do
   -- The new UI to set active.
-  let ui' = if paused gstate then parent $ fromJust $ activeUI gstate else Just pausedUI
+  let ui' = if paused gstate
+      -- If there is an active UI, we open its parent.
+      then parent $ entryValue $ fromJust $ activeUI gstate
+      -- If there isn't, we open the paused UI.
+      else getUI gstate "paused"
 
   -- Whether the paused state has remained the same.
   let stateSame = isJust ui' && isJust (activeUI gstate)
@@ -322,8 +330,8 @@ fireMissile gstate target = do
       let (px, py) = playerPos $ player gstate
       let proj = createMissile (px + (24 * assetScale / 2) + (36 * 0.3), py) target Friendly
       playMissileSound
-      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate) 
-        { cooldown    = 8 
+      return $ gstate { projectiles = proj : projectiles gstate, player = (player gstate)
+        { cooldown    = 8
         , mslCooldown = 120 -- One missile every 4 seconds
         } }
     else do

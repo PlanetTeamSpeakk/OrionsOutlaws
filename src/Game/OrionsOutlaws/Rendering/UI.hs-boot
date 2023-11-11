@@ -55,6 +55,7 @@ import Graphics.Gloss.Data.Picture (Picture)
 import Graphics.Gloss.Interface.IO.Game (KeyState)
 import Game.OrionsOutlaws.Rendering.Font (Font)
 import Data.Map (Map)
+import Game.OrionsOutlaws.Util.Registry (RegistryEntry)
 
 data UI
 instance Show UI
@@ -63,7 +64,7 @@ instance Eq UI
 elements      :: UI -> [UIElement]
 keyedElements :: UI -> Map ElementKey UIElement
 background    :: UI -> Picture
-parent        :: UI -> Maybe UI
+parent        :: UI -> Maybe (RegistryEntry UI)
 
 data UIElement
 instance Show UIElement
@@ -105,4 +106,4 @@ type BorderWidth   = Float
 type TextSize      = Float
 type SliderValue   = Float
 type ElementKey    = String
-type ParentUI      = UI 
+type ParentUI      = RegistryEntry UI 

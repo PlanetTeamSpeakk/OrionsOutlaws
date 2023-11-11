@@ -16,6 +16,7 @@ import Graphics.Gloss.Data.Picture      (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 import Graphics.Gloss.Geometry.Angle    (radToDeg, degToRad)
 import Data.Functor                     ((<&>))
+import Game.OrionsOutlaws.Util.Registry (RegistryEntry (..))
 
 -- | Some logging-related constants
 --
@@ -101,7 +102,7 @@ data GameState = GameState
   , enemies      :: [Enemy]               -- ^ A list of enemies
   , projectiles  :: [Projectile]          -- ^ A list of projectiles currently on the field
   , animations   :: [PositionedAnimation] -- ^ A list of animations currently on the field
-  , activeUI     :: Maybe UI              -- ^ The currently active UI, if any
+  , activeUI     :: Maybe (RegistryEntry UI)              -- ^ The currently active UI, if any
   , score        :: Int                   -- ^ The player's score
   , lastSpawn    :: Float                 -- ^ The time at which the last enemy was spawned
   , elapsedTime  :: Float                 -- ^ The time elapsed since the game started
@@ -275,24 +276,22 @@ instance Collidable Projectile where
 data Animation = Animation
   { frameCount      :: Int            -- ^ How many frames the animation has
   , frameDuration   :: Int            -- ^ How long each frame lasts in steps
-  , curFrame        :: Int            -- ^ The current frame of the animation
-  , animationStep   :: Int            -- ^ The current step of the animation
   , frameGetter     :: Int -> Picture -- ^ A function that returns the picture for the given frame
   }
 
 -- | An animation with a position.
 data PositionedAnimation = PositionedAnimation
-  { animation    :: Animation  -- ^ The animation
-  , animationPos :: Position   -- ^ The position of the animation
+  { animation     :: RegistryEntry Animation -- ^ The animation
+  , curFrame      :: Int                     -- ^ The current frame of the animation
+  , animationStep :: Int                     -- ^ The current step of the animation
+  , animationPos  :: Position                -- ^ The position of the animation
   } deriving (Show, Eq)
 
 instance Eq Animation where
-  a1 == a2 = frameCount a1 == frameCount a2 && frameDuration a1 == frameDuration a2 &&
-    curFrame a1 == curFrame a2 && animationStep a1 == animationStep a2
+  a1 == a2 = frameCount a1 == frameCount a2 && frameDuration a1 == frameDuration a2
 
 instance Show Animation where
-  show a = "Animation { frameCount = " ++ show (frameCount a) ++ ", frameDuration = " ++ show (frameDuration a) ++
-    ", curFrame = " ++ show (curFrame a) ++ ", animationStep = " ++ show (animationStep a) ++ " }"
+  show a = "Animation { frameCount = " ++ show (frameCount a) ++ ", frameDuration = " ++ show (frameDuration a) ++ " }"
 
 -- | A direction the player is facing.
 --
@@ -422,12 +421,12 @@ subtractMargin :: Bounds -> Bounds
 subtractMargin (width, height) = bimap (width -) (height -) margin
 
 -- | Returns the current frame of the given animation.
-frame :: Animation -> Picture
-frame a = frameGetter a $ curFrame a
+frame :: PositionedAnimation -> Picture
+frame pa@(PositionedAnimation { animation = RegistryEntry { entryValue = a } }) = frameGetter a $ curFrame pa
 
 -- | Positions the given animation at the given position.
-positionAnimation :: Animation -> Position -> PositionedAnimation
-positionAnimation = PositionedAnimation
+positionAnimation :: RegistryEntry Animation -> Position -> PositionedAnimation
+positionAnimation a = PositionedAnimation a 0 0
 
 -- | Calculates a facing based on the given movement.
 facing :: GameState -> Movement -> PlayerFacing
@@ -463,5 +462,7 @@ growBox :: Box -> Float -> Float -> Box
 growBox ((x1, y1), (x2, y2)) w h = ((x1 - w / 2, y1 - h / 2), (x2 + w / 2, y2 + h / 2))
 
 -- | Opens a UI while keeping track of the parent.
-openUI :: GameState -> Maybe UI -> GameState
-openUI gstate ui = gstate { activeUI = ui <&> withParent (activeUI gstate) }
+openUI :: GameState -> Maybe (RegistryEntry UI) -> GameState
+openUI gstate Nothing = gstate { activeUI = Nothing }
+openUI gstate (Just e@(RegistryEntry _ ui)) = gstate { activeUI =
+  Just ui <&> (\ui' -> e { entryValue = ui'}) . withParent (activeUI gstate) }
