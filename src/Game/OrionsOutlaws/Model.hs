@@ -160,16 +160,7 @@ data Enemy =
         prevEnemyPos    :: Position, -- ^ Enemy's previous position on the field. Used for rendering the enemy
         enemyMovement   :: Movement, -- ^ Enemy's movement
         enemyCooldown   :: Int       -- ^ How many steps until the enemy can shoot again. Between 0 and 5.
-    }
-    -- 
-    -- BossEnemy { -- Boss enemy, will not move in a straight line, but rather anywhere on the field and shoot at the player.
-    --     enemyPos        :: Position,    -- Boss' position on the field
-    --     prevEnemyPos    :: Position,    -- Enemy's previous position on the field. Used for rendering the boss
-    --     enemyCooldown   :: Int,         -- How many steps until the boss can shoot again.
-    --     enemyMovement   :: Movement,    -- Enemy's movement
-    --     bossHealth      :: Int          -- Boss' health. Will be between 0 and 10
-    -- } 
-    deriving (Show, Eq)
+    } deriving (Show, Eq)
 
 -- | A projectile fired by either the player or an enemy.
 data Projectile =
