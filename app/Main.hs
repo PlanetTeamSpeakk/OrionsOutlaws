@@ -4,7 +4,7 @@ import Game.OrionsOutlaws.Controller        (input, step)
 import Game.OrionsOutlaws.Model             (GameState(..), debugLog, defLog, initialState, logFormatter, stepsPerSec, Settings(volume), Player (..))
 import Game.OrionsOutlaws.Assets            (freeglutDll)
 import Game.OrionsOutlaws.Rendering.View    (view)
-import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume)
+import Game.OrionsOutlaws.Util.Audio        (initAudio, finishAudio, loopBgMusic, setVolume, pauseAllSounds)
 import Game.OrionsOutlaws.Util.Data         (loadSettings, loadScores, writeScores, writeGameState, loadGameState)
 import Game.OrionsOutlaws.Util.Tasks        (runAndClearTasks)
 
@@ -63,7 +63,9 @@ main = do
   scs <- initAudio
   setVolume $ volume s
   debugM debugLog $ "Audio init " ++ if scs then "successful" else "unsuccessful"
+  -- Ensure bg music is queued, but paused as we are on a menu.
   loopBgMusic
+  pauseAllSounds
 
   -- Load gamestate (if one is available)
   savedState <- loadGameState
