@@ -98,22 +98,22 @@ stepDelta prev current = fromIntegral (current - prev) / fromIntegral stepLength
 -- Data types
 -- | The game state. Contains everything that is needed to render and simulate the game.
 data GameState = GameState
-  { player       :: Player                -- ^ The player
-  , enemies      :: [Enemy]               -- ^ A list of enemies
-  , projectiles  :: [Projectile]          -- ^ A list of projectiles currently on the field
-  , animations   :: [PositionedAnimation] -- ^ A list of animations currently on the field
-  , activeUI     :: Maybe (RegistryEntry UI)              -- ^ The currently active UI, if any
-  , score        :: Int                   -- ^ The player's score
-  , lastSpawn    :: Float                 -- ^ The time at which the last enemy was spawned
-  , elapsedTime  :: Float                 -- ^ The time elapsed since the game started
-  , windowSize   :: Bounds                -- ^ The size of the window
-  , mousePos     :: Maybe Position        -- ^ The position of the mouse. 'Nothing' if the mouse is outside the window
-  , steps        :: Integer               -- ^ The number of steps that have been taken since the game started
-  , lastStep     :: Integer               -- ^ The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
-  , settings     :: Settings              -- ^ The game settings
-  , scores       :: [Score]               -- ^ The high scores
-  , keyListeners :: [Key -> IO ()]        -- ^ A list of key listeners that will be called when a key is pressed
-  , debug        :: Bool                  -- ^ Whether debug mode is enabled
+  { player       :: Player                   -- ^ The player
+  , enemies      :: [Enemy]                  -- ^ A list of enemies
+  , projectiles  :: [Projectile]             -- ^ A list of projectiles currently on the field
+  , animations   :: [PositionedAnimation]    -- ^ A list of animations currently on the field
+  , activeUI     :: Maybe (RegistryEntry UI) -- ^ The currently active UI, if any
+  , score        :: Int                      -- ^ The player's score
+  , lastSpawn    :: Float                    -- ^ The time at which the last enemy was spawned
+  , elapsedTime  :: Float                    -- ^ The time elapsed since the game started
+  , windowSize   :: Bounds                   -- ^ The size of the window
+  , mousePos     :: Maybe Position           -- ^ The position of the mouse. 'Nothing' if the mouse is outside the window
+  , steps        :: Integer                  -- ^ The number of steps that have been taken since the game started
+  , lastStep     :: Integer                  -- ^ The time in milliseconds at which the last step was taken. Used to calculate step delta and nothing else
+  , settings     :: Settings                 -- ^ The game settings
+  , scores       :: [Score]                  -- ^ The high scores
+  , keyListeners :: [Key -> IO ()]           -- ^ A list of key listeners that will be called when a key is pressed
+  , debug        :: Bool                     -- ^ Whether debug mode is enabled
   }
 
 instance Show GameState where
