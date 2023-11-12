@@ -78,7 +78,7 @@ modifyElement :: UI -> ElementKey -> (UIElement -> UIElement) -> UI
 renderUI :: Maybe MousePosition -> AxialScale -> UI -> Picture
 renderUIElement :: Maybe MousePosition -> AxialScale -> UIElement -> Picture
 handleMouse :: UI -> KeyState -> MousePosition -> AxialScale -> IO (Bool, UI)
-handleMotion :: UI -> MousePosition -> AxialScale -> IO UI
+handleMotion :: UI -> MousePosition -> AxialScale -> UI
 
 defaultBackground :: Picture
 
