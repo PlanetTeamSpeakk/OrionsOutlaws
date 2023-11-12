@@ -12,7 +12,7 @@ module Game.OrionsOutlaws.Util.Data
   ) where
 
 import Game.OrionsOutlaws.Model (Settings(..), defaultSettings, Score, defLog, GameState(..), Player,
-  Movement, MovementDirection, Enemy, PositionedAnimation(..), Projectile, Friendliness, Bounds, Position)
+  Movement, MovementDirection, Enemy, PositionedAnimation(..), Projectile, Friendliness, Position)
 import Graphics.Gloss.Interface.IO.Game (Key, MouseButton, SpecialKey)
 import Data.Aeson                       (FromJSON, ToJSON, Options (fieldLabelModifier), Value (..), (.:), object, KeyValue ((.=)))
 import Data.Aeson.TH                    (deriveJSON, defaultOptions)
@@ -71,16 +71,13 @@ instance FromJSON GameState where
     <*> v .: "score"
     <*> v .: "lastSpawn"
     <*> v .: "elapsedTime"
-    <*> v .: "windowSize"
     <*> v .: "mousePos"
     <*> v .: "steps"
     <*> v .: "lastStep"
-    <*> v .: "settings"
-    <*> v .: "scores"
     where
       mkGstate :: Player -> [Enemy] -> [Projectile] -> [PositionedAnimation] -> Int -> Float -> Float ->
-        Bounds -> Maybe Position -> Integer -> Integer -> Settings -> [Score] -> GameState
-      mkGstate p es ps as s ls et ws mp st lst stt scs = GameState p es ps as Nothing s ls et ws mp st lst stt scs [] False
+        Maybe Position -> Integer -> Integer -> GameState
+      mkGstate p es ps as s ls et mp st lst = GameState p es ps as Nothing s ls et (1280, 720) mp st lst defaultSettings [] [] False
   parseJSON _ = error "parseJSON GameState: Expected Object, but got something else"
 
 instance ToJSON GameState where
@@ -92,12 +89,9 @@ instance ToJSON GameState where
     , "score"        .= score gs
     , "lastSpawn"    .= lastSpawn gs
     , "elapsedTime"  .= elapsedTime gs
-    , "windowSize"   .= windowSize gs
     , "mousePos"     .= mousePos gs
     , "steps"        .= steps gs
     , "lastStep"     .= lastStep gs
-    , "settings"     .= settings gs
-    , "scores"       .= scores gs
     ]
 
 newtype Const a = Const a
