@@ -22,4 +22,4 @@ onSettingsBtn = queueTask $ \gs -> return $ openUI gs $ getUI gs "settings"
 
 -- | Called when the scores button is pressed.
 onScoresBtn :: IO ()
-onScoresBtn = queueTask $ \gs -> return $ openUI gs $ getUI gs "settings"
+onScoresBtn = queueTask $ \gs -> return $ openUI gs $ getUI gs "scores"

@@ -12,6 +12,7 @@ import Game.OrionsOutlaws.UI.SettingsUI (settingsUI)
 import Game.OrionsOutlaws.Util.Registry (Registry(..), mkRegistry, getEntry, RegistryEntry)
 import Game.OrionsOutlaws.UI.MenuUI     (menuUI)
 import Game.OrionsOutlaws.UI.GameOverUI (gameOverUI)
+import Game.OrionsOutlaws.UI.ScoresUI (scoresUI)
 
 -- | A registry of animations.
 animationsRegistry :: Registry Animation
@@ -25,6 +26,7 @@ uiRegistry = mkRegistry "ui"
   [ ("menu", menuUI . Just) -- Not really correct, but this isn't really used anyway.
   , ("paused", const pausedUI)
   , ("settings", settingsUI . settings)
+  , ("scores", scoresUI . scores)
   , ("gameOver", gameOverUI)
   ]
 
