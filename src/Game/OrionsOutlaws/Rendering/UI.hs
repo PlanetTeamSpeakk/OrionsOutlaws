@@ -247,23 +247,20 @@ handleMouse ui' state mousePos s = do
     handleMouse'' e = return (False, e)
 
 -- | Handles a mouse motion event on a UI.
-handleMotion :: UI -> MousePosition -> AxialScale -> IO UI
-handleMotion ui' mousePos (hs, vs) = do
-  es <- mapM handleMotion' $ allElements ui'
-  return $ withElements ui' es
+handleMotion :: UI -> MousePosition -> AxialScale -> UI
+handleMotion ui' mousePos (hs, vs) = withElements ui' $ map handleMotion' $ allElements ui'
   where
     s = min hs vs -- Scale to use
-    handleMotion' :: (Maybe ElementKey, UIElement) -> IO (Maybe ElementKey, UIElement)
-    handleMotion' (k, e) = handleMotion'' e >>= \e' -> return (k, e')
+    handleMotion' :: (Maybe ElementKey, UIElement) -> (Maybe ElementKey, UIElement)
+    handleMotion' (k, e) = (k, handleMotion'' e)
 
-    handleMotion'' :: UIElement -> IO UIElement
+    handleMotion'' :: UIElement -> UIElement
     -- For sliders, update the value if the slider is active.
-    handleMotion'' sl@(UISlider (x, _) (w, _) _ _ True) = do
-      let v' = (fst mousePos - (x * s)) / w / s + 0.5 -- Calculate new value
-      let v'' = clamp (0, 1) v'                       -- Clamp value to [0, 1]
-      return sl { sldrValue = v'' }                   -- Update slider value
+    handleMotion'' sl@(UISlider (x, _) (w, _) _ _ True) = let v' = (fst mousePos - (x * s)) / w / s + 0.5 -- Calculate new value
+                                                              v'' = clamp (0, 1) v'                       -- Clamp value to [0, 1]
+                                                          in sl { sldrValue = v'' }                       -- Update slider value
     -- For anything else, do nothing.
-    handleMotion'' e                         = return e
+    handleMotion'' e                         = e
 
 -- | The default background for a UI. Simply transparent black.
 defaultBackground :: Picture

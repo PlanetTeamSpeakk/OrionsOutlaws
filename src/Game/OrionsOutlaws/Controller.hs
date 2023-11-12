@@ -227,20 +227,20 @@ input' e@(EventKey key down _ _) gstate
   | key == backwardKey  s = return $ moveBackward gstate d
   | key == leftKey      s = return $ moveLeft     gstate d
   | key == rightKey     s = return $ moveRight    gstate $ down == Down
-  | otherwise             = input'' e gstate -- Continue to last stage (mouse move and window resize)
+  | otherwise             = return $ input'' e gstate -- Continue to last stage (mouse move and window resize)
     where
       d = down == Down
       s = settings gstate
-input' e gstate = input'' e gstate -- Continue to last stage
+input' e gstate = return $ input'' e gstate -- Continue to last stage
 
 -- | Stage 3 of input handling. Handles mouse move and window resize.
-input'' :: Event -> GameState -> IO GameState
+input'' :: Event -> GameState -> GameState
 -- Mouse move event
 input'' e@(EventMotion {}) gstate = inputMouseMove e gstate
 -- Resize event
-input'' (EventResize ns) gstate = return gstate { windowSize = ns }
+input'' (EventResize ns) gstate = gstate { windowSize = ns }
 -- Fallback
-input'' _ gstate = return gstate
+input'' _ gstate = gstate
 
 -- | Handle mouse input. Propagates to UI if there's an active UI.
 inputMouse :: Event -> GameState -> IO GameState
@@ -261,21 +261,15 @@ inputMouse (EventKey (MouseButton btn) state _ (x, y)) gstate = do
 inputMouse _ gstate = return gstate
 
 -- | Handle mouse motion. Propagates to UI if there's an active UI.
-inputMouseMove :: Event -> GameState -> IO GameState
-inputMouseMove (EventMotion mPos) gstate = do
-  let (ww, wh) = windowSize gstate
-  let s = (fromIntegral ww / 1280, fromIntegral wh / 720)
-
-  -- Handle UI motion if there's an active UI
-  ui' <- case activeUI gstate of
-    Just ui -> Just <$> handleMotion (entryValue ui) mPos s
-    Nothing -> return Nothing
-
-  return $ gstate
-    { mousePos = Just mPos
-    , activeUI = activeUI gstate >>= (\ui -> Just $ ui { entryValue = fromJust ui' })
-    }
-inputMouseMove _ gstate = return gstate
+inputMouseMove :: Event -> GameState -> GameState
+inputMouseMove (EventMotion mPos) gstate = let (ww, wh) = windowSize gstate
+                                               s = (fromIntegral ww / 1280, fromIntegral wh / 720)
+                                               ui' = (\ui -> handleMotion (entryValue ui) mPos s) <$> activeUI gstate
+                                           in gstate
+                                            { mousePos = Just mPos
+                                            , activeUI = activeUI gstate >>= (\ui -> Just $ ui { entryValue = fromJust ui' })
+                                            }
+inputMouseMove _ gstate = gstate
 
 -- | Handle pause input
 --
