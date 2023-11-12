@@ -9,7 +9,7 @@ import Game.OrionsOutlaws.Util.Tasks      (queueTask)
 import Data.Maybe                         (isJust)
 import {-# SOURCE #-} Game.OrionsOutlaws.Util.Registries (getUI)
 
--- | The paused UI. Doesn't ever change and doesn't do much on its own.
+-- | The menu UI. Doesn't ever change and doesn't do much on its own.
 menuUI :: Maybe GameState -> UI
 menuUI gs = ui
   [ text "Orion's Outlaws" JustCentered pixeboyFont 1.3 (0, 200)
