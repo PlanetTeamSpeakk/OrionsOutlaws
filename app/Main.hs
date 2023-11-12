@@ -150,4 +150,4 @@ onClose = do
   -- Save the scores and gamestate
   gstate <- readIORef gameStateRef
   writeScores $ scores gstate
-  writeGameState gstate
+  when (steps gstate > 1) $ writeGameState gstate
