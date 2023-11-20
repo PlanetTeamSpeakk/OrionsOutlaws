@@ -387,7 +387,7 @@ lerpPos :: Position -> Position -> Float -> Position
 lerpPos (x1, y1) (x2, y2) t = (lerp x1 x2 t, lerp y1 y2 t)
 
 -- | Calculates movement based on the given Movement.
--- | Ensures that the player moves at the same speed in all directions.
+--   Ensures that the player moves at the same speed in all directions.
 calcMovement :: Movement -> (Float, Float)
 calcMovement m = invertIfR2L (if y /= 0 then x * halfRt2 else x, if x /= 0 then y * halfRt2 else y)
   where
