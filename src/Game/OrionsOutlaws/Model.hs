@@ -15,7 +15,6 @@ import Data.Time                        (UTCTime)
 import Graphics.Gloss.Data.Picture      (Picture)
 import Graphics.Gloss.Interface.IO.Game (Key (..), SpecialKey (KeySpace))
 import Graphics.Gloss.Geometry.Angle    (radToDeg, degToRad)
-import Data.Functor                     ((<&>))
 import Game.OrionsOutlaws.Util.Registry (RegistryEntry (..))
 
 -- | Some logging-related constants
@@ -456,4 +455,4 @@ growBox ((x1, y1), (x2, y2)) w h = ((x1 - w / 2, y1 - h / 2), (x2 + w / 2, y2 + 
 openUI :: GameState -> Maybe (RegistryEntry UI) -> GameState
 openUI gstate Nothing = gstate { activeUI = Nothing }
 openUI gstate (Just e@(RegistryEntry _ ui)) = gstate { activeUI =
-  Just ui <&> (\ui' -> e { entryValue = ui'}) . withParent (activeUI gstate) }
+  Just $ e { entryValue = withParent (activeUI gstate) ui} }
